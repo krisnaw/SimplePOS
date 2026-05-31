@@ -9,10 +9,10 @@
     "start": "vite build && tsc -p tsconfig.electron.json && electron ."
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "@tailwindcss/vite": "^4.0.0",
     "@vitejs/plugin-react": "^6.0.2",
     "concurrently": "^9.0.0",
     "electron": "^42.3.0",
@@ -21,8 +21,13 @@
     "wait-on": "^9.0.10"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.17.0",
+    "radix-ui": "^1.4.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router-dom": "^7.15.1"
+    "react-router-dom": "^7.15.1",
+    "tailwind-merge": "^3.6.0"
   }
 }

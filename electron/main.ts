@@ -3,10 +3,10 @@ import path from 'path'
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    minWidth: 1024,
-    minHeight: 600,
+    width: 420,
+    height: 580,
+    resizable: false,
+    center: true,
   })
 
   if (process.env.ELECTRON_DEV === 'true') {
