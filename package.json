@@ -1,0 +1,28 @@
+{
+  "name": "simple-pos",
+  "version": "1.0.0",
+  "description": "Simple POS and Inventory App for Car Repair Shop",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "tsc -p tsconfig.electron.json && concurrently \"vite\" \"wait-on http://localhost:5173 && ELECTRON_DEV=true electron .\"",
+    "build": "vite build && tsc -p tsconfig.electron.json",
+    "start": "vite build && tsc -p tsconfig.electron.json && electron ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.73",
+    "@types/react-dom": "^18.2.23",
+    "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "concurrently": "^8.2.2",
+    "electron": "^42.3.0",
+    "typescript": "^5.4.3",
+    "vite": "^8.0.14",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3"
+  }
+}
