@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
+import { Button } from '@/renderer/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { Label } from '@/renderer/components/ui/label'
 
 export function ReportsWorkspace() {
   const [period, setPeriod] = useState('today')

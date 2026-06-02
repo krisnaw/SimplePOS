@@ -35,8 +35,8 @@ function saveSqljsDatabase(source: DataSource, dbPath: string): Promise<void> {
   return (source.manager as unknown as SqljsDatabaseManager).saveDatabase(dbPath)
 }
 
-export async function initializeDatabase(projectPath: string): Promise<DatabaseStatus> {
-  const dbPath = path.join(projectPath, 'simplepos.sqlite')
+export async function initializeDatabase(databaseDirectory: string): Promise<DatabaseStatus> {
+  const dbPath = path.join(databaseDirectory, 'simplepos.sqlite')
   const existsBeforeOpen = fs.existsSync(dbPath)
 
   try {
@@ -92,11 +92,17 @@ export function getDataSource(): DataSource | null {
   return dataSource?.isInitialized ? dataSource : null
 }
 
+export async function flushDatabase(): Promise<void> {
+  if (!dataSource?.isInitialized || !status.path) return
+
+  await saveSqljsDatabase(dataSource, status.path)
+}
+
 export async function closeDatabase(): Promise<void> {
   if (!dataSource) return
 
   if (dataSource.isInitialized) {
-    await saveSqljsDatabase(dataSource, status.path)
+    await flushDatabase()
     await dataSource.destroy()
   }
 

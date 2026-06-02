@@ -1,4 +1,5 @@
 import type { User } from '../db/schema'
+import { flushDatabase } from '../db/client'
 import { getUserRepository } from '../repositories/user.repository'
 import { verifyPassword } from './password.service'
 import { normalizeEmail } from './user.service'
@@ -43,6 +44,7 @@ export async function authenticateUser(email: string, password: string): Promise
     lastLoginAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   })
+  await flushDatabase()
 
   return {
     ok: true,

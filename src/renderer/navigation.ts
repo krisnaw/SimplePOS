@@ -9,7 +9,7 @@ import {
   ShoppingCart,
   Users,
 } from 'lucide-react'
-import type { AppSection, SectionDetail } from '@/app/types'
+import type { AppSection, SectionDetail } from '@/shared/types/app'
 
 export const navigationItems: Array<{
   id: AppSection

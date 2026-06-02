@@ -1,4 +1,5 @@
 import type { User } from '../db/schema'
+import { flushDatabase } from '../db/client'
 import { getUserRepository } from '../repositories/user.repository'
 import { createPasswordCredentials } from './password.service'
 
@@ -118,6 +119,7 @@ export async function createUser(input: {
   })
 
   const savedUser = await repository.save(user)
+  await flushDatabase()
 
   return {
     ok: true,
@@ -210,6 +212,7 @@ export async function updateUser(input: {
     updatedAt: new Date().toISOString(),
     ...passwordFields,
   })
+  await flushDatabase()
 
   return {
     ok: true,

@@ -1,5 +1,6 @@
 import 'reflect-metadata'
 import { app, BrowserWindow, ipcMain } from 'electron'
+import fs from 'fs'
 import path from 'path'
 import {
   closeDatabase,
@@ -16,14 +17,14 @@ import {
 function expandWindowForDashboard(win: BrowserWindow): void {
   win.setResizable(true)
   win.setMinimumSize(900, 640)
-  win.setSize(1100, 760, true)
-  win.center()
+  win.setFullScreen(true)
 }
 
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 420,
     height: 580,
+    fullscreen: true,
     resizable: true,
     minWidth: 420,
     minHeight: 580,
@@ -47,8 +48,23 @@ function createWindow(): void {
   }
 }
 
+function prepareDatabaseDirectory(): string {
+  const databaseDirectory = app.getPath('userData')
+  const databasePath = path.join(databaseDirectory, 'simplepos.sqlite')
+  const legacyDatabasePath = path.join(app.getAppPath(), 'simplepos.sqlite')
+
+  if (!fs.existsSync(databasePath) && fs.existsSync(legacyDatabasePath)) {
+    fs.mkdirSync(databaseDirectory, { recursive: true })
+    fs.copyFileSync(legacyDatabasePath, databasePath)
+  }
+
+  return databaseDirectory
+}
+
+let isClosingDatabase = false
+
 app.whenReady().then(async () => {
-  await initializeDatabase(app.getAppPath())
+  await initializeDatabase(prepareDatabaseDirectory())
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
   ipcMain.handle('users:list', () => listUsers())
@@ -104,6 +120,13 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('before-quit', () => {
-  void closeDatabase()
+app.on('before-quit', (event) => {
+  if (isClosingDatabase) return
+
+  event.preventDefault()
+  isClosingDatabase = true
+
+  void closeDatabase().finally(() => {
+    app.quit()
+  })
 })

@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { sectionDetails } from '@/app/navigation'
-import type { AppSection } from '@/app/types'
+import { Button } from '@/renderer/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { sectionDetails } from '@/renderer/navigation'
+import type { AppSection } from '@/shared/types/app'
 
 export function SectionWorkspace({ section }: { section: AppSection }) {
   const details = sectionDetails[section]

@@ -1,5 +1,5 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { AuthenticatedUser } from '@/app/types'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import type { AuthenticatedUser } from '@/shared/types/app'
 
 export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
   return (

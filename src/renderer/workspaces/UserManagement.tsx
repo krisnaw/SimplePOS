@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
-import type { AuthenticatedUser, UserRole, UserSummary } from '@/app/types'
+import { Button } from '@/renderer/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { Input } from '@/renderer/components/ui/input'
+import { Label } from '@/renderer/components/ui/label'
+import { cn } from '@/renderer/lib/utils'
+import type { AuthenticatedUser, UserRole, UserSummary } from '@/shared/types/app'
 
 export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser }) {
   const [users, setUsers] = useState<UserSummary[]>([])

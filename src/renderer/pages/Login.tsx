@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { Button } from '@/renderer/components/ui/button'
+import { Input } from '@/renderer/components/ui/input'
+import { Label } from '@/renderer/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { cn } from '@/renderer/lib/utils'
 
 type DatabaseConnectionState = 'checking' | 'connected_existing' | 'connected_created' | 'error'
 
@@ -27,7 +27,14 @@ export default function Login() {
   useEffect(() => {
     let isMounted = true
 
-    window.simplepos?.db.getStatus()
+    const promise = window.simplepos?.db?.getStatus()
+
+    if (!promise) {
+      setDatabase({ state: 'error', message: 'Database unavailable' })
+      return
+    }
+
+    promise
       .then((status) => {
         if (!isMounted) return
 
@@ -119,7 +126,7 @@ export default function Login() {
                   {authMessage}
                 </p>
               ) : null}
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button variant="outline" type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Signing in' : 'Sign in'}
               </Button>
             </form>

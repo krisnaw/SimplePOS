@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { PackagePlus, Search, SlidersHorizontal } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { Button } from '@/renderer/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { Input } from '@/renderer/components/ui/input'
+import { Label } from '@/renderer/components/ui/label'
+import { cn } from '@/renderer/lib/utils'
 
 type InventoryProduct = {
   id: number
