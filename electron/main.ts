@@ -1,5 +1,6 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
+import { closeDatabase, getDatabaseStatus, initializeDatabase } from './db'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -7,6 +8,11 @@ function createWindow(): void {
     height: 580,
     resizable: false,
     center: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
   })
 
   if (process.env.ELECTRON_DEV === 'true') {
@@ -22,6 +28,10 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  initializeDatabase(app.getAppPath())
+
+  ipcMain.handle('db:getStatus', () => getDatabaseStatus())
+
   createWindow()
 
   app.on('activate', () => {
@@ -31,4 +41,8 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('before-quit', () => {
+  closeDatabase()
 })
