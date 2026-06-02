@@ -1,7 +1,14 @@
 import 'reflect-metadata'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
-import { closeDatabase, getDatabaseStatus, initializeDatabase } from './db'
+import { authenticateUser, closeDatabase, getDatabaseStatus, initializeDatabase } from './db'
+
+function expandWindowForDashboard(win: BrowserWindow): void {
+  win.setResizable(true)
+  win.setMinimumSize(900, 640)
+  win.setSize(1100, 760, true)
+  win.center()
+}
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -32,6 +39,26 @@ app.whenReady().then(async () => {
   await initializeDatabase(app.getAppPath())
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
+  ipcMain.handle('auth:login', async (event, credentials: { email?: unknown; password?: unknown }) => {
+    if (typeof credentials.email !== 'string' || typeof credentials.password !== 'string') {
+      return {
+        ok: false,
+        message: 'Invalid login request',
+      }
+    }
+
+    const result = await authenticateUser(credentials.email, credentials.password)
+
+    if (result.ok) {
+      const win = BrowserWindow.fromWebContents(event.sender)
+
+      if (win) {
+        expandWindowForDashboard(win)
+      }
+    }
+
+    return result
+  })
 
   createWindow()
 

@@ -1,8 +1,11 @@
 import fs from 'fs'
 import path from 'path'
+import { scryptSync, timingSafeEqual } from 'crypto'
 import { DataSource } from 'typeorm'
 import { SqljsEntityManager } from 'typeorm/entity-manager/SqljsEntityManager'
 import { AppDatabaseStatusEntity } from './entity/AppDatabaseStatus'
+import { User, UserEntity } from './entity/User'
+import { CreateUserSchema1717300000000 } from './migration/1717300000000-CreateUserSchema'
 
 export type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -12,6 +15,17 @@ export type DatabaseStatus = {
   existsBeforeOpen: boolean
   message: string
   checkedAt: string
+}
+
+export type LoginResult = {
+  ok: boolean
+  message: string
+  user?: {
+    id: number
+    email: string
+    name: string
+    role: User['role']
+  }
 }
 
 let dataSource: DataSource | null = null
@@ -25,6 +39,19 @@ let status: DatabaseStatus = {
 
 function persistDatabase(dbPath: string, database: Uint8Array): void {
   fs.writeFileSync(dbPath, Buffer.from(database))
+}
+
+function hashPassword(password: string, salt: string): Buffer {
+  return scryptSync(password, salt, 64)
+}
+
+function verifyPassword(password: string, salt: string, expectedHash: string): boolean {
+  const actualHash = hashPassword(password, salt)
+  const expectedHashBuffer = Buffer.from(expectedHash, 'hex')
+
+  if (actualHash.length !== expectedHashBuffer.length) return false
+
+  return timingSafeEqual(actualHash, expectedHashBuffer)
 }
 
 export async function initializeDatabase(projectPath: string): Promise<DatabaseStatus> {
@@ -43,12 +70,14 @@ export async function initializeDatabase(projectPath: string): Promise<DatabaseS
       autoSaveCallback: (updatedDatabase: Uint8Array) => {
         persistDatabase(dbPath, updatedDatabase)
       },
-      entities: [AppDatabaseStatusEntity],
-      synchronize: true,
+      entities: [AppDatabaseStatusEntity, UserEntity],
+      migrations: [CreateUserSchema1717300000000],
+      synchronize: false,
     })
 
     await dataSource.initialize()
     await dataSource.query('PRAGMA foreign_keys = ON')
+    await dataSource.runMigrations()
     await dataSource.query('SELECT 1 AS ok')
     await (dataSource.manager as SqljsEntityManager).saveDatabase(dbPath)
 
@@ -76,6 +105,46 @@ export async function initializeDatabase(projectPath: string): Promise<DatabaseS
 
 export function getDatabaseStatus(): DatabaseStatus {
   return status
+}
+
+export async function authenticateUser(email: string, password: string): Promise<LoginResult> {
+  if (!dataSource?.isInitialized) {
+    return {
+      ok: false,
+      message: 'Database unavailable',
+    }
+  }
+
+  const normalizedEmail = email.trim().toLowerCase()
+  const user = await dataSource.getRepository(UserEntity).findOne({
+    where: {
+      email: normalizedEmail,
+      isActive: true,
+    },
+  })
+
+  if (!user || !verifyPassword(password, user.passwordSalt, user.passwordHash)) {
+    return {
+      ok: false,
+      message: 'Invalid email or password',
+    }
+  }
+
+  await dataSource.getRepository(UserEntity).update(user.id, {
+    lastLoginAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  })
+
+  return {
+    ok: true,
+    message: 'Signed in',
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+  }
 }
 
 export async function closeDatabase(): Promise<void> {

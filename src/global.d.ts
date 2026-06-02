@@ -10,11 +10,25 @@ type DatabaseStatus = {
   checkedAt: string
 }
 
+type LoginResult = {
+  ok: boolean
+  message: string
+  user?: {
+    id: number
+    email: string
+    name: string
+    role: 'admin' | 'staff'
+  }
+}
+
 declare global {
   interface Window {
     simplepos?: {
       db: {
         getStatus: () => Promise<DatabaseStatus>
+      }
+      auth: {
+        login: (credentials: { email: string; password: string }) => Promise<LoginResult>
       }
     }
   }

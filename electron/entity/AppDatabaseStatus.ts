@@ -21,3 +21,7 @@ export const AppDatabaseStatusEntity = new EntitySchema<AppDatabaseStatus>({
     },
   },
 })
+
+
+//   - Email: admin@simplepos.com
+// - Password: admin123
