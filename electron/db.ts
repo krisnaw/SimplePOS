@@ -1,6 +1,8 @@
 import fs from 'fs'
 import path from 'path'
-import { DatabaseSync } from 'node:sqlite'
+import { DataSource } from 'typeorm'
+import { SqljsEntityManager } from 'typeorm/entity-manager/SqljsEntityManager'
+import { AppDatabaseStatusEntity } from './entity/AppDatabaseStatus'
 
 export type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -12,7 +14,7 @@ export type DatabaseStatus = {
   checkedAt: string
 }
 
-let db: DatabaseSync | null = null
+let dataSource: DataSource | null = null
 let status: DatabaseStatus = {
   state: 'error',
   path: '',
@@ -21,22 +23,34 @@ let status: DatabaseStatus = {
   checkedAt: new Date().toISOString(),
 }
 
-export function initializeDatabase(projectPath: string): DatabaseStatus {
+function persistDatabase(dbPath: string, database: Uint8Array): void {
+  fs.writeFileSync(dbPath, Buffer.from(database))
+}
+
+export async function initializeDatabase(projectPath: string): Promise<DatabaseStatus> {
   const dbPath = path.join(projectPath, 'simplepos.sqlite')
   const existsBeforeOpen = fs.existsSync(dbPath)
 
   try {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 
-    db = new DatabaseSync(dbPath)
-    db.exec('PRAGMA foreign_keys = ON')
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS app_database_status (
-        id INTEGER PRIMARY KEY CHECK (id = 1),
-        initialized_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
-    db.prepare('SELECT 1 AS ok').get()
+    const database = existsBeforeOpen ? new Uint8Array(fs.readFileSync(dbPath)) : undefined
+
+    dataSource = new DataSource({
+      type: 'sqljs',
+      database,
+      autoSave: true,
+      autoSaveCallback: (updatedDatabase: Uint8Array) => {
+        persistDatabase(dbPath, updatedDatabase)
+      },
+      entities: [AppDatabaseStatusEntity],
+      synchronize: true,
+    })
+
+    await dataSource.initialize()
+    await dataSource.query('PRAGMA foreign_keys = ON')
+    await dataSource.query('SELECT 1 AS ok')
+    await (dataSource.manager as SqljsEntityManager).saveDatabase(dbPath)
 
     status = {
       state: existsBeforeOpen ? 'connected_existing' : 'connected_created',
@@ -64,9 +78,13 @@ export function getDatabaseStatus(): DatabaseStatus {
   return status
 }
 
-export function closeDatabase(): void {
-  if (!db) return
+export async function closeDatabase(): Promise<void> {
+  if (!dataSource) return
 
-  db.close()
-  db = null
+  if (dataSource.isInitialized) {
+    await (dataSource.manager as SqljsEntityManager).saveDatabase(status.path)
+    await dataSource.destroy()
+  }
+
+  dataSource = null
 }

@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import { closeDatabase, getDatabaseStatus, initializeDatabase } from './db'
@@ -27,8 +28,8 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
-  initializeDatabase(app.getAppPath())
+app.whenReady().then(async () => {
+  await initializeDatabase(app.getAppPath())
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
 
@@ -44,5 +45,5 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
-  closeDatabase()
+  void closeDatabase()
 })
