@@ -1,8 +1,10 @@
 import type { User } from '../db/schema'
+import { users } from '../db/schema'
 import { flushDatabase } from '../db/client'
 import { getUserRepository } from '../repositories/user.repository'
 import { verifyPassword } from './password.service'
 import { normalizeEmail } from './user.service'
+import { and, eq } from 'drizzle-orm'
 
 export type LoginResult = {
   ok: boolean
@@ -26,12 +28,11 @@ export async function authenticateUser(email: string, password: string): Promise
   }
 
   const normalizedEmail = normalizeEmail(email)
-  const user = await repository.findOne({
-    where: {
-      email: normalizedEmail,
-      isActive: true,
-    },
-  })
+  const [user] = await repository
+    .select()
+    .from(users)
+    .where(and(eq(users.email, normalizedEmail), eq(users.isActive, true)))
+    .limit(1)
 
   if (!user || !verifyPassword(password, user.passwordSalt, user.passwordHash)) {
     return {
@@ -40,10 +41,10 @@ export async function authenticateUser(email: string, password: string): Promise
     }
   }
 
-  await repository.update(user.id, {
+  await repository.update(users).set({
     lastLoginAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  })
+  }).where(eq(users.id, user.id))
   await flushDatabase()
 
   return {

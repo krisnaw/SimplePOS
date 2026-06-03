@@ -1,7 +1,9 @@
 import type { User } from '../db/schema'
+import { users } from '../db/schema'
 import { flushDatabase } from '../db/client'
 import { getUserRepository } from '../repositories/user.repository'
 import { createPasswordCredentials } from './password.service'
+import { asc, eq, ne } from 'drizzle-orm'
 
 export type UserSummary = {
   id: number
@@ -46,13 +48,9 @@ export async function listUsers(): Promise<UserSummary[]> {
 
   if (!repository) return []
 
-  const users = await repository.find({
-    order: {
-      name: 'ASC',
-    },
-  })
+  const userList = await repository.select().from(users).orderBy(asc(users.name))
 
-  return users.map(toUserSummary)
+  return userList.map(toUserSummary)
 }
 
 export async function createUser(input: {
@@ -93,13 +91,9 @@ export async function createUser(input: {
     }
   }
 
-  const existingUser = await repository.findOne({
-    where: {
-      email,
-    },
-  })
+  const existingUser = await repository.select().from(users).where(eq(users.email, email)).limit(1)
 
-  if (existingUser) {
+  if (existingUser.length > 0) {
     return {
       ok: false,
       message: 'A user with this email already exists',
@@ -107,7 +101,7 @@ export async function createUser(input: {
   }
 
   const now = new Date().toISOString()
-  const user = repository.create({
+  const [savedUser] = await repository.insert(users).values({
     email,
     name,
     role: input.role,
@@ -116,9 +110,7 @@ export async function createUser(input: {
     updatedAt: now,
     lastLoginAt: null,
     ...createPasswordCredentials(password),
-  })
-
-  const savedUser = await repository.save(user)
+  }).returning()
   await flushDatabase()
 
   return {
@@ -176,11 +168,7 @@ export async function updateUser(input: {
     }
   }
 
-  const user = await repository.findOne({
-    where: {
-      id: input.id,
-    },
-  })
+  const [user] = await repository.select().from(users).where(eq(users.id, input.id)).limit(1)
 
   if (!user) {
     return {
@@ -189,13 +177,13 @@ export async function updateUser(input: {
     }
   }
 
-  const existingUser = await repository.findOne({
-    where: {
-      email,
-    },
-  })
+  const existingUser = await repository
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1)
 
-  if (existingUser && existingUser.id !== user.id) {
+  if (existingUser[0] && existingUser[0].id !== user.id) {
     return {
       ok: false,
       message: 'A user with this email already exists',
@@ -203,15 +191,14 @@ export async function updateUser(input: {
   }
 
   const passwordFields = password ? createPasswordCredentials(password) : {}
-  const updatedUser = await repository.save({
-    ...user,
+  const [updatedUser] = await repository.update(users).set({
     email,
     name,
     role: input.role,
     isActive: input.isActive,
     updatedAt: new Date().toISOString(),
     ...passwordFields,
-  })
+  }).where(eq(users.id, user.id)).returning()
   await flushDatabase()
 
   return {

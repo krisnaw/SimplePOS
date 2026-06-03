@@ -1,7 +1,5 @@
-import type { Repository } from 'typeorm'
-import { getDataSource } from '../db/client'
-import { User, UserEntity } from '../db/schema'
+import { getDatabaseClient } from '../db/client'
 
-export function getUserRepository(): Repository<User> | null {
-  return getDataSource()?.getRepository(UserEntity) ?? null
+export function getUserRepository() {
+  return getDatabaseClient()
 }

@@ -12,6 +12,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["src/main/**/*"],
+  "include": ["src/main/**/*", "src/shared/types/sql-js.d.ts"],
   "exclude": ["node_modules", "dist", "dist-electron"]
 }

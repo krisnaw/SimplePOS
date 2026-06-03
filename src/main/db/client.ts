@@ -1,8 +1,9 @@
+import { scryptSync } from 'crypto'
 import fs from 'fs'
 import path from 'path'
-import { DataSource } from 'typeorm'
-import { AppDatabaseStatusEntity, UserEntity } from './schema'
-import { CreateUserSchema1717300000000 } from './migrations/1717300000000-CreateUserSchema'
+import { drizzle, type SQLJsDatabase } from 'drizzle-orm/sql-js'
+import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
+import * as schema from './schema'
 
 export type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -14,11 +15,14 @@ export type DatabaseStatus = {
   checkedAt: string
 }
 
-type SqljsDatabaseManager = {
-  saveDatabase(fileNameOrLocalStorage?: string): Promise<void>
-}
+type DatabaseClient = SQLJsDatabase<typeof schema>
 
-let dataSource: DataSource | null = null
+const defaultAdminEmail = 'admin@simplepos.com'
+const defaultAdminPassword = 'admin123'
+const defaultAdminSalt = 'simplepos-default-admin-salt'
+
+let sqliteDatabase: SqlJsDatabase | null = null
+let databaseClient: DatabaseClient | null = null
 let status: DatabaseStatus = {
   state: 'error',
   path: '',
@@ -27,12 +31,49 @@ let status: DatabaseStatus = {
   checkedAt: new Date().toISOString(),
 }
 
-function persistDatabase(dbPath: string, database: Uint8Array): void {
-  fs.writeFileSync(dbPath, Buffer.from(database))
+function hashPassword(password: string, salt: string): string {
+  return scryptSync(password, salt, 64).toString('hex')
 }
 
-function saveSqljsDatabase(source: DataSource, dbPath: string): Promise<void> {
-  return (source.manager as unknown as SqljsDatabaseManager).saveDatabase(dbPath)
+function runSchemaMigration(database: SqlJsDatabase): void {
+  database.run(`
+    CREATE TABLE IF NOT EXISTS app_database_status (
+      id integer PRIMARY KEY NOT NULL,
+      initialized_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      email text NOT NULL,
+      name text NOT NULL,
+      role text NOT NULL DEFAULT ('cashier'),
+      password_hash text NOT NULL,
+      password_salt text NOT NULL,
+      is_active integer NOT NULL DEFAULT (1),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      last_login_at text,
+      CONSTRAINT UQ_users_email UNIQUE (email)
+    )
+  `)
+
+  database.run(
+    `
+      INSERT INTO users (email, name, role, password_hash, password_salt, is_active)
+      SELECT ?, ?, ?, ?, ?, 1
+      WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = ?)
+    `,
+    [
+      defaultAdminEmail,
+      'Administrator',
+      'admin',
+      hashPassword(defaultAdminPassword, defaultAdminSalt),
+      defaultAdminSalt,
+      defaultAdminEmail,
+    ],
+  )
 }
 
 export async function initializeDatabase(databaseDirectory: string): Promise<DatabaseStatus> {
@@ -42,25 +83,15 @@ export async function initializeDatabase(databaseDirectory: string): Promise<Dat
   try {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 
-    const database = existsBeforeOpen ? new Uint8Array(fs.readFileSync(dbPath)) : undefined
+    const SQL = await initSqlJs()
+    const databaseBytes = existsBeforeOpen ? fs.readFileSync(dbPath) : undefined
 
-    dataSource = new DataSource({
-      type: 'sqljs',
-      database,
-      autoSave: true,
-      autoSaveCallback: (updatedDatabase: Uint8Array) => {
-        persistDatabase(dbPath, updatedDatabase)
-      },
-      entities: [AppDatabaseStatusEntity, UserEntity],
-      migrations: [CreateUserSchema1717300000000],
-      synchronize: false,
-    })
+    sqliteDatabase = databaseBytes ? new SQL.Database(databaseBytes) : new SQL.Database()
+    sqliteDatabase.run('PRAGMA foreign_keys = ON')
+    runSchemaMigration(sqliteDatabase)
 
-    await dataSource.initialize()
-    await dataSource.query('PRAGMA foreign_keys = ON')
-    await dataSource.runMigrations()
-    await dataSource.query('SELECT 1 AS ok')
-    await saveSqljsDatabase(dataSource, dbPath)
+    databaseClient = drizzle(sqliteDatabase, { schema })
+    await flushDatabase()
 
     status = {
       state: existsBeforeOpen ? 'connected_existing' : 'connected_created',
@@ -88,23 +119,21 @@ export function getDatabaseStatus(): DatabaseStatus {
   return status
 }
 
-export function getDataSource(): DataSource | null {
-  return dataSource?.isInitialized ? dataSource : null
+export function getDatabaseClient(): DatabaseClient | null {
+  return databaseClient
 }
 
 export async function flushDatabase(): Promise<void> {
-  if (!dataSource?.isInitialized || !status.path) return
+  if (!sqliteDatabase || !status.path) return
 
-  await saveSqljsDatabase(dataSource, status.path)
+  fs.writeFileSync(status.path, Buffer.from(sqliteDatabase.export()))
 }
 
 export async function closeDatabase(): Promise<void> {
-  if (!dataSource) return
+  if (!sqliteDatabase) return
 
-  if (dataSource.isInitialized) {
-    await flushDatabase()
-    await dataSource.destroy()
-  }
-
-  dataSource = null
+  await flushDatabase()
+  sqliteDatabase.close()
+  sqliteDatabase = null
+  databaseClient = null
 }
