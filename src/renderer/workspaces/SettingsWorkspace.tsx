@@ -1,8 +1,10 @@
-import { Barcode, Database, Printer, RefreshCw, Settings } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Barcode, Database, Download, Printer, RefreshCw, Settings } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { cn } from '@/renderer/lib/utils'
+import type { UpdateStatus } from '@/shared/types/updates'
 
 const externalDevices = [
   {
@@ -35,6 +37,61 @@ const externalDevices = [
 ]
 
 export function SettingsWorkspace() {
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({
+    state: 'idle',
+    message: 'Updates have not been checked yet',
+  })
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    window.simplepos?.updates.getStatus().then((status) => {
+      if (!isMounted) return
+      setUpdateStatus(status)
+    })
+
+    const unsubscribe = window.simplepos?.updates.onStatus((status) => {
+      setUpdateStatus(status)
+      setIsCheckingUpdates(status.state === 'checking' || status.state === 'downloading')
+    })
+
+    return () => {
+      isMounted = false
+      unsubscribe?.()
+    }
+  }, [])
+
+  async function checkForUpdates() {
+    setIsCheckingUpdates(true)
+
+    try {
+      const status = await window.simplepos?.updates.check()
+
+      if (status) {
+        setUpdateStatus(status)
+      }
+    } catch (error) {
+      setUpdateStatus({
+        state: 'error',
+        message: error instanceof Error ? error.message : 'Unable to check for updates',
+      })
+    } finally {
+      setIsCheckingUpdates(false)
+    }
+  }
+
+  async function installUpdate() {
+    const result = await window.simplepos?.updates.install()
+
+    if (result) {
+      setUpdateStatus({
+        state: result.ok ? 'downloaded' : 'error',
+        message: result.message,
+      })
+    }
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       <Card>
@@ -114,6 +171,37 @@ export function SettingsWorkspace() {
               <span className="size-2 rounded-full bg-muted-foreground" aria-hidden="true" />
               <span>Muted dot means the device is standby or not configured.</span>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="xl:col-start-2">
+        <CardHeader>
+          <CardTitle className="text-base">Software Updates</CardTitle>
+          <CardDescription>Updates are delivered from GitHub Releases.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="rounded-lg border bg-background p-3">
+            <p className="text-sm font-medium">{updateStatus.message}</p>
+            {typeof updateStatus.percent === 'number' ? (
+              <p className="text-xs text-muted-foreground">{Math.round(updateStatus.percent)}% downloaded</p>
+            ) : null}
+          </div>
+
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={checkForUpdates} disabled={isCheckingUpdates}>
+              <RefreshCw data-icon="inline-start" aria-hidden="true" />
+              {isCheckingUpdates ? 'Checking' : 'Check'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={installUpdate}
+              disabled={updateStatus.state !== 'downloaded'}
+            >
+              <Download data-icon="inline-start" aria-hidden="true" />
+              Install
+            </Button>
           </div>
         </CardContent>
       </Card>

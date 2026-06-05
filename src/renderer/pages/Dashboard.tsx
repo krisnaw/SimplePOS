@@ -62,12 +62,12 @@ export default function Dashboard() {
         <aside className="min-h-0 border-b bg-background lg:border-b-0 lg:border-r">
           <div className="flex h-full min-h-0 flex-col">
             <div className="flex h-16 shrink-0 items-center gap-3 border-b px-4">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <FileText aria-hidden="true" data-icon="inline-start" />
               </div>
               <div className="min-w-0">
-                <h1 className="truncate text-base font-semibold">SimplePOS</h1>
-                <p className="truncate text-xs text-muted-foreground">Car Repair Shop</p>
+                <h1 className="truncate text-base font-semibold text-balance">SimplePOS</h1>
+                <p className="truncate text-xs text-muted-foreground text-pretty">Car Repair Shop</p>
               </div>
             </div>
 
@@ -83,7 +83,7 @@ export default function Dashboard() {
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => setActiveSection(item.id)}
                     className={cn(
-                      'flex min-w-44 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors lg:min-w-0',
+                      'flex min-h-10 min-w-44 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98] lg:min-w-0',
                       isActive
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -94,7 +94,7 @@ export default function Dashboard() {
                       <span className="block truncate font-medium">{item.label}</span>
                       <span
                         className={cn(
-                          'block truncate text-xs',
+                          'block truncate text-xs text-pretty',
                           isActive ? 'text-primary-foreground/70' : 'text-muted-foreground',
                         )}
                       >
@@ -124,7 +124,11 @@ export default function Dashboard() {
                         </span>
                         <span className="flex shrink-0 items-center gap-2 text-xs font-medium">
                           <span
-                            className={cn('size-2 rounded-full', item.tone, item.connected ? 'animate-pulse' : null)}
+                            className={cn(
+                              'size-2 shrink-0 rounded-full',
+                              item.tone,
+                              item.connected ? 'status-dot-pulse' : null,
+                            )}
                             aria-hidden="true"
                           />
                           {item.status}
@@ -142,7 +146,12 @@ export default function Dashboard() {
                   <p className="truncate text-sm font-medium">{user.name}</p>
                   <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate('/', { replace: true })}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0"
+                  onClick={() => navigate('/', { replace: true })}
+                >
                   <LogOut data-icon="inline-start" aria-hidden="true" />
                   Sign out
                 </Button>
@@ -152,32 +161,45 @@ export default function Dashboard() {
         </aside>
 
         <main className="flex min-h-0 min-w-0 flex-col">
-          <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 py-3 md:px-6">
-            <div className="min-w-0">
-              <p className="text-xs font-medium uppercase text-muted-foreground">{activeDetails.eyebrow}</p>
-              <h2 className="truncate text-xl font-semibold tracking-tight">{activeDetails.title}</h2>
+          <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground text-pretty leading-none">
+                {activeDetails.eyebrow}
+              </p>
+              <h2 className="truncate text-base font-semibold tracking-tight text-balance leading-none">
+                {activeDetails.title}
+              </h2>
             </div>
-            <Button className="hidden md:inline-flex" variant="outline" onClick={() => navigate('/', { replace: true })}>
+            <Button
+              className="hidden transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0 md:inline-flex"
+              variant="outline"
+              onClick={() => navigate('/', { replace: true })}
+            >
               <LogOut data-icon="inline-start" aria-hidden="true" />
               Sign out
             </Button>
           </header>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-auto p-4 md:p-6">
-            {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
-            {activeSection === 'sales' ? <SalesWorkspace /> : null}
-            {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
-            {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
-            {activeSection === 'reports' ? <ReportsWorkspace /> : null}
-            {activeSection === 'settings' ? <SettingsWorkspace /> : null}
-            {activeSection !== 'dashboard' &&
-            activeSection !== 'sales' &&
-            activeSection !== 'inventory' &&
-            activeSection !== 'users' &&
-            activeSection !== 'reports' &&
-            activeSection !== 'settings' ? (
-              <SectionWorkspace section={activeSection} />
-            ) : null}
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6">
+            <div
+              key={activeSection}
+              className={cn('flex flex-col gap-5', activeSection !== 'dashboard' && 'content-enter')}
+            >
+              {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
+              {activeSection === 'sales' ? <SalesWorkspace /> : null}
+              {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
+              {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
+              {activeSection === 'reports' ? <ReportsWorkspace /> : null}
+              {activeSection === 'settings' ? <SettingsWorkspace /> : null}
+              {activeSection !== 'dashboard' &&
+              activeSection !== 'sales' &&
+              activeSection !== 'inventory' &&
+              activeSection !== 'users' &&
+              activeSection !== 'reports' &&
+              activeSection !== 'settings' ? (
+                <SectionWorkspace section={activeSection} />
+              ) : null}
+            </div>
           </div>
         </main>
       </div>

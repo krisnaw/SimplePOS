@@ -25,4 +25,16 @@ contextBridge.exposeInMainWorld('simplepos', {
       return ipcRenderer.invoke('users:update', input)
     },
   },
+  updates: {
+    getStatus: () => ipcRenderer.invoke('updates:getStatus'),
+    check: () => ipcRenderer.invoke('updates:check'),
+    install: () => ipcRenderer.invoke('updates:install'),
+    onStatus: (callback: (status: unknown) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, status: unknown) => callback(status)
+
+      ipcRenderer.on('updates:status', listener)
+
+      return () => ipcRenderer.removeListener('updates:status', listener)
+    },
+  },
 })

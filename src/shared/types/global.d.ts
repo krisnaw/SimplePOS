@@ -1,5 +1,7 @@
 export {}
 
+import type { UpdateStatus } from './updates'
+
 type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
 type DatabaseStatus = {
@@ -60,6 +62,12 @@ declare global {
           isActive: boolean
           password?: string
         }) => Promise<UserMutationResult>
+      }
+      updates: {
+        getStatus: () => Promise<UpdateStatus>
+        check: () => Promise<UpdateStatus>
+        install: () => Promise<{ ok: boolean; message: string }>
+        onStatus: (callback: (status: UpdateStatus) => void) => () => void
       }
     }
   }

@@ -12,6 +12,7 @@ import {
   listUsers,
   updateUser,
 } from './services'
+import { registerUpdateHandlers } from './services/update.service'
 
 function expandWindowForDashboard(win: BrowserWindow): void {
   win.setResizable(true)
@@ -64,6 +65,7 @@ let isClosingDatabase = false
 
 app.whenReady().then(async () => {
   await initializeDatabase(prepareDatabaseDirectory())
+  registerUpdateHandlers()
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
   ipcMain.handle('users:list', () => listUsers())
