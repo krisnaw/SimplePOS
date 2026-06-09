@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Boxes,
   ClipboardList,
   LayoutDashboard,
@@ -66,6 +67,12 @@ export const navigationItems: Array<{
     icon: ShieldCheck,
   },
   {
+    id: 'user-guide',
+    label: 'User Guide',
+    description: 'How to use SimplePOS',
+    icon: BookOpen,
+  },
+  {
     id: 'settings',
     label: 'Settings',
     description: 'Shop preferences',
@@ -113,6 +120,11 @@ export const sectionDetails: Record<AppSection, SectionDetail> = {
     eyebrow: 'Access control',
     title: 'Users',
     description: 'Manage admin and cashier accounts for the POS.',
+  },
+  'user-guide': {
+    eyebrow: 'Help',
+    title: 'User Guide',
+    description: 'Learn how to use the POS, inventory, and daily shop workflows.',
   },
   settings: {
     eyebrow: 'Configuration',

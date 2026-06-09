@@ -10,6 +10,7 @@ import { ReportsWorkspace } from '@/renderer/workspaces/ReportsWorkspace'
 import { SalesWorkspace } from '@/renderer/workspaces/SalesWorkspace'
 import { SectionWorkspace } from '@/renderer/workspaces/SectionWorkspace'
 import { SettingsWorkspace } from '@/renderer/workspaces/SettingsWorkspace'
+import { UserGuideWorkspace } from '@/renderer/workspaces/UserGuideWorkspace'
 import { UserManagement } from '@/renderer/workspaces/UserManagement'
 import { cn } from '@/renderer/lib/utils'
 
@@ -190,12 +191,14 @@ export default function Dashboard() {
               {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
               {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
               {activeSection === 'reports' ? <ReportsWorkspace /> : null}
+              {activeSection === 'user-guide' ? <UserGuideWorkspace /> : null}
               {activeSection === 'settings' ? <SettingsWorkspace /> : null}
               {activeSection !== 'dashboard' &&
               activeSection !== 'sales' &&
               activeSection !== 'inventory' &&
               activeSection !== 'users' &&
               activeSection !== 'reports' &&
+              activeSection !== 'user-guide' &&
               activeSection !== 'settings' ? (
                 <SectionWorkspace section={activeSection} />
               ) : null}

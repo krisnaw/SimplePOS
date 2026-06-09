@@ -8,8 +8,12 @@ import {
 } from './db/client'
 import {
   authenticateUser,
+  createProduct,
   createUser,
+  listProductCategories,
+  listProducts,
   listUsers,
+  updateProduct,
   updateUser,
 } from './services'
 import { registerUpdateHandlers } from './services/update.service'
@@ -68,6 +72,10 @@ app.whenReady().then(async () => {
   registerUpdateHandlers()
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
+  ipcMain.handle('categories:list', () => listProductCategories())
+  ipcMain.handle('products:list', () => listProducts())
+  ipcMain.handle('products:create', (_event, input: unknown) => createProduct(input as Record<string, unknown>))
+  ipcMain.handle('products:update', (_event, input: unknown) => updateProduct(input as Record<string, unknown>))
   ipcMain.handle('users:list', () => listUsers())
   ipcMain.handle('users:create', async (_event, input: unknown) => {
     if (!input || typeof input !== 'object') {

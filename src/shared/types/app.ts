@@ -27,6 +27,7 @@ export type AppSection =
   | 'invoices'
   | 'reports'
   | 'users'
+  | 'user-guide'
   | 'settings'
 
 export type SectionDetail = {

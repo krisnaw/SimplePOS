@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PackagePlus, Search, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
@@ -6,107 +6,53 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { cn } from '@/renderer/lib/utils'
 
-type InventoryProduct = {
+type ProductCategorySummary = {
   id: number
-  sku: string
   name: string
-  category: string
+  description: string | null
+}
+
+type ProductSummary = {
+  id: number
+  categoryId: number | null
+  sku: string
+  barcode: string | null
+  name: string
+  description: string | null
   unitPrice: number
-  unitType: string
+  unitType: 'piece' | 'litre' | 'set' | 'box'
   stockQty: number
   minStock: number
-  isSellable: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 type ProductFormState = {
   sku: string
+  barcode: string
   name: string
-  category: string
+  description: string
+  categoryId: string
   unitPrice: string
-  unitType: string
+  unitType: 'piece' | 'litre' | 'set' | 'box'
   stockQty: string
   minStock: string
-  isSellable: boolean
 }
-
-const initialProducts: InventoryProduct[] = [
-  {
-    id: 1,
-    sku: 'LUB-OIL-5W30-1L',
-    name: 'Engine Oil 5W-30',
-    category: 'Lubricants & Fluids',
-    unitPrice: 65000,
-    unitType: 'litre',
-    stockQty: 50,
-    minStock: 10,
-    isSellable: true,
-  },
-  {
-    id: 2,
-    sku: 'FLT-OIL-UNIV',
-    name: 'Oil Filter Universal',
-    category: 'Filters',
-    unitPrice: 35000,
-    unitType: 'piece',
-    stockQty: 40,
-    minStock: 10,
-    isSellable: true,
-  },
-  {
-    id: 3,
-    sku: 'BRK-PAD-FRONT-STD',
-    name: 'Brake Pad Front',
-    category: 'Brake Parts',
-    unitPrice: 120000,
-    unitType: 'set',
-    stockQty: 3,
-    minStock: 4,
-    isSellable: true,
-  },
-  {
-    id: 4,
-    sku: 'ELC-BATT-45AH',
-    name: 'Car Battery 45Ah',
-    category: 'Electrical Parts',
-    unitPrice: 550000,
-    unitType: 'piece',
-    stockQty: 8,
-    minStock: 2,
-    isSellable: true,
-  },
-  {
-    id: 5,
-    sku: 'TRE-VALVE-STD',
-    name: 'Tire Valve Stem',
-    category: 'Tires & Wheels Parts',
-    unitPrice: 8000,
-    unitType: 'piece',
-    stockQty: 50,
-    minStock: 10,
-    isSellable: true,
-  },
-]
 
 const emptyForm: ProductFormState = {
   sku: '',
+  barcode: '',
   name: '',
-  category: 'Lubricants & Fluids',
+  description: '',
+  categoryId: '',
   unitPrice: '',
   unitType: 'piece',
   stockQty: '',
   minStock: '',
-  isSellable: true,
 }
 
-const categories = [
-  'Lubricants & Fluids',
-  'Filters',
-  'Brake Parts',
-  'Electrical Parts',
-  'Tires & Wheels Parts',
-]
-
-const unitTypes = ['piece', 'litre', 'set', 'box']
+const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('id-ID', {
@@ -116,15 +62,25 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
-function getStockStatus(product: InventoryProduct): 'Low' | 'In Stock' {
-  return product.stockQty <= product.minStock ? 'Low' : 'In Stock'
+function isLowStock(product: ProductSummary): boolean {
+  return product.stockQty <= product.minStock
 }
 
 export function InventoryWorkspace() {
-  const [products, setProducts] = useState<InventoryProduct[]>(initialProducts)
+  const [products, setProducts] = useState<ProductSummary[]>([])
+  const [categories, setCategories] = useState<ProductCategorySummary[]>([])
   const [form, setForm] = useState<ProductFormState>(emptyForm)
   const [searchQuery, setSearchQuery] = useState('')
   const [message, setMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    void window.simplepos?.products.list().then(setProducts)
+    void window.simplepos?.categories.list().then((list) => {
+      setCategories(list)
+      if (list[0]) setForm((f) => ({ ...f, categoryId: String(list[0].id) }))
+    })
+  }, [])
 
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -132,27 +88,26 @@ export function InventoryWorkspace() {
     if (!query) return products
 
     return products.filter((product) =>
-      [product.name, product.sku, product.category].some((value) => value.toLowerCase().includes(query)),
+      [product.name, product.sku, product.barcode ?? ''].some((value) =>
+        value.toLowerCase().includes(query),
+      ),
     )
   }, [products, searchQuery])
 
-  const lowStockCount = products.filter((product) => getStockStatus(product) === 'Low').length
-  const totalUnits = products.reduce((total, product) => total + product.stockQty, 0)
-  const inventoryValue = products.reduce((total, product) => total + product.stockQty * product.unitPrice, 0)
+  const lowStockCount = products.filter(isLowStock).length
+  const totalUnits = products.reduce((total, p) => total + p.stockQty, 0)
+  const inventoryValue = products.reduce((total, p) => total + p.stockQty * p.unitPrice, 0)
 
-  function updateForm(field: keyof ProductFormState, value: string | boolean) {
-    setForm((currentForm) => ({
-      ...currentForm,
-      [field]: value,
-    }))
+  function updateForm<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) {
+    setForm((f) => ({ ...f, [field]: value }))
   }
 
   function resetForm() {
-    setForm(emptyForm)
+    setForm((f) => ({ ...emptyForm, categoryId: f.categoryId }))
     setMessage('')
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const unitPrice = Number(form.unitPrice)
@@ -164,21 +119,40 @@ export function InventoryWorkspace() {
       return
     }
 
-    const nextProduct: InventoryProduct = {
-      id: Math.max(...products.map((product) => product.id), 0) + 1,
-      sku: form.sku.trim().toUpperCase(),
+    setIsSubmitting(true)
+
+    const result = await window.simplepos?.products.create({
+      sku: form.sku.trim(),
+      barcode: form.barcode.trim() || null,
       name: form.name.trim(),
-      category: form.category,
+      description: form.description.trim() || null,
+      categoryId: form.categoryId ? Number(form.categoryId) : null,
       unitPrice,
       unitType: form.unitType,
       stockQty,
       minStock,
-      isSellable: form.isSellable,
+    })
+
+    setIsSubmitting(false)
+
+    if (!result) {
+      setMessage('Unable to reach the database.')
+      return
     }
 
-    setProducts((currentProducts) => [nextProduct, ...currentProducts])
-    setMessage(`${nextProduct.name} added to inventory.`)
-    setForm(emptyForm)
+    if (!result.ok) {
+      setMessage(result.message)
+      return
+    }
+
+    setMessage(result.message)
+    resetForm()
+    void window.simplepos?.products.list().then(setProducts)
+  }
+
+  async function handleDeactivate(product: ProductSummary) {
+    await window.simplepos?.products.update({ ...product, isActive: false })
+    void window.simplepos?.products.list().then(setProducts)
   }
 
   return (
@@ -191,7 +165,7 @@ export function InventoryWorkspace() {
               <CardDescription>Active product SKUs</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-semibold">{products.length}</p>
+              <p className="text-2xl font-semibold tabular-nums">{products.length}</p>
             </CardContent>
           </Card>
 
@@ -201,7 +175,7 @@ export function InventoryWorkspace() {
               <CardDescription>Available quantity</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-semibold">{totalUnits}</p>
+              <p className="text-2xl font-semibold tabular-nums">{totalUnits}</p>
             </CardContent>
           </Card>
 
@@ -211,7 +185,7 @@ export function InventoryWorkspace() {
               <CardDescription>At or below minimum</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-semibold">{lowStockCount}</p>
+              <p className="text-2xl font-semibold tabular-nums">{lowStockCount}</p>
             </CardContent>
           </Card>
         </div>
@@ -221,14 +195,17 @@ export function InventoryWorkspace() {
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <CardTitle className="text-base">Product List</CardTitle>
-                <CardDescription>{formatCurrency(inventoryValue)} in current sample stock value.</CardDescription>
+                <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
               </div>
               <div className="flex gap-2">
                 <div className="relative min-w-56">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Search
+                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                   <Input
                     value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search inventory"
                     className="pl-8"
                   />
@@ -239,49 +216,64 @@ export function InventoryWorkspace() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="min-h-0 overflow-auto">
-            <div className="overflow-hidden rounded-lg border bg-background">
-              <div className="grid min-w-[760px] grid-cols-[1.3fr_0.9fr_0.7fr_0.6fr_0.7fr] gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
-                <span>Product</span>
-                <span>Category</span>
-                <span>Price</span>
-                <span>Stock</span>
-                <span>Status</span>
-              </div>
+          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-6">
+            <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
+              <div className="flex min-h-0 min-w-[800px] flex-1 flex-col rounded-lg border bg-background">
+                <div className="grid shrink-0 grid-cols-[1.3fr_0.9fr_0.7fr_0.6fr_0.6fr_auto] gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
+                  <span>Product</span>
+                  <span>Category</span>
+                  <span>Price</span>
+                  <span>Stock</span>
+                  <span>Status</span>
+                  <span />
+                </div>
 
-              <div className="min-w-[760px] divide-y">
+                <div className="min-h-0 flex-1 overflow-y-auto divide-y">
                 {filteredProducts.length === 0 ? (
-                  <div className="px-3 py-6 text-sm text-muted-foreground">No products match this search.</div>
+                  <div className="px-3 py-6 text-sm text-muted-foreground">
+                    {products.length === 0 ? 'No products yet. Add one using the form.' : 'No products match this search.'}
+                  </div>
                 ) : null}
 
                 {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product)
+                  const categoryName = categories.find((c) => c.id === product.categoryId)?.name ?? '—'
+                  const lowStock = isLowStock(product)
 
                   return (
                     <div
                       key={product.id}
-                      className="grid grid-cols-[1.3fr_0.9fr_0.7fr_0.6fr_0.7fr] gap-3 px-3 py-3 text-sm"
+                      className="grid grid-cols-[1.3fr_0.9fr_0.7fr_0.6fr_0.6fr_auto] gap-3 px-3 py-3 text-sm"
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{product.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
                       </span>
-                      <span className="truncate">{product.category}</span>
-                      <span className="truncate">{formatCurrency(product.unitPrice)}</span>
-                      <span className="truncate">
+                      <span className="truncate">{categoryName}</span>
+                      <span className="truncate tabular-nums">{formatCurrency(product.unitPrice)}</span>
+                      <span className="truncate tabular-nums">
                         {product.stockQty} {product.unitType}
                       </span>
                       <span
                         className={cn(
                           'w-fit rounded-md border px-2 py-1 text-xs font-medium',
-                          stockStatus === 'Low' ? 'text-destructive' : 'text-muted-foreground',
+                          lowStock ? 'text-destructive' : 'text-muted-foreground',
                         )}
                       >
-                        {stockStatus}
+                        {lowStock ? 'Low' : 'In Stock'}
                       </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDeactivate(product)}
+                      >
+                        Remove
+                      </Button>
                     </div>
                   )
                 })}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -303,7 +295,7 @@ export function InventoryWorkspace() {
               <Input
                 id="inventory-sku"
                 value={form.sku}
-                onChange={(event) => updateForm('sku', event.target.value)}
+                onChange={(e) => updateForm('sku', e.target.value)}
                 placeholder="BRK-PAD-FRONT"
                 required
               />
@@ -314,9 +306,19 @@ export function InventoryWorkspace() {
               <Input
                 id="inventory-name"
                 value={form.name}
-                onChange={(event) => updateForm('name', event.target.value)}
+                onChange={(e) => updateForm('name', e.target.value)}
                 placeholder="Brake Pad Front"
                 required
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="inventory-barcode">Barcode <span className="text-muted-foreground">(optional)</span></Label>
+              <Input
+                id="inventory-barcode"
+                value={form.barcode}
+                onChange={(e) => updateForm('barcode', e.target.value)}
+                placeholder="8991234567890"
               />
             </div>
 
@@ -324,13 +326,14 @@ export function InventoryWorkspace() {
               <Label htmlFor="inventory-category">Category</Label>
               <select
                 id="inventory-category"
-                value={form.category}
-                onChange={(event) => updateForm('category', event.target.value)}
+                value={form.categoryId}
+                onChange={(e) => updateForm('categoryId', e.target.value)}
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
+                <option value="">— No category —</option>
                 {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                  <option key={category.id} value={category.id}>
+                    {category.name}
                   </option>
                 ))}
               </select>
@@ -338,13 +341,13 @@ export function InventoryWorkspace() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-price">Unit Price</Label>
+                <Label htmlFor="inventory-price">Unit Price (IDR)</Label>
                 <Input
                   id="inventory-price"
                   type="number"
                   min="0"
                   value={form.unitPrice}
-                  onChange={(event) => updateForm('unitPrice', event.target.value)}
+                  onChange={(e) => updateForm('unitPrice', e.target.value)}
                   placeholder="120000"
                   required
                 />
@@ -355,7 +358,7 @@ export function InventoryWorkspace() {
                 <select
                   id="inventory-unit"
                   value={form.unitType}
-                  onChange={(event) => updateForm('unitType', event.target.value)}
+                  onChange={(e) => updateForm('unitType', e.target.value as ProductFormState['unitType'])}
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {unitTypes.map((unitType) => (
@@ -375,7 +378,7 @@ export function InventoryWorkspace() {
                   type="number"
                   min="0"
                   value={form.stockQty}
-                  onChange={(event) => updateForm('stockQty', event.target.value)}
+                  onChange={(e) => updateForm('stockQty', e.target.value)}
                   placeholder="12"
                   required
                 />
@@ -388,22 +391,12 @@ export function InventoryWorkspace() {
                   type="number"
                   min="0"
                   value={form.minStock}
-                  onChange={(event) => updateForm('minStock', event.target.value)}
+                  onChange={(e) => updateForm('minStock', e.target.value)}
                   placeholder="4"
                   required
                 />
               </div>
             </div>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.isSellable}
-                onChange={(event) => updateForm('isSellable', event.target.checked)}
-                className="size-4"
-              />
-              Sellable at checkout
-            </label>
 
             {message ? (
               <p className="text-sm text-muted-foreground" role="status">
@@ -412,9 +405,9 @@ export function InventoryWorkspace() {
             ) : null}
 
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1">
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
                 <PackagePlus data-icon="inline-start" aria-hidden="true" />
-                Create
+                {isSubmitting ? 'Creating…' : 'Create'}
               </Button>
               <Button type="button" variant="outline" onClick={resetForm}>
                 Clear

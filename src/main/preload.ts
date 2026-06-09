@@ -25,6 +25,14 @@ contextBridge.exposeInMainWorld('simplepos', {
       return ipcRenderer.invoke('users:update', input)
     },
   },
+  categories: {
+    list: () => ipcRenderer.invoke('categories:list'),
+  },
+  products: {
+    list: () => ipcRenderer.invoke('products:list'),
+    create: (input: Record<string, unknown>) => ipcRenderer.invoke('products:create', input),
+    update: (input: Record<string, unknown>) => ipcRenderer.invoke('products:update', input),
+  },
   updates: {
     getStatus: () => ipcRenderer.invoke('updates:getStatus'),
     check: () => ipcRenderer.invoke('updates:check'),

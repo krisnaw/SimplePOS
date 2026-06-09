@@ -9,6 +9,9 @@
     "build": "npm run build:renderer && npm run build:electron",
     "build:renderer": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/vite/bin/vite.js build",
     "build:electron": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/typescript/bin/tsc -p tsconfig.electron.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "npm run build:electron && ELECTRON_RUN_AS_NODE=1 electron ./dist-electron/db/seeder/seed-products.js",
     "start": "npm run build && electron .",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
     "publish:mac": "npm run build && electron-builder --mac --arm64 --publish always"
@@ -20,6 +23,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "concurrently": "^9.0.0",
+    "drizzle-kit": "^0.31.10",
     "electron": "^42.3.0",
     "electron-builder": "^26.8.1",
     "typescript": "^5.4.3",

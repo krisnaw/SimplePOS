@@ -42,6 +42,36 @@ type UserMutationResult = {
   user?: UserSummary
 }
 
+type ProductCategorySummary = {
+  id: number
+  name: string
+  description: string | null
+}
+
+type UnitType = 'piece' | 'litre' | 'set' | 'box'
+
+type ProductSummary = {
+  id: number
+  categoryId: number | null
+  sku: string
+  barcode: string | null
+  name: string
+  description: string | null
+  unitPrice: number
+  unitType: UnitType
+  stockQty: number
+  minStock: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+type ProductMutationResult = {
+  ok: boolean
+  message: string
+  product?: ProductSummary
+}
+
 declare global {
   interface Window {
     simplepos?: {
@@ -62,6 +92,14 @@ declare global {
           isActive: boolean
           password?: string
         }) => Promise<UserMutationResult>
+      }
+      categories: {
+        list: () => Promise<ProductCategorySummary[]>
+      }
+      products: {
+        list: () => Promise<ProductSummary[]>
+        create: (input: Record<string, unknown>) => Promise<ProductMutationResult>
+        update: (input: Record<string, unknown>) => Promise<ProductMutationResult>
       }
       updates: {
         getStatus: () => Promise<UpdateStatus>

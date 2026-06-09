@@ -4,6 +4,7 @@ import path from 'path'
 import { drizzle, type SQLJsDatabase } from 'drizzle-orm/sql-js'
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
 import * as schema from './schema'
+import { seedProductCatalog } from './seeder'
 
 export type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -74,6 +75,40 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       defaultAdminEmail,
     ],
   )
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS product_categories (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      name text NOT NULL,
+      description text,
+      is_active integer NOT NULL DEFAULT (1),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      CONSTRAINT UQ_product_categories_name UNIQUE (name)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS products (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      category_id integer REFERENCES product_categories(id),
+      sku text NOT NULL,
+      barcode text,
+      name text NOT NULL,
+      description text,
+      unit_price integer NOT NULL DEFAULT (0),
+      unit_type text NOT NULL DEFAULT ('piece'),
+      stock_qty integer NOT NULL DEFAULT (0),
+      min_stock integer NOT NULL DEFAULT (0),
+      is_active integer NOT NULL DEFAULT (1),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      CONSTRAINT UQ_products_sku UNIQUE (sku),
+      CONSTRAINT UQ_products_barcode UNIQUE (barcode)
+    )
+  `)
+
+  seedProductCatalog(database)
 }
 
 export async function initializeDatabase(databaseDirectory: string): Promise<DatabaseStatus> {
@@ -91,7 +126,7 @@ export async function initializeDatabase(databaseDirectory: string): Promise<Dat
     runSchemaMigration(sqliteDatabase)
 
     databaseClient = drizzle(sqliteDatabase, { schema })
-    await flushDatabase()
+    fs.writeFileSync(dbPath, Buffer.from(sqliteDatabase.export()))
 
     status = {
       state: existsBeforeOpen ? 'connected_existing' : 'connected_created',
