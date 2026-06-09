@@ -4,3 +4,6 @@ dist-electron/
 release/
 *.db
 .idea
+simplepos.sqlite
+docs
+.claude/
