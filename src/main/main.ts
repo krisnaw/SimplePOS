@@ -8,13 +8,21 @@ import {
 } from './db/client'
 import {
   authenticateUser,
+  createCustomer,
   createProduct,
   createUser,
+  createVehicle,
+  deleteCustomer,
+  deleteVehicle,
+  listCustomers,
   listProductCategories,
   listProducts,
   listUsers,
+  listVehicles,
+  updateCustomer,
   updateProduct,
   updateUser,
+  updateVehicle,
 } from './services'
 import { registerUpdateHandlers } from './services/update.service'
 
@@ -76,6 +84,14 @@ app.whenReady().then(async () => {
   ipcMain.handle('products:list', () => listProducts())
   ipcMain.handle('products:create', (_event, input: unknown) => createProduct(input as Record<string, unknown>))
   ipcMain.handle('products:update', (_event, input: unknown) => updateProduct(input as Record<string, unknown>))
+  ipcMain.handle('customers:list', () => listCustomers())
+  ipcMain.handle('customers:create', (_event, input: unknown) => createCustomer(input as Record<string, unknown>))
+  ipcMain.handle('customers:update', (_event, input: unknown) => updateCustomer(input as Record<string, unknown>))
+  ipcMain.handle('customers:delete', (_event, input: unknown) => deleteCustomer(input as Record<string, unknown>))
+  ipcMain.handle('vehicles:list', () => listVehicles())
+  ipcMain.handle('vehicles:create', (_event, input: unknown) => createVehicle(input as Record<string, unknown>))
+  ipcMain.handle('vehicles:update', (_event, input: unknown) => updateVehicle(input as Record<string, unknown>))
+  ipcMain.handle('vehicles:delete', (_event, input: unknown) => deleteVehicle(input as Record<string, unknown>))
   ipcMain.handle('users:list', () => listUsers())
   ipcMain.handle('users:create', async (_event, input: unknown) => {
     if (!input || typeof input !== 'object') {

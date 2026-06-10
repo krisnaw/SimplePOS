@@ -59,7 +59,7 @@ function formatCurrency(value: number): string {
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0,
-  }).format(value)
+  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
 }
 
 function isLowStock(product: ProductSummary): boolean {
@@ -156,8 +156,8 @@ export function InventoryWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="flex min-h-0 flex-col gap-4">
+    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex min-h-0 flex-col gap-3">
         <div className="grid gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
@@ -192,7 +192,7 @@ export function InventoryWorkspace() {
 
         <Card className="min-h-0">
           <CardHeader>
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <CardTitle className="text-base">Product List</CardTitle>
                 <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
@@ -216,16 +216,16 @@ export function InventoryWorkspace() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-6">
+          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
             <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
               <div className="flex min-h-0 min-w-[800px] flex-1 flex-col rounded-lg border bg-background">
-                <div className="grid shrink-0 grid-cols-[1.3fr_0.9fr_0.7fr_0.6fr_0.6fr_auto] gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
+                <div className="grid shrink-0 grid-cols-[minmax(220px,1.3fr)_minmax(140px,0.9fr)_minmax(120px,0.7fr)_minmax(96px,0.6fr)_minmax(96px,0.6fr)_72px] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
                   <span>Product</span>
                   <span>Category</span>
-                  <span>Price</span>
+                  <span className="text-right">Price</span>
                   <span>Stock</span>
                   <span>Status</span>
-                  <span />
+                  <span className="text-right">Action</span>
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto divide-y">
@@ -242,14 +242,14 @@ export function InventoryWorkspace() {
                   return (
                     <div
                       key={product.id}
-                      className="grid grid-cols-[1.3fr_0.9fr_0.7fr_0.6fr_0.6fr_auto] gap-3 px-3 py-3 text-sm"
+                      className="grid grid-cols-[minmax(220px,1.3fr)_minmax(140px,0.9fr)_minmax(120px,0.7fr)_minmax(96px,0.6fr)_minmax(96px,0.6fr)_72px] items-center gap-3 px-3 py-2.5 text-sm"
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{product.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
                       </span>
                       <span className="truncate">{categoryName}</span>
-                      <span className="truncate tabular-nums">{formatCurrency(product.unitPrice)}</span>
+                      <span className="truncate text-right tabular-nums">{formatCurrency(product.unitPrice)}</span>
                       <span className="truncate tabular-nums">
                         {product.stockQty} {product.unitType}
                       </span>
@@ -265,7 +265,7 @@ export function InventoryWorkspace() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                        className="h-7 justify-self-end px-2 text-xs text-muted-foreground hover:text-destructive"
                         onClick={() => handleDeactivate(product)}
                       >
                         Remove
@@ -289,7 +289,7 @@ export function InventoryWorkspace() {
           <CardDescription>Add a part or consumable to the inventory list.</CardDescription>
         </CardHeader>
         <CardContent className="min-h-0 overflow-auto">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor="inventory-sku">SKU</Label>
               <Input

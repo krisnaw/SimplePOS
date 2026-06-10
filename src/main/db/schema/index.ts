@@ -1,3 +1,5 @@
 export * from './app.schema'
 export * from './user.schema'
 export * from './product.schema'
+export * from './customer.schema'
+export * from './vehicle.schema'

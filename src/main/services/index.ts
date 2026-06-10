@@ -4,3 +4,19 @@ export { createUser, listUsers, updateUser } from './user.service'
 export type { UserMutationResult, UserSummary } from './user.service'
 export { createProduct, listProductCategories, listProducts, updateProduct } from './product.service'
 export type { ProductCategorySummary, ProductMutationResult, ProductSummary } from './product.service'
+export {
+  createCustomer,
+  createVehicle,
+  deleteCustomer,
+  deleteVehicle,
+  listCustomers,
+  listVehicles,
+  updateCustomer,
+  updateVehicle,
+} from './customer.service'
+export type {
+  CustomerMutationResult,
+  CustomerSummary,
+  VehicleMutationResult,
+  VehicleSummary,
+} from './customer.service'

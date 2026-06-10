@@ -1,5 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto'
-import type { User } from '../db/schema'
+import type { User } from '../db/schema/index'
 
 function hashPassword(password: string, salt: string): Buffer {
   return scryptSync(password, salt, 64)

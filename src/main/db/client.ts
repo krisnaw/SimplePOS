@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { drizzle, type SQLJsDatabase } from 'drizzle-orm/sql-js'
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
-import * as schema from './schema'
+import * as schema from './schema/index'
 import { seedProductCatalog } from './seeder'
 
 export type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
@@ -75,6 +75,40 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       defaultAdminEmail,
     ],
   )
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      name text NOT NULL,
+      phone text,
+      email text,
+      address text,
+      notes text,
+      is_active integer NOT NULL DEFAULT (1),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      CONSTRAINT UQ_customers_email UNIQUE (email)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS vehicles (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      customer_id integer NOT NULL REFERENCES customers(id),
+      plate_number text NOT NULL,
+      brand text NOT NULL,
+      model text NOT NULL,
+      year integer,
+      vin text,
+      color text,
+      notes text,
+      is_active integer NOT NULL DEFAULT (1),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      CONSTRAINT UQ_vehicles_plate_number UNIQUE (plate_number),
+      CONSTRAINT UQ_vehicles_vin UNIQUE (vin)
+    )
+  `)
 
   database.run(`
     CREATE TABLE IF NOT EXISTS product_categories (

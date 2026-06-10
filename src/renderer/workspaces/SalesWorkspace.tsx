@@ -99,7 +99,7 @@ function formatCurrency(value: number): string {
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0,
-  }).format(value)
+  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
 }
 
 function isUnlimitedStock(stock: number): boolean {
@@ -223,9 +223,9 @@ export function SalesWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
-      <Card className="min-h-0 gap-4 border-0 shadow-border">
-        <div className="flex shrink-0 flex-col gap-3 px-6">
+    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <Card className="min-h-0 gap-3 border-0 shadow-border">
+        <div className="flex shrink-0 flex-col gap-2 px-4">
           <div className="relative">
             <Search
               aria-hidden="true"
@@ -284,7 +284,7 @@ export function SalesWorkspace() {
           </p>
         </div>
 
-        <CardContent className="min-h-0 flex-1 overflow-auto py-3">
+        <CardContent className="min-h-0 flex-1 overflow-auto py-2">
           {visibleProducts.length === 0 ? (
             <div className="flex min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
               <div className="flex max-w-xs flex-col gap-1">
@@ -356,7 +356,7 @@ export function SalesWorkspace() {
       </Card>
 
       <Card className="flex min-h-0 flex-col gap-0 border-0 py-0 shadow-border">
-        <CardHeader className="shrink-0 gap-1 border-b px-4 py-3">
+        <CardHeader className="shrink-0 gap-1 border-b px-4 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-baseline gap-2">
               <CardTitle className="text-sm text-balance">Current Sale</CardTitle>
@@ -378,7 +378,7 @@ export function SalesWorkspace() {
           </div>
         </CardHeader>
 
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-3 pb-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pt-3 pb-4">
           <div
             className={cn(
               'grid shrink-0 transition-[grid-template-rows,opacity] duration-150 ease-in',

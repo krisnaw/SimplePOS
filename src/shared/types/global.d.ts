@@ -72,6 +72,45 @@ type ProductMutationResult = {
   product?: ProductSummary
 }
 
+type CustomerSummary = {
+  id: number
+  name: string
+  phone: string | null
+  email: string | null
+  address: string | null
+  notes: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+type VehicleSummary = {
+  id: number
+  customerId: number
+  plateNumber: string
+  brand: string
+  model: string
+  year: number | null
+  vin: string | null
+  color: string | null
+  notes: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+type CustomerMutationResult = {
+  ok: boolean
+  message: string
+  customer?: CustomerSummary
+}
+
+type VehicleMutationResult = {
+  ok: boolean
+  message: string
+  vehicle?: VehicleSummary
+}
+
 declare global {
   interface Window {
     simplepos?: {
@@ -100,6 +139,18 @@ declare global {
         list: () => Promise<ProductSummary[]>
         create: (input: Record<string, unknown>) => Promise<ProductMutationResult>
         update: (input: Record<string, unknown>) => Promise<ProductMutationResult>
+      }
+      customers: {
+        list: () => Promise<CustomerSummary[]>
+        create: (input: Record<string, unknown>) => Promise<CustomerMutationResult>
+        update: (input: Record<string, unknown>) => Promise<CustomerMutationResult>
+        delete: (input: { id: number }) => Promise<CustomerMutationResult>
+      }
+      vehicles: {
+        list: () => Promise<VehicleSummary[]>
+        create: (input: Record<string, unknown>) => Promise<VehicleMutationResult>
+        update: (input: Record<string, unknown>) => Promise<VehicleMutationResult>
+        delete: (input: { id: number }) => Promise<VehicleMutationResult>
       }
       updates: {
         getStatus: () => Promise<UpdateStatus>

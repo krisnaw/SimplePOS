@@ -33,6 +33,18 @@ contextBridge.exposeInMainWorld('simplepos', {
     create: (input: Record<string, unknown>) => ipcRenderer.invoke('products:create', input),
     update: (input: Record<string, unknown>) => ipcRenderer.invoke('products:update', input),
   },
+  customers: {
+    list: () => ipcRenderer.invoke('customers:list'),
+    create: (input: Record<string, unknown>) => ipcRenderer.invoke('customers:create', input),
+    update: (input: Record<string, unknown>) => ipcRenderer.invoke('customers:update', input),
+    delete: (input: { id: number }) => ipcRenderer.invoke('customers:delete', input),
+  },
+  vehicles: {
+    list: () => ipcRenderer.invoke('vehicles:list'),
+    create: (input: Record<string, unknown>) => ipcRenderer.invoke('vehicles:create', input),
+    update: (input: Record<string, unknown>) => ipcRenderer.invoke('vehicles:update', input),
+    delete: (input: { id: number }) => ipcRenderer.invoke('vehicles:delete', input),
+  },
   updates: {
     getStatus: () => ipcRenderer.invoke('updates:getStatus'),
     check: () => ipcRenderer.invoke('updates:check'),

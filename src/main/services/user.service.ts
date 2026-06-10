@@ -1,5 +1,5 @@
-import type { User } from '../db/schema'
-import { users } from '../db/schema'
+import type { User } from '../db/schema/index'
+import { users } from '../db/schema/index'
 import { flushDatabase } from '../db/client'
 import { getUserRepository } from '../repositories/user.repository'
 import { createPasswordCredentials } from './password.service'

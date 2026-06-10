@@ -1,7 +1,7 @@
 import { asc, eq } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
-import { productCategories, products } from '../db/schema'
-import type { Product, ProductCategory, UnitType } from '../db/schema'
+import { productCategories, products } from '../db/schema/index'
+import type { Product, ProductCategory, UnitType } from '../db/schema/index'
 import { getProductRepository } from '../repositories/product.repository'
 
 export type ProductCategorySummary = {
