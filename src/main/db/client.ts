@@ -22,6 +22,37 @@ const defaultAdminEmail = 'admin@simplepos.com'
 const defaultAdminPassword = 'admin123'
 const defaultAdminSalt = 'simplepos-default-admin-salt'
 
+const defaultServices = [
+  {
+    code: 'SVC-BRAKE-INSPECT',
+    name: 'Brake Inspection',
+    description: 'Inspect brake pads, fluid, rotors, and brake system condition.',
+    category: 'Brake Service',
+    price: 75000,
+  },
+  {
+    code: 'SVC-BRAKE-PAD',
+    name: 'Front Brake Pad Replacement',
+    description: 'Labor charge for replacing front brake pads.',
+    category: 'Brake Service',
+    price: 150000,
+  },
+  {
+    code: 'SVC-OIL-CHANGE',
+    name: 'Oil Change Labor',
+    description: 'Labor charge for routine engine oil replacement.',
+    category: 'Maintenance',
+    price: 100000,
+  },
+  {
+    code: 'SVC-AC-CHECK',
+    name: 'AC System Check',
+    description: 'Inspect AC cooling performance, pressure, and cabin airflow.',
+    category: 'AC Service',
+    price: 125000,
+  },
+]
+
 let sqliteDatabase: SqlJsDatabase | null = null
 let databaseClient: DatabaseClient | null = null
 let status: DatabaseStatus = {
@@ -111,6 +142,39 @@ function runSchemaMigration(database: SqlJsDatabase): void {
   `)
 
   database.run(`
+    CREATE TABLE IF NOT EXISTS services (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      code text NOT NULL,
+      name text NOT NULL,
+      description text,
+      category text,
+      price integer NOT NULL DEFAULT (0),
+      is_active integer NOT NULL DEFAULT (1),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      CONSTRAINT UQ_services_code UNIQUE (code)
+    )
+  `)
+
+  for (const service of defaultServices) {
+    database.run(
+      `
+        INSERT INTO services (code, name, description, category, price, is_active)
+        SELECT ?, ?, ?, ?, ?, 1
+        WHERE NOT EXISTS (SELECT 1 FROM services WHERE code = ?)
+      `,
+      [
+        service.code,
+        service.name,
+        service.description,
+        service.category,
+        service.price,
+        service.code,
+      ],
+    )
+  }
+
+  database.run(`
     CREATE TABLE IF NOT EXISTS product_categories (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       name text NOT NULL,
@@ -139,6 +203,69 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
       CONSTRAINT UQ_products_sku UNIQUE (sku),
       CONSTRAINT UQ_products_barcode UNIQUE (barcode)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS sales (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      customer_id integer REFERENCES customers(id),
+      created_by_id integer REFERENCES users(id),
+      status text NOT NULL DEFAULT ('completed'),
+      subtotal integer NOT NULL DEFAULT (0),
+      discount integer NOT NULL DEFAULT (0),
+      tax integer NOT NULL DEFAULT (0),
+      total integer NOT NULL DEFAULT (0),
+      notes text,
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS sale_items (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      sale_id integer NOT NULL REFERENCES sales(id),
+      item_type text NOT NULL,
+      product_id integer REFERENCES products(id),
+      service_id integer REFERENCES services(id),
+      name text NOT NULL,
+      sku text,
+      quantity integer NOT NULL,
+      unit_price integer NOT NULL,
+      line_total integer NOT NULL,
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS invoices (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      sale_id integer NOT NULL REFERENCES sales(id),
+      invoice_number text NOT NULL,
+      status text NOT NULL DEFAULT ('paid'),
+      subtotal integer NOT NULL DEFAULT (0),
+      discount integer NOT NULL DEFAULT (0),
+      tax integer NOT NULL DEFAULT (0),
+      total integer NOT NULL DEFAULT (0),
+      issued_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      CONSTRAINT UQ_invoices_invoice_number UNIQUE (invoice_number)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      sale_id integer NOT NULL REFERENCES sales(id),
+      invoice_id integer NOT NULL REFERENCES invoices(id),
+      method text NOT NULL,
+      status text NOT NULL DEFAULT ('paid'),
+      amount integer NOT NULL,
+      paid_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
     )
   `)
 

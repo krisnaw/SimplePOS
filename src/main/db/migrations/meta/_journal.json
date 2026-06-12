@@ -22,6 +22,20 @@
       "when": 1781050789256,
       "tag": "0002_rich_bushwacker",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781072742461,
+      "tag": "0003_flawless_harry_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781219995250,
+      "tag": "0004_wandering_mongoose",
+      "breakpoints": true
     }
   ]
 }

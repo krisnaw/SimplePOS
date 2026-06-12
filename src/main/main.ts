@@ -9,18 +9,24 @@ import {
 import {
   authenticateUser,
   createCustomer,
+  createCheckout,
   createProduct,
+  createService,
   createUser,
   createVehicle,
   deleteCustomer,
   deleteVehicle,
+  getInvoiceDetail,
   listCustomers,
+  listInvoices,
   listProductCategories,
   listProducts,
+  listServices,
   listUsers,
   listVehicles,
   updateCustomer,
   updateProduct,
+  updateService,
   updateUser,
   updateVehicle,
 } from './services'
@@ -84,6 +90,12 @@ app.whenReady().then(async () => {
   ipcMain.handle('products:list', () => listProducts())
   ipcMain.handle('products:create', (_event, input: unknown) => createProduct(input as Record<string, unknown>))
   ipcMain.handle('products:update', (_event, input: unknown) => updateProduct(input as Record<string, unknown>))
+  ipcMain.handle('services:list', () => listServices())
+  ipcMain.handle('services:create', (_event, input: unknown) => createService(input as Record<string, unknown>))
+  ipcMain.handle('services:update', (_event, input: unknown) => updateService(input as Record<string, unknown>))
+  ipcMain.handle('checkout:create', (_event, input: unknown) => createCheckout(input as Record<string, unknown>))
+  ipcMain.handle('invoices:list', (_event, input: unknown) => listInvoices(input as Record<string, unknown>))
+  ipcMain.handle('invoices:get', (_event, input: unknown) => getInvoiceDetail(input as { id?: unknown }))
   ipcMain.handle('customers:list', () => listCustomers())
   ipcMain.handle('customers:create', (_event, input: unknown) => createCustomer(input as Record<string, unknown>))
   ipcMain.handle('customers:update', (_event, input: unknown) => updateCustomer(input as Record<string, unknown>))

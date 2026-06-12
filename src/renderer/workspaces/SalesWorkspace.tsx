@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Minus, Plus, Search, ShoppingCart, X } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Minus, Plus, Search, ShoppingCart, X } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -7,6 +7,7 @@ import { cn } from '@/renderer/lib/utils'
 
 type SampleProduct = {
   id: number
+  itemType: 'product' | 'service'
   name: string
   category: string
   sku: string
@@ -14,18 +15,20 @@ type SampleProduct = {
   compatibility: string
   price: number
   stock: number
+  minStock: number
 }
 
 type CartItem = SampleProduct & {
+  cartKey: string
   quantity: number
 }
 
-const LOW_STOCK_THRESHOLD = 5
 const UNLIMITED_STOCK = 999
 
 const sampleProducts: SampleProduct[] = [
   {
     id: 1,
+    itemType: 'product',
     name: 'Engine Oil 10W-40',
     category: 'Lubricants',
     sku: 'OIL-10W40',
@@ -33,9 +36,11 @@ const sampleProducts: SampleProduct[] = [
     compatibility: 'Gasoline engines, common passenger vehicles',
     price: 85000,
     stock: 24,
+    minStock: 5,
   },
   {
     id: 2,
+    itemType: 'product',
     name: 'Oil Filter',
     category: 'Filters',
     sku: 'FLT-OIL-01',
@@ -43,9 +48,11 @@ const sampleProducts: SampleProduct[] = [
     compatibility: 'Most compact and mid-size vehicles',
     price: 45000,
     stock: 18,
+    minStock: 5,
   },
   {
     id: 3,
+    itemType: 'product',
     name: 'Brake Pad Set',
     category: 'Brakes',
     sku: 'BRK-PAD-SET',
@@ -53,9 +60,11 @@ const sampleProducts: SampleProduct[] = [
     compatibility: 'Confirm by vehicle model before installation',
     price: 320000,
     stock: 8,
+    minStock: 5,
   },
   {
     id: 4,
+    itemType: 'product',
     name: 'Spark Plug',
     category: 'Ignition',
     sku: 'IGN-SPARK',
@@ -63,9 +72,11 @@ const sampleProducts: SampleProduct[] = [
     compatibility: 'Gasoline engines, model-specific fit',
     price: 55000,
     stock: 32,
+    minStock: 5,
   },
   {
     id: 5,
+    itemType: 'product',
     name: 'Air Filter',
     category: 'Filters',
     sku: 'FLT-AIR-01',
@@ -73,9 +84,11 @@ const sampleProducts: SampleProduct[] = [
     compatibility: 'Confirm size by vehicle airbox',
     price: 75000,
     stock: 15,
+    minStock: 5,
   },
   {
     id: 6,
+    itemType: 'service',
     name: 'Standard Service Labor',
     category: 'Service',
     sku: 'SVC-STD',
@@ -83,10 +96,9 @@ const sampleProducts: SampleProduct[] = [
     compatibility: 'General shop service',
     price: 150000,
     stock: UNLIMITED_STOCK,
+    minStock: 0,
   },
 ]
-
-const categories = ['All', ...new Set(sampleProducts.map((product) => product.category))]
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
@@ -106,44 +118,130 @@ function isUnlimitedStock(stock: number): boolean {
   return stock >= UNLIMITED_STOCK
 }
 
-function isLowStock(stock: number): boolean {
-  return !isUnlimitedStock(stock) && stock <= LOW_STOCK_THRESHOLD
+function isLowStock(product: SampleProduct): boolean {
+  return product.itemType === 'product' && !isUnlimitedStock(product.stock) && product.stock <= product.minStock
+}
+
+function getCartKey(item: SampleProduct): string {
+  return `${item.itemType}:${item.id}`
 }
 
 export function SalesWorkspace() {
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const [catalogItems, setCatalogItems] = useState<SampleProduct[]>(sampleProducts)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('All')
+  const [itemsPerPage, setItemsPerPage] = useState(6)
+  const [currentPage, setCurrentPage] = useState(1)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [actionMessage, setActionMessage] = useState('')
   const [checkoutComplete, setCheckoutComplete] = useState(false)
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+  const categories = useMemo(() => ['All', ...new Set(catalogItems.map((item) => item.category))], [catalogItems])
 
   const visibleProducts = useMemo(() => {
-    return sampleProducts.filter((product) => {
+    return catalogItems.filter((product) => {
       const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter
       const matchesSearch =
         normalizedSearchQuery.length === 0 ||
-        [product.name, product.category, product.sku, product.description, product.compatibility].some((value) =>
+        [
+          product.name,
+          product.category,
+          product.sku,
+          product.description,
+          product.compatibility,
+          product.itemType,
+        ].some((value) =>
           value.toLowerCase().includes(normalizedSearchQuery),
         )
 
       return matchesCategory && matchesSearch
     })
-  }, [categoryFilter, normalizedSearchQuery])
+  }, [catalogItems, categoryFilter, normalizedSearchQuery])
 
   const cartQuantityByProductId = useMemo(() => {
-    return new Map(cartItems.map((item) => [item.id, item.quantity]))
+    return new Map(cartItems.map((item) => [item.cartKey, item.quantity]))
   }, [cartItems])
 
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
   const tax = Math.round(subtotal * 0.11)
   const total = subtotal + tax
   const cartItemCount = cartItems.reduce((count, item) => count + item.quantity, 0)
+  const pageCount = Math.max(1, Math.ceil(visibleProducts.length / itemsPerPage))
+  const pageStart = (currentPage - 1) * itemsPerPage
+  const paginatedProducts = visibleProducts.slice(pageStart, pageStart + itemsPerPage)
+  const shownStart = visibleProducts.length === 0 ? 0 : pageStart + 1
+  const shownEnd = Math.min(pageStart + itemsPerPage, visibleProducts.length)
 
   useEffect(() => {
     searchInputRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1280px)')
+
+    function syncItemsPerPage() {
+      setItemsPerPage(mediaQuery.matches ? 9 : 6)
+    }
+
+    syncItemsPerPage()
+    mediaQuery.addEventListener('change', syncItemsPerPage)
+
+    return () => mediaQuery.removeEventListener('change', syncItemsPerPage)
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadCatalog() {
+      const [products, categories, services] = await Promise.all([
+        window.simplepos?.products.list(),
+        window.simplepos?.categories.list(),
+        window.simplepos?.services.list(),
+      ])
+
+      if (!isMounted) return
+
+      const categoryNames = new Map((categories ?? []).map((category) => [category.id, category.name]))
+      const productItems = (products ?? []).map<SampleProduct>((product) => ({
+        id: product.id,
+        itemType: 'product',
+        name: product.name,
+        category: categoryNames.get(product.categoryId ?? 0) ?? 'Products',
+        sku: product.sku,
+        description: product.description ?? 'Inventory product',
+        compatibility: product.barcode ? `Barcode ${product.barcode}` : `${product.stockQty} ${product.unitType} in stock`,
+        price: product.unitPrice,
+        stock: product.stockQty,
+        minStock: product.minStock,
+      }))
+      const serviceItems = (services ?? []).map<SampleProduct>((service) => ({
+        id: service.id,
+        itemType: 'service',
+        name: service.name,
+        category: service.category ?? 'Services',
+        sku: service.code,
+        description: service.description ?? 'Service labor item',
+        compatibility: 'Labor/service charge',
+        price: service.price,
+        stock: UNLIMITED_STOCK,
+        minStock: 0,
+      }))
+
+      if (productItems.length > 0 || serviceItems.length > 0) {
+        setCatalogItems([...serviceItems, ...productItems])
+      }
+    }
+
+    void loadCatalog().catch(() => {
+      if (isMounted) setCatalogItems(sampleProducts)
+    })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   useEffect(() => {
@@ -153,8 +251,16 @@ export function SalesWorkspace() {
     return () => window.clearTimeout(timeoutId)
   }, [actionMessage])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [categoryFilter, itemsPerPage, normalizedSearchQuery])
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, pageCount))
+  }, [pageCount])
+
   function getAvailableQuantity(product: SampleProduct): number {
-    const inCart = cartQuantityByProductId.get(product.id) ?? 0
+    const inCart = cartQuantityByProductId.get(getCartKey(product)) ?? 0
     if (isUnlimitedStock(product.stock)) return Number.POSITIVE_INFINITY
     return Math.max(product.stock - inCart, 0)
   }
@@ -172,26 +278,27 @@ export function SalesWorkspace() {
     }
 
     setCartItems((currentItems) => {
-      const existingItem = currentItems.find((item) => item.id === product.id)
+      const cartKey = getCartKey(product)
+      const existingItem = currentItems.find((item) => item.cartKey === cartKey)
 
       if (existingItem) {
         return currentItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
+          item.cartKey === cartKey ? { ...item, quantity: item.quantity + quantity } : item,
         )
       }
 
-      return [...currentItems, { ...product, quantity }]
+      return [...currentItems, { ...product, cartKey, quantity }]
     })
 
     return true
   }
 
-  function updateQuantity(productId: number, quantity: number) {
-    const product = sampleProducts.find((item) => item.id === productId)
+  function updateQuantity(cartKey: string, quantity: number) {
+    const product = catalogItems.find((item) => getCartKey(item) === cartKey)
     if (!product) return
 
     if (quantity <= 0) {
-      setCartItems((currentItems) => currentItems.filter((item) => item.id !== productId))
+      setCartItems((currentItems) => currentItems.filter((item) => item.cartKey !== cartKey))
       return
     }
 
@@ -201,15 +308,56 @@ export function SalesWorkspace() {
     }
 
     setCartItems((currentItems) =>
-      currentItems.map((item) => (item.id === productId ? { ...item, quantity } : item)),
+      currentItems.map((item) => (item.cartKey === cartKey ? { ...item, quantity } : item)),
     )
   }
 
-  function handleCheckout() {
+  async function handleCheckout() {
     if (cartItems.length === 0) return
 
+    setIsCheckingOut(true)
+    setActionMessage('')
+
+    const result = await window.simplepos?.checkout.create({
+      paymentMethod: 'cash',
+      amountPaid: total,
+      discount: 0,
+      tax,
+      items: cartItems.map((item) => ({
+        itemType: item.itemType,
+        id: item.id,
+        quantity: item.quantity,
+      })),
+    })
+
+    setIsCheckingOut(false)
+
+    if (!result) {
+      setActionMessage('Unable to reach the database.')
+      return
+    }
+
+    if (!result.ok || !result.checkout) {
+      setActionMessage(result.message)
+      return
+    }
+
     setCheckoutComplete(true)
-    setActionMessage(`Sale completed — ${formatCurrency(total)}`)
+    setActionMessage(`${result.message} — ${formatCurrency(result.checkout.total)}`)
+    setCatalogItems((currentItems) =>
+      currentItems.map((item) => {
+        const soldItem = cartItems.find((cartItem) => cartItem.itemType === item.itemType && cartItem.id === item.id)
+
+        if (!soldItem || item.itemType !== 'product' || isUnlimitedStock(item.stock)) {
+          return item
+        }
+
+        return {
+          ...item,
+          stock: Math.max(item.stock - soldItem.quantity, 0),
+        }
+      }),
+    )
 
     window.setTimeout(() => {
       setCartItems([])
@@ -223,8 +371,8 @@ export function SalesWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_380px]">
-      <Card className="min-h-0 gap-3 border-0 shadow-border">
+    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
+      <Card className="flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden shadow-border">
         <div className="flex shrink-0 flex-col gap-2 px-4">
           <div className="relative">
             <Search
@@ -236,8 +384,8 @@ export function SalesWorkspace() {
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search products, SKU, category..."
-              aria-label="Search products"
+              placeholder="Search products, services, SKU, category..."
+              aria-label="Search products and services"
               className="pl-9 pr-9"
             />
             {searchQuery ? (
@@ -279,38 +427,41 @@ export function SalesWorkspace() {
           </div>
 
           <p className="text-xs text-muted-foreground text-pretty tabular-nums">
-            {visibleProducts.length} product{visibleProducts.length === 1 ? '' : 's'}
+            {visibleProducts.length} item{visibleProducts.length === 1 ? '' : 's'}
             {searchQuery ? ` matching "${searchQuery.trim()}"` : null}
           </p>
         </div>
 
-        <CardContent className="min-h-0 flex-1 overflow-auto py-2">
+        <CardContent className="min-h-0 flex-1 overflow-hidden px-3 pt-1 pb-2">
           {visibleProducts.length === 0 ? (
-            <div className="flex min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
+            <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
               <div className="flex max-w-xs flex-col gap-1">
-                <p className="text-sm font-medium text-balance">No products found</p>
+                <p className="text-sm font-medium text-balance">No items found</p>
                 <p className="text-sm text-muted-foreground text-pretty">
                   Try another search term or category filter.
                 </p>
               </div>
             </div>
           ) : (
-            <div className="stagger-children grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {visibleProducts.map((product) => {
-                const inCartQty = cartQuantityByProductId.get(product.id) ?? 0
+            <div className="stagger-children grid h-full min-h-0 auto-rows-fr gap-3 overflow-hidden px-1 pt-1 pb-2 md:grid-cols-2 xl:grid-cols-3">
+              {paginatedProducts.map((product) => {
+                const cartKey = getCartKey(product)
+                const inCartQty = cartQuantityByProductId.get(cartKey) ?? 0
                 const available = getAvailableQuantity(product)
                 const outOfStock = !isUnlimitedStock(product.stock) && available === 0
 
                 return (
                   <div
-                    key={product.id}
-                    className="flex min-h-44 flex-col justify-between rounded-xl p-3 text-left shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover"
+                    key={cartKey}
+                    className="flex min-h-0 flex-col justify-between overflow-hidden rounded-lg border bg-background p-3 text-left shadow-sm transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover"
                   >
                     <div className="flex flex-1 flex-col gap-2">
                       <span className="flex items-start justify-between gap-2">
                         <span className="min-w-0 flex flex-col gap-0.5">
                           <span className="text-sm font-medium text-balance">{product.name}</span>
-                          <span className="text-xs text-muted-foreground text-pretty">{product.category}</span>
+                          <span className="text-xs text-muted-foreground text-pretty">
+                            {product.itemType === 'service' ? 'Service' : 'Product'} · {product.category}
+                          </span>
                           <span className="text-xs text-muted-foreground tabular-nums">{product.sku}</span>
                         </span>
                         <span className="flex shrink-0 flex-col items-end gap-1">
@@ -319,8 +470,8 @@ export function SalesWorkspace() {
                               {inCartQty} in cart
                             </span>
                           ) : null}
-                          {isLowStock(product.stock) ? (
-                            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 tabular-nums">
+                          {isLowStock(product) ? (
+                            <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive tabular-nums">
                               Low stock
                             </span>
                           ) : null}
@@ -333,7 +484,7 @@ export function SalesWorkspace() {
                       <span className="flex flex-col gap-0.5">
                         <span className="text-base font-semibold tabular-nums">{formatCurrency(product.price)}</span>
                         <span className="text-xs text-muted-foreground tabular-nums">
-                          {isUnlimitedStock(product.stock) ? 'Service item' : `${product.stock} in stock`}
+                          {product.itemType === 'service' ? 'Service item' : `${product.stock} in stock`}
                         </span>
                       </span>
                       <Button
@@ -353,9 +504,42 @@ export function SalesWorkspace() {
             </div>
           )}
         </CardContent>
+
+        <div className="flex shrink-0 flex-col gap-2 border-t px-4 pt-2.5 pb-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground tabular-nums">
+            Showing {shownStart}-{shownEnd} of {visibleProducts.length} · {itemsPerPage} per page
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className={pressableButtonClass}
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              aria-label="Previous catalog page"
+            >
+              <ChevronLeft aria-hidden="true" />
+            </Button>
+            <span className="min-w-16 text-center text-xs font-medium tabular-nums text-muted-foreground">
+              {currentPage} / {pageCount}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className={pressableButtonClass}
+              disabled={currentPage >= pageCount}
+              onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
+              aria-label="Next catalog page"
+            >
+              <ChevronRight aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
       </Card>
 
-      <Card className="flex min-h-0 flex-col gap-0 border-0 py-0 shadow-border">
+      <Card className="flex min-h-0 min-w-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-border">
         <CardHeader className="shrink-0 gap-1 border-b px-4 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-baseline gap-2">
@@ -404,17 +588,20 @@ export function SalesWorkspace() {
             {cartItems.length === 0 ? (
               <div className="rounded-lg border border-dashed bg-background px-4 py-3 text-center shadow-border">
                 <p className="text-sm text-muted-foreground text-pretty">
-                  Add products from the catalog to start a sale.
+                  Add products or services from the catalog to start a sale.
                 </p>
               </div>
             ) : (
               cartItems.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.cartKey}
                   className="flex items-start justify-between gap-3 rounded-lg bg-background p-2.5 shadow-border"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-balance">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.itemType === 'service' ? 'Service' : 'Product'}
+                    </p>
                     <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(item.price)} each</p>
                     <p className="text-sm font-medium tabular-nums">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
@@ -424,7 +611,7 @@ export function SalesWorkspace() {
                       variant="outline"
                       size="icon-sm"
                       className={cn(pressableButtonClass, qtyButtonClass)}
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
                       aria-label={`Decrease quantity of ${item.name}`}
                     >
                       <Minus aria-hidden="true" />
@@ -435,7 +622,7 @@ export function SalesWorkspace() {
                       variant="outline"
                       size="icon-sm"
                       className={cn(pressableButtonClass, qtyButtonClass)}
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
                       disabled={!isUnlimitedStock(item.stock) && item.quantity >= item.stock}
                       aria-label={`Increase quantity of ${item.name}`}
                     >
@@ -465,10 +652,15 @@ export function SalesWorkspace() {
           <div className="flex shrink-0 gap-2">
             <Button
               className={cn('h-10 flex-1', pressableButtonClass)}
-              disabled={cartItems.length === 0 || checkoutComplete}
+              disabled={cartItems.length === 0 || checkoutComplete || isCheckingOut}
               onClick={handleCheckout}
             >
-              {checkoutComplete ? (
+              {isCheckingOut ? (
+                <>
+                  <ShoppingCart data-icon="inline-start" aria-hidden="true" />
+                  Saving
+                </>
+              ) : checkoutComplete ? (
                 <>
                   <Check data-icon="inline-start" aria-hidden="true" />
                   Completed
@@ -485,7 +677,7 @@ export function SalesWorkspace() {
               variant="outline"
               className={cn('h-10', pressableButtonClass)}
               onClick={handleClearCart}
-              disabled={cartItems.length === 0 || checkoutComplete}
+              disabled={cartItems.length === 0 || checkoutComplete || isCheckingOut}
             >
               Clear
             </Button>

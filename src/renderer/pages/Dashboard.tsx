@@ -6,6 +6,7 @@ import { navigationItems, sectionDetails } from '@/renderer/navigation'
 import type { AppSection, AuthenticatedUser } from '@/shared/types/app'
 import { CustomerWorkspace } from '@/renderer/workspaces/CustomerWorkspace'
 import { DashboardOverview } from '@/renderer/workspaces/DashboardOverview'
+import { InvoiceWorkspace } from '@/renderer/workspaces/InvoiceWorkspace'
 import { InventoryWorkspace } from '@/renderer/workspaces/InventoryWorkspace'
 import { ReportsWorkspace } from '@/renderer/workspaces/ReportsWorkspace'
 import { SalesWorkspace } from '@/renderer/workspaces/SalesWorkspace'
@@ -184,6 +185,7 @@ export default function Dashboard() {
               {activeSection === 'sales' ? <SalesWorkspace /> : null}
               {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
+              {activeSection === 'invoices' ? <InvoiceWorkspace /> : null}
               {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
               {activeSection === 'reports' ? <ReportsWorkspace /> : null}
               {activeSection === 'user-guide' ? <UserGuideWorkspace /> : null}
@@ -192,6 +194,7 @@ export default function Dashboard() {
               activeSection !== 'sales' &&
               activeSection !== 'inventory' &&
               activeSection !== 'customers' &&
+              activeSection !== 'invoices' &&
               activeSection !== 'users' &&
               activeSection !== 'reports' &&
               activeSection !== 'user-guide' &&

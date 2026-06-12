@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PackagePlus, Search, SlidersHorizontal } from 'lucide-react'
+import { PackagePlus, Search, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -53,6 +53,10 @@ const emptyForm: ProductFormState = {
 }
 
 const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
+const productTableGrid =
+  'grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)_104px_88px_84px_56px]'
+const iconHitAreaClass =
+  'relative after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2'
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('id-ID', {
@@ -66,10 +70,25 @@ function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock
 }
 
+function toProductForm(product: ProductSummary): ProductFormState {
+  return {
+    sku: product.sku,
+    barcode: product.barcode ?? '',
+    name: product.name,
+    description: product.description ?? '',
+    categoryId: product.categoryId ? String(product.categoryId) : '',
+    unitPrice: String(product.unitPrice),
+    unitType: product.unitType,
+    stockQty: String(product.stockQty),
+    minStock: String(product.minStock),
+  }
+}
+
 export function InventoryWorkspace() {
   const [products, setProducts] = useState<ProductSummary[]>([])
   const [categories, setCategories] = useState<ProductCategorySummary[]>([])
   const [form, setForm] = useState<ProductFormState>(emptyForm)
+  const [editingProduct, setEditingProduct] = useState<ProductSummary | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -104,6 +123,13 @@ export function InventoryWorkspace() {
 
   function resetForm() {
     setForm((f) => ({ ...emptyForm, categoryId: f.categoryId }))
+    setEditingProduct(null)
+    setMessage('')
+  }
+
+  function handleEdit(product: ProductSummary) {
+    setEditingProduct(product)
+    setForm(toProductForm(product))
     setMessage('')
   }
 
@@ -121,7 +147,7 @@ export function InventoryWorkspace() {
 
     setIsSubmitting(true)
 
-    const result = await window.simplepos?.products.create({
+    const payload = {
       sku: form.sku.trim(),
       barcode: form.barcode.trim() || null,
       name: form.name.trim(),
@@ -131,7 +157,15 @@ export function InventoryWorkspace() {
       unitType: form.unitType,
       stockQty,
       minStock,
-    })
+    }
+
+    const result = editingProduct
+      ? await window.simplepos?.products.update({
+          ...payload,
+          id: editingProduct.id,
+          isActive: editingProduct.isActive,
+        })
+      : await window.simplepos?.products.create(payload)
 
     setIsSubmitting(false)
 
@@ -156,9 +190,9 @@ export function InventoryWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex min-h-0 flex-col gap-3">
-        <div className="grid gap-3 md:grid-cols-3">
+    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
+        <div className="grid shrink-0 gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Total Items</CardTitle>
@@ -190,8 +224,8 @@ export function InventoryWorkspace() {
           </Card>
         </div>
 
-        <Card className="min-h-0">
-          <CardHeader>
+        <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <CardHeader className="shrink-0">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <CardTitle className="text-base">Product List</CardTitle>
@@ -216,19 +250,23 @@ export function InventoryWorkspace() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
-            <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
-              <div className="flex min-h-0 min-w-[800px] flex-1 flex-col rounded-lg border bg-background">
-                <div className="grid shrink-0 grid-cols-[minmax(220px,1.3fr)_minmax(140px,0.9fr)_minmax(120px,0.7fr)_minmax(96px,0.6fr)_minmax(96px,0.6fr)_72px] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
+          <CardContent className="min-h-0 min-w-0 flex-1 overflow-hidden pb-4">
+            <div className="h-full min-h-0 min-w-0 overflow-y-auto rounded-lg border bg-background">
+              <div
+                className={cn(
+                  'sticky top-0 z-10 grid shrink-0 items-center gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur',
+                  productTableGrid,
+                )}
+              >
                   <span>Product</span>
                   <span>Category</span>
                   <span className="text-right">Price</span>
                   <span>Stock</span>
                   <span>Status</span>
-                  <span className="text-right">Action</span>
-                </div>
+                  <span className="text-center">Remove</span>
+              </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto divide-y">
+              <div className="divide-y">
                 {filteredProducts.length === 0 ? (
                   <div className="px-3 py-6 text-sm text-muted-foreground">
                     {products.length === 0 ? 'No products yet. Add one using the form.' : 'No products match this search.'}
@@ -242,53 +280,78 @@ export function InventoryWorkspace() {
                   return (
                     <div
                       key={product.id}
-                      className="grid grid-cols-[minmax(220px,1.3fr)_minmax(140px,0.9fr)_minmax(120px,0.7fr)_minmax(96px,0.6fr)_minmax(96px,0.6fr)_72px] items-center gap-3 px-3 py-2.5 text-sm"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleEdit(product)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          handleEdit(product)
+                        }
+                      }}
+                      className={cn(
+                        'grid min-h-12 w-full cursor-pointer items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                        productTableGrid,
+                        editingProduct?.id === product.id && 'bg-muted/60',
+                      )}
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{product.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
                       </span>
-                      <span className="truncate">{categoryName}</span>
+                      <span className="min-w-0 truncate">{categoryName}</span>
                       <span className="truncate text-right tabular-nums">{formatCurrency(product.unitPrice)}</span>
                       <span className="truncate tabular-nums">
                         {product.stockQty} {product.unitType}
                       </span>
                       <span
                         className={cn(
-                          'w-fit rounded-md border px-2 py-1 text-xs font-medium',
-                          lowStock ? 'text-destructive' : 'text-muted-foreground',
+                          'w-fit rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums',
+                          lowStock
+                            ? 'bg-destructive/10 text-destructive'
+                            : 'bg-emerald-500/15 text-emerald-700',
                         )}
                       >
-                        {lowStock ? 'Low' : 'In Stock'}
+                        {lowStock ? 'Low stock' : 'In stock'}
                       </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 justify-self-end px-2 text-xs text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDeactivate(product)}
-                      >
-                        Remove
-                      </Button>
+                      <span className="flex justify-center">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={cn('text-muted-foreground hover:text-destructive active:scale-[0.96]', iconHitAreaClass)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            void handleDeactivate(product)
+                          }}
+                          aria-label={`Remove ${product.name}`}
+                          title={`Remove ${product.name}`}
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </Button>
+                      </span>
                     </div>
                   )
                 })}
-                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="min-h-0">
-        <CardHeader>
+      <Card className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+        <CardHeader className="shrink-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <PackagePlus aria-hidden="true" />
-            Create Product
+            {editingProduct ? 'Edit Product' : 'Create Product'}
           </CardTitle>
-          <CardDescription>Add a part or consumable to the inventory list.</CardDescription>
+          <CardDescription>
+            {editingProduct
+              ? `Update ${editingProduct.name} details, price, and stock.`
+              : 'Add a part or consumable to the inventory list.'}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="min-h-0 overflow-auto">
+        <CardContent className="min-h-0 flex-1 overflow-auto">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor="inventory-sku">SKU</Label>
@@ -407,10 +470,10 @@ export function InventoryWorkspace() {
             <div className="flex gap-2">
               <Button type="submit" className="flex-1" disabled={isSubmitting}>
                 <PackagePlus data-icon="inline-start" aria-hidden="true" />
-                {isSubmitting ? 'Creating…' : 'Create'}
+                {isSubmitting ? (editingProduct ? 'Saving...' : 'Creating...') : editingProduct ? 'Save Changes' : 'Create'}
               </Button>
               <Button type="button" variant="outline" onClick={resetForm}>
-                Clear
+                {editingProduct ? 'Cancel' : 'Clear'}
               </Button>
             </div>
           </form>
