@@ -1,0 +1,391 @@
+import { useEffect, useMemo, useState } from 'react'
+import { CalendarDays, Download, Printer, Receipt, Search } from 'lucide-react'
+import { Button } from '@/renderer/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { Input } from '@/renderer/components/ui/input'
+import { Label } from '@/renderer/components/ui/label'
+import { cn } from '@/renderer/lib/utils'
+
+type InvoiceSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['invoices']['list']>>[number]
+type InvoiceDetail = Awaited<ReturnType<NonNullable<typeof window.simplepos>['invoices']['get']>>
+
+const pressableButtonClass =
+  'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
+}
+
+function formatDateTime(value: string): string {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('id-ID', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
+
+function formatPaymentMethod(value: string | null): string {
+  if (!value) return 'Unrecorded'
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+function statusClass(status: string | null): string {
+  if (status === 'paid') return 'bg-emerald-500/10 text-emerald-700'
+  if (status === 'refunded') return 'bg-amber-500/15 text-amber-700'
+  if (status === 'void') return 'bg-destructive/10 text-destructive'
+  return 'bg-muted text-muted-foreground'
+}
+
+export function InvoiceWorkspace() {
+  const [invoices, setInvoices] = useState<InvoiceSummary[]>([])
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetail>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [isLoadingList, setIsLoadingList] = useState(false)
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadInvoices() {
+      setIsLoadingList(true)
+
+      const list = await window.simplepos?.invoices.list({
+        search: searchQuery,
+        status: statusFilter === 'all' ? 'all' : statusFilter,
+        dateFrom,
+        dateTo,
+      })
+
+      if (!isMounted) return
+
+      const nextInvoices = list ?? []
+      setInvoices(nextInvoices)
+      setIsLoadingList(false)
+      setSelectedInvoiceId((currentId) => {
+        if (currentId && nextInvoices.some((invoice) => invoice.id === currentId)) return currentId
+        return nextInvoices[0]?.id ?? null
+      })
+    }
+
+    void loadInvoices()
+
+    return () => {
+      isMounted = false
+    }
+  }, [dateFrom, dateTo, searchQuery, statusFilter])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadInvoiceDetail() {
+      if (!selectedInvoiceId) {
+        setSelectedInvoice(null)
+        return
+      }
+
+      setIsLoadingDetail(true)
+      const invoice = await window.simplepos?.invoices.get({ id: selectedInvoiceId })
+
+      if (!isMounted) return
+
+      setSelectedInvoice(invoice ?? null)
+      setIsLoadingDetail(false)
+    }
+
+    void loadInvoiceDetail()
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedInvoiceId])
+
+  const totals = useMemo(() => {
+    return invoices.reduce(
+      (summary, invoice) => ({
+        count: summary.count + 1,
+        paidCount: summary.paidCount + (invoice.status === 'paid' ? 1 : 0),
+        total: summary.total + invoice.total,
+      }),
+      { count: 0, paidCount: 0, total: 0 },
+    )
+  }, [invoices])
+
+  return (
+    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
+      <Card className="flex min-h-0 min-w-0 flex-col gap-0 overflow-hidden py-0 shadow-border">
+        <CardHeader className="shrink-0 border-b px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base text-balance">Invoice History</CardTitle>
+              <CardDescription className="text-pretty">
+                {isLoadingList ? 'Loading invoices' : `${totals.count} invoice${totals.count === 1 ? '' : 's'}`}
+              </CardDescription>
+            </div>
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Receipt aria-hidden="true" className="size-4" />
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3">
+          <div className="grid shrink-0 gap-2">
+            <div className="relative">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search invoice, customer, payment"
+                className="pl-8"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Status
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="all">All</option>
+                  <option value="paid">Paid</option>
+                  <option value="void">Void</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                From
+                <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+              </label>
+              <label className="col-span-2 flex flex-col gap-1 text-xs text-muted-foreground">
+                To
+                <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+              </label>
+            </div>
+          </div>
+
+          <div className="grid shrink-0 grid-cols-2 gap-2">
+            <div className="rounded-lg bg-muted px-3 py-2">
+              <p className="text-xs text-muted-foreground">Paid</p>
+              <p className="text-lg font-semibold tabular-nums">{totals.paidCount}</p>
+            </div>
+            <div className="rounded-lg bg-muted px-3 py-2">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-lg font-semibold tabular-nums">{formatCurrency(totals.total)}</p>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-auto">
+            {invoices.length === 0 ? (
+              <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
+                <div className="max-w-xs">
+                  <p className="text-sm font-medium text-balance">No invoices found</p>
+                  <p className="text-sm text-muted-foreground text-pretty">
+                    Completed checkouts will appear here once they match the current filters.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {invoices.map((invoice) => {
+                  const isSelected = invoice.id === selectedInvoiceId
+
+                  return (
+                    <button
+                      key={invoice.id}
+                      type="button"
+                      aria-current={isSelected ? 'true' : undefined}
+                      onClick={() => setSelectedInvoiceId(invoice.id)}
+                      className={cn(
+                        'min-h-20 rounded-lg border bg-background p-3 text-left shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
+                        isSelected
+                          ? 'border-primary/50 bg-primary/5 shadow-border-hover'
+                          : 'hover:border-primary/30 hover:shadow-border-hover',
+                      )}
+                    >
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium tabular-nums">
+                            {invoice.invoiceNumber}
+                          </span>
+                          <span className="mt-1 block truncate text-xs text-muted-foreground">
+                            {invoice.customerName ?? 'Walk-in customer'}
+                          </span>
+                        </span>
+                        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', statusClass(invoice.status))}>
+                          {invoice.status}
+                        </span>
+                      </span>
+                      <span className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <CalendarDays aria-hidden="true" className="size-3.5 shrink-0" />
+                          <span className="truncate">{formatDateTime(invoice.issuedAt)}</span>
+                        </span>
+                        <span className="shrink-0 font-medium text-foreground tabular-nums">
+                          {formatCurrency(invoice.total)}
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="flex min-h-0 min-w-0 flex-col gap-0 overflow-hidden py-0 shadow-border">
+        {selectedInvoice ? (
+          <>
+            <CardHeader className="shrink-0 border-b px-4 py-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0">
+                  <CardTitle className="truncate text-base tabular-nums">{selectedInvoice.invoiceNumber}</CardTitle>
+                  <CardDescription className="text-pretty">
+                    {selectedInvoice.customerName ?? 'Walk-in customer'} · {formatDateTime(selectedInvoice.issuedAt)}
+                  </CardDescription>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
+                    <Printer data-icon="inline-start" aria-hidden="true" />
+                    Print
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
+                    <Download data-icon="inline-start" aria-hidden="true" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="min-h-0 flex-1 overflow-auto px-4 py-4">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="flex min-w-0 flex-col gap-4">
+                  <div className="rounded-lg border bg-background p-4">
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Customer</Label>
+                        <p className="mt-1 text-sm font-medium text-pretty">
+                          {selectedInvoice.customerName ?? 'Walk-in customer'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Contact</Label>
+                        <p className="mt-1 text-sm text-pretty">
+                          {selectedInvoice.customerPhone ?? selectedInvoice.customerEmail ?? 'Not recorded'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Payment</Label>
+                        <p className="mt-1 text-sm font-medium">
+                          {formatPaymentMethod(selectedInvoice.payment?.method ?? null)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-lg border bg-background">
+                    <div className="grid grid-cols-[minmax(0,1fr)_72px_96px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
+                      <span>Item</span>
+                      <span className="text-right">Qty</span>
+                      <span className="text-right">Price</span>
+                      <span className="text-right">Total</span>
+                    </div>
+                    <div className="divide-y">
+                      {selectedInvoice.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="grid grid-cols-[minmax(0,1fr)_72px_96px_104px] gap-3 px-3 py-2.5 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-balance">{item.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {item.itemType === 'service' ? 'Service' : 'Product'} · {item.sku ?? 'No SKU'}
+                            </p>
+                          </div>
+                          <span className="text-right tabular-nums">{item.quantity}</span>
+                          <span className="text-right tabular-nums">{formatCurrency(item.unitPrice)}</span>
+                          <span className="text-right font-medium tabular-nums">{formatCurrency(item.lineTotal)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-3">
+                  <div className="rounded-lg border bg-background p-4">
+                    <p className="text-sm font-semibold text-balance">Receipt Preview</p>
+                    <div className="mt-4 flex flex-col gap-2 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="tabular-nums">{formatCurrency(selectedInvoice.subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Discount</span>
+                        <span className="tabular-nums">{formatCurrency(selectedInvoice.discount)}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Tax</span>
+                        <span className="tabular-nums">{formatCurrency(selectedInvoice.tax)}</span>
+                      </div>
+                      <div className="mt-2 flex justify-between gap-3 border-t pt-3 text-base font-semibold">
+                        <span>Total</span>
+                        <span className="tabular-nums">{formatCurrency(selectedInvoice.total)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-background p-4">
+                    <p className="text-sm font-semibold text-balance">Payment Details</p>
+                    <div className="mt-3 flex flex-col gap-2 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Status</span>
+                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', statusClass(selectedInvoice.payment?.status ?? null))}>
+                          {selectedInvoice.payment?.status ?? 'unrecorded'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Method</span>
+                        <span>{formatPaymentMethod(selectedInvoice.payment?.method ?? null)}</span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-muted-foreground">Amount</span>
+                        <span className="tabular-nums">
+                          {formatCurrency(selectedInvoice.payment?.amount ?? selectedInvoice.total)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </>
+        ) : (
+          <CardContent className="flex min-h-96 flex-1 items-center justify-center p-6 text-center">
+            <div className="max-w-sm">
+              <p className="text-sm font-medium text-balance">
+                {isLoadingDetail ? 'Loading invoice' : 'Select an invoice'}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                Completed sales will show line items, totals, and payment details here.
+              </p>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    </div>
+  )
+}
