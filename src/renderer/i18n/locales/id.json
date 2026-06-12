@@ -1,0 +1,365 @@
+{
+  "common": {
+    "search": "Cari",
+    "clear": "Bersihkan",
+    "update": "Perbarui",
+    "create": "Tambah",
+    "delete": "Hapus",
+    "cancel": "Batal",
+    "save": "Simpan",
+    "saveChanges": "Simpan Perubahan",
+    "saving": "Menyimpan...",
+    "loading": "Memuat...",
+    "error": "Kesalahan",
+    "status": "Status",
+    "notes": "Catatan",
+    "all": "Semua",
+    "today": "Hari Ini",
+    "noRecords": "Data tidak ditemukan.",
+    "actions": "Aksi",
+    "remove": "Hapus",
+    "configure": "Konfigurasi",
+    "test": "Uji",
+    "online": "Online",
+    "offline": "Offline",
+    "notConfigured": "Belum dikonfigurasi"
+  },
+  "navigation": {
+    "dashboard": {
+      "label": "Dashboard",
+      "description": "Ringkasan"
+    },
+    "sales": {
+      "label": "Penjualan",
+      "description": "Pembayaran dan kasir"
+    },
+    "inventory": {
+      "label": "Inventaris",
+      "description": "Suku cadang dan stok"
+    },
+    "workOrders": {
+      "label": "Perintah Kerja",
+      "description": "Perbaikan sedang berjalan"
+    },
+    "customers": {
+      "label": "Pelanggan",
+      "description": "Pemilik kendaraan"
+    },
+    "invoices": {
+      "label": "Faktur",
+      "description": "Riwayat penagihan"
+    },
+    "reports": {
+      "label": "Laporan",
+      "description": "Penjualan dan operasional"
+    },
+    "users": {
+      "label": "Pengguna",
+      "description": "Akses admin dan kasir"
+    },
+    "userGuide": {
+      "label": "Panduan",
+      "description": "Cara menggunakan SimplePOS"
+    },
+    "settings": {
+      "label": "Pengaturan",
+      "description": "Preferensi bengkel"
+    }
+  },
+  "login": {
+    "title": "SimplePOS",
+    "subtitle": "Manajemen Bengkel Mobil",
+    "signIn": "Masuk",
+    "credentialsHint": "Masukkan kredensial Anda untuk melanjutkan",
+    "email": "Email",
+    "password": "Kata Sandi",
+    "signingIn": "Sedang masuk",
+    "authUnavailable": "Autentikasi tidak tersedia",
+    "dbChecking": "Memeriksa koneksi database",
+    "dbUnavailable": "Database tidak tersedia",
+    "version": "SimplePOS v1.0.0"
+  },
+  "dashboard": {
+    "sections": {
+      "dashboard": {
+        "eyebrow": "Hari Ini",
+        "title": "Dashboard",
+        "description": "Ringkasan cepat aktivitas bengkel dan status operasional."
+      }
+    },
+    "user": "Pengguna",
+    "currentSession": "Sesi saat ini",
+    "sales": "Penjualan",
+    "invoices": "Faktur",
+    "createdToday": "Dibuat hari ini",
+    "lowStock": "Stok Menipis",
+    "needsReview": "Perlu ditinjau",
+    "recentTransactions": "Transaksi Terakhir",
+    "transactionsHint": "Faktur dan pembayaran terbaru yang diselesaikan.",
+    "noActivity": "Belum ada aktivitas transaksi yang tercatat.",
+    "table": {
+      "invoice": "Faktur",
+      "payment": "Pembayaran",
+      "total": "Total",
+      "time": "Waktu"
+    }
+  },
+  "sales": {
+    "sections": {
+      "sales": {
+        "eyebrow": "Point of sale",
+        "title": "Penjualan",
+        "description": "Buat penjualan perbaikan, terima pembayaran, dan tinjau transaksi saat ini."
+      }
+    },
+    "searchPlaceholder": "Cari produk, layanan, SKU, kategori...",
+    "itemsFound": "{{count}} item ditemukan",
+    "itemsFound_plural": "{{count}} item ditemukan",
+    "matching": " cocok dengan \"{{query}}\"",
+    "noItemsFound": "Item tidak ditemukan",
+    "noItemsFoundHint": "Coba istilah pencarian atau filter kategori lain.",
+    "service": "Layanan",
+    "product": "Produk",
+    "inCart": "{{count}} di keranjang",
+    "lowStock": "Stok menipis",
+    "inStock": "{{count}} tersedia",
+    "serviceItem": "Item layanan",
+    "add": "Tambah",
+    "pagination": "Menampilkan {{start}}-{{end}} dari {{total}} · {{limit}} per halaman",
+    "currentSale": "Penjualan Saat Ini",
+    "noItemsInCart": "Belum ada item",
+    "cartEmptyHint": "Tambah produk atau layanan dari katalog untuk memulai penjualan.",
+    "subtotal": "Subtotal",
+    "tax": "Pajak 11%",
+    "total": "Total",
+    "checkout": "Bayar",
+    "completed": "Selesai",
+    "clearCart": "Bersihkan",
+    "checkoutSuccess": "Pembayaran berhasil",
+    "unableToReachDb": "Tidak dapat terhubung ke database.",
+    "onlyInStock": "Hanya tersisa {{count}} stok untuk {{name}}"
+  },
+  "inventory": {
+    "sections": {
+      "inventory": {
+        "eyebrow": "Kontrol stok",
+        "title": "Inventaris",
+        "description": "Lacak suku cadang, persediaan, tingkat stok, dan kebutuhan pemesanan ulang."
+      }
+    },
+    "totalItems": "Total Item",
+    "activeSkus": "SKU produk aktif",
+    "stockUnits": "Unit Stok",
+    "availableQty": "Kuantitas tersedia",
+    "lowStock": "Stok Menipis",
+    "atMinimum": "Di atau di bawah minimum",
+    "productList": "Daftar Produk",
+    "stockValueHint": "Nilai stok saat ini {{value}}.",
+    "searchPlaceholder": "Cari inventaris",
+    "table": {
+      "product": "Produk",
+      "category": "Kategori",
+      "price": "Harga",
+      "stock": "Stok",
+      "status": "Status",
+      "remove": "Hapus"
+    },
+    "noProducts": "Belum ada produk. Tambahkan menggunakan formulir.",
+    "noMatchingProducts": "Tidak ada produk yang cocok dengan pencarian ini.",
+    "inStock": "Tersedia",
+    "lowStockStatus": "Menipis",
+    "createProduct": "Tambah Produk",
+    "editProduct": "Edit Produk",
+    "createHint": "Tambahkan suku cadang atau bahan habis pakai ke daftar inventaris.",
+    "editHint": "Perbarui detail, harga, dan stok {{name}}.",
+    "sku": "SKU",
+    "productName": "Nama Produk",
+    "barcode": "Barcode",
+    "optional": "(opsional)",
+    "unitPrice": "Harga Satuan (IDR)",
+    "unitType": "Tipe Unit",
+    "openingStock": "Stok Awal",
+    "minimumStock": "Stok Minimum",
+    "noCategory": "— Tanpa kategori —",
+    "units": {
+      "piece": "pcs",
+      "litre": "liter",
+      "set": "set",
+      "box": "dus"
+    }
+  },
+  "customers": {
+    "sections": {
+      "customers": {
+        "eyebrow": "Data pelanggan",
+        "title": "Pelanggan",
+        "description": "Cari pelanggan, kendaraan, riwayat servis, dan rincian kontak."
+      }
+    },
+    "activeRecords": "Data aktif",
+    "contacts": "Kontak",
+    "emailAvailable": "Email tersedia",
+    "vehicles": "Kendaraan",
+    "registeredAssets": "Aset terdaftar",
+    "customerList": "Daftar Pelanggan",
+    "customerListHint": "Cari pelanggan berdasarkan nama, telepon, email, atau alamat.",
+    "searchPlaceholder": "Cari pelanggan",
+    "createCustomer": "Tambah Pelanggan",
+    "editCustomer": "Edit Pelanggan",
+    "table": {
+      "customer": "Pelanggan",
+      "phone": "Telepon",
+      "address": "Alamat",
+      "updated": "Diperbarui"
+    },
+    "noMatchingCustomers": "Tidak ada pelanggan yang cocok dengan pencarian ini.",
+    "noEmail": "Tidak ada email",
+    "noAddress": "Tidak ada alamat",
+    "vehicleList": "Daftar Kendaraan",
+    "vehicleListHint": "Kendaraan yang terhubung dengan {{name}}.",
+    "selectCustomerHint": "Pilih pelanggan untuk mengelola kendaraan.",
+    "createVehicle": "Tambah Kendaraan",
+    "editVehicle": "Edit Kendaraan",
+    "vehicleTable": {
+      "vehicle": "Kendaraan",
+      "plate": "Plat",
+      "color": "Warna",
+      "updated": "Diperbarui"
+    },
+    "selectCustomerFirst": "Pilih pelanggan terlebih dahulu.",
+    "noVehiclesLinked": "Tidak ada kendaraan yang terhubung dengan pelanggan ini.",
+    "yearUnknown": "Tahun tidak diketahui",
+    "noColor": "Tanpa warna",
+    "form": {
+      "name": "Nama",
+      "phone": "Telepon",
+      "email": "Email",
+      "address": "Alamat",
+      "notes": "Catatan",
+      "namePlaceholder": "Nama pelanggan",
+      "phonePlaceholder": "+62 812...",
+      "emailPlaceholder": "pelanggan@example.com",
+      "addressPlaceholder": "Jalan, area, kota",
+      "notesPlaceholder": "Preferensi layanan, catatan penagihan...",
+      "plateNumber": "Nomor Plat",
+      "brand": "Merk",
+      "model": "Model",
+      "year": "Tahun",
+      "color": "Warna",
+      "vin": "VIN",
+      "platePlaceholder": "DK 1234 AB",
+      "brandPlaceholder": "Toyota",
+      "modelPlaceholder": "Avanza",
+      "yearPlaceholder": "2021",
+      "colorPlaceholder": "Silver",
+      "vinPlaceholder": "Opsional sasis/VIN",
+      "vehicleNotesPlaceholder": "Interval servis, masalah yang diketahui..."
+    },
+    "messages": {
+      "required": "Nama dan telepon wajib diisi.",
+      "updated": "Pelanggan diperbarui",
+      "created": "Pelanggan ditambahkan",
+      "deleted": "Pelanggan dihapus",
+      "selectCustomerForVehicle": "Pilih pelanggan sebelum menambahkan kendaraan.",
+      "vehicleRequired": "Nomor plat, merk, dan model wajib diisi.",
+      "vehicleUpdated": "Kendaraan diperbarui",
+      "vehicleCreated": "Kendaraan ditambahkan",
+      "vehicleDeleted": "Kendaraan dihapus"
+    }
+  },
+  "reports": {
+    "sections": {
+      "reports": {
+        "eyebrow": "Analitik",
+        "title": "Laporan",
+        "description": "Tinjau performa bengkel melalui penjualan, inventaris, perintah kerja, dan faktur."
+      }
+    },
+    "filters": "Filter Laporan",
+    "dateRange": "Meninjau {{from}} hingga {{to}}.",
+    "period": "Periode",
+    "exportPdf": "Ekspor PDF",
+    "exportCsv": "Ekspor CSV",
+    "periods": {
+      "today": "Hari Ini",
+      "week": "Minggu Ini",
+      "month": "Bulan Ini",
+      "quarter": "Kuartal Ini"
+    },
+    "groups": {
+      "sales": {
+        "title": "Penjualan",
+        "description": "Pendapatan untuk periode yang dipilih.",
+        "helper": "{{count}} faktur"
+      },
+      "sales_plural": {
+        "helper": "{{count}} faktur"
+      },
+      "averageInvoice": {
+        "title": "Rata-rata Faktur",
+        "description": "Nilai rata-rata faktur yang diselesaikan.",
+        "helper": "{{value}} pajak terkumpul"
+      },
+      "inventoryValue": {
+        "title": "Nilai Inventaris",
+        "description": "Nilai stok aktif saat ini.",
+        "helper": "{{count}} item stok rendah"
+      },
+      "inventoryValue_plural": {
+        "helper": "{{count}} item stok rendah"
+      },
+      "discounts": {
+        "title": "Diskon",
+        "description": "Diskon yang diterapkan pada faktur berbayar.",
+        "helper": "Periode terpilih"
+      }
+    },
+    "topSelling": {
+      "title": "Item Terlaris",
+      "description": "Produk dan layanan diurutkan berdasarkan pendapatan.",
+      "noSales": "Tidak ada penjualan item pada periode ini.",
+      "table": {
+        "item": "Item",
+        "qty": "Jml",
+        "revenue": "Pendapatan"
+      }
+    },
+    "paymentMethods": {
+      "title": "Metode Pembayaran",
+      "description": "Faktur dibayar berdasarkan metode.",
+      "noPayments": "Tidak ada pembayaran pada periode ini.",
+      "paymentCount": "{{count}} pembayaran",
+      "paymentCount_plural": "{{count}} pembayaran"
+    },
+    "lowStock": {
+      "title": "Stok Menipis",
+      "description": "Item di atau di bawah stok minimum.",
+      "noLowStock": "Tidak ada item dengan stok menipis."
+    }
+  },
+  "settings": {
+    "sections": {
+      "settings": {
+        "eyebrow": "Konfigurasi",
+        "title": "Pengaturan",
+        "description": "Kelola profil toko, pengaturan pajak, pengguna, dan default tanda terima."
+      }
+    },
+    "externalDevices": "Perangkat Eksternal",
+    "devicesHint": "Kelola koneksi perangkat keras dan layanan yang digunakan oleh POS.",
+    "deviceType": "Tipe perangkat",
+    "connection": "Koneksi",
+    "deviceNotes": "Catatan Perangkat",
+    "notesPlaceholder": "Placeholder konfigurasi untuk integrasi nanti.",
+    "printerScannerHint": "Aksi printer dan pemindai barcode hanya UI sampai penemuan perangkat terhubung.",
+    "healthCheckHint": "Indikator koneksi dapat dihubungkan ke pemeriksaan kesehatan IPC saat lapisan perangkat keras ditambahkan.",
+    "greenPulse": "Denyut hijau berarti perangkat terhubung.",
+    "mutedDot": "Titik pudar berarti perangkat standby atau belum dikonfigurasi.",
+    "softwareUpdates": "Pembaruan Perangkat Lunak",
+    "updatesHint": "Pembaruan dikirim dari GitHub Releases.",
+    "percentDownloaded": "{{percent}}% terunduh",
+    "check": "Periksa",
+    "checking": "Memeriksa",
+    "install": "Pasang"
+  }
+}

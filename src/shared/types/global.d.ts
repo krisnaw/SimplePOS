@@ -235,6 +235,61 @@ type InvoiceDetail = InvoiceSummary & {
   payment: InvoicePaymentSummary | null
 }
 
+type ReportPeriod = 'today' | 'week' | 'month' | 'quarter'
+
+type DashboardRecentTransaction = {
+  invoiceId: number
+  invoiceNumber: string
+  total: number
+  paymentMethod: PaymentMethod | null
+  issuedAt: string
+}
+
+type DashboardSummary = {
+  paidSalesTotal: number
+  paidInvoiceCount: number
+  lowStockCount: number
+  recentTransactions: DashboardRecentTransaction[]
+}
+
+type PaymentMethodSummary = {
+  method: PaymentMethod
+  count: number
+  total: number
+}
+
+type TopSellingItemSummary = {
+  itemType: 'product' | 'service'
+  name: string
+  sku: string | null
+  quantity: number
+  total: number
+}
+
+type LowStockItemSummary = {
+  id: number
+  sku: string
+  name: string
+  stockQty: number
+  minStock: number
+}
+
+type ReportSummary = {
+  period: ReportPeriod
+  dateFrom: string
+  dateTo: string
+  salesTotal: number
+  invoiceCount: number
+  averageInvoiceTotal: number
+  discountTotal: number
+  taxTotal: number
+  inventoryValue: number
+  lowStockCount: number
+  paymentMethods: PaymentMethodSummary[]
+  lowStockItems: LowStockItemSummary[]
+  topSellingItems: TopSellingItemSummary[]
+}
+
 declare global {
   interface Window {
     simplepos?: {
@@ -271,6 +326,12 @@ declare global {
       }
       checkout: {
         create: (input: CheckoutInput) => Promise<CheckoutResult>
+      }
+      dashboard: {
+        getSummary: () => Promise<DashboardSummary>
+      }
+      reports: {
+        getSummary: (input?: { period?: ReportPeriod }) => Promise<ReportSummary>
       }
       invoices: {
         list: (input?: InvoiceListInput) => Promise<InvoiceSummary[]>

@@ -16,7 +16,9 @@ import {
   createVehicle,
   deleteCustomer,
   deleteVehicle,
+  getDashboardSummary,
   getInvoiceDetail,
+  getReportSummary,
   listCustomers,
   listInvoices,
   listProductCategories,
@@ -96,6 +98,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('checkout:create', (_event, input: unknown) => createCheckout(input as Record<string, unknown>))
   ipcMain.handle('invoices:list', (_event, input: unknown) => listInvoices(input as Record<string, unknown>))
   ipcMain.handle('invoices:get', (_event, input: unknown) => getInvoiceDetail(input as { id?: unknown }))
+  ipcMain.handle('dashboard:getSummary', () => getDashboardSummary())
+  ipcMain.handle('reports:getSummary', (_event, input: unknown) => getReportSummary(input as Record<string, unknown>))
   ipcMain.handle('customers:list', () => listCustomers())
   ipcMain.handle('customers:create', (_event, input: unknown) => createCustomer(input as Record<string, unknown>))
   ipcMain.handle('customers:update', (_event, input: unknown) => updateCustomer(input as Record<string, unknown>))

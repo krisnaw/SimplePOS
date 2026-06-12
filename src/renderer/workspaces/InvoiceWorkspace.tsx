@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Download, Printer, Receipt, Search } from 'lucide-react'
+import { CalendarDays, Download, Printer, Receipt, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -53,29 +53,45 @@ export function InvoiceWorkspace() {
   const [dateTo, setDateTo] = useState('')
   const [isLoadingList, setIsLoadingList] = useState(false)
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [refreshCount, setRefreshCount] = useState(0)
 
   useEffect(() => {
     let isMounted = true
 
     async function loadInvoices() {
       setIsLoadingList(true)
+      setLoadError('')
 
-      const list = await window.simplepos?.invoices.list({
-        search: searchQuery,
-        status: statusFilter === 'all' ? 'all' : statusFilter,
-        dateFrom,
-        dateTo,
-      })
+      try {
+        if (!window.simplepos?.invoices) {
+          throw new Error('Invoice records are unavailable. Restart SimplePOS to load the latest app bridge.')
+        }
 
-      if (!isMounted) return
+        const list = await window.simplepos.invoices.list({
+          search: searchQuery,
+          status: statusFilter === 'all' ? 'all' : statusFilter,
+          dateFrom,
+          dateTo,
+        })
 
-      const nextInvoices = list ?? []
-      setInvoices(nextInvoices)
-      setIsLoadingList(false)
-      setSelectedInvoiceId((currentId) => {
-        if (currentId && nextInvoices.some((invoice) => invoice.id === currentId)) return currentId
-        return nextInvoices[0]?.id ?? null
-      })
+        if (!isMounted) return
+
+        const nextInvoices = list ?? []
+        setInvoices(nextInvoices)
+        setSelectedInvoiceId((currentId) => {
+          if (currentId && nextInvoices.some((invoice) => invoice.id === currentId)) return currentId
+          return nextInvoices[0]?.id ?? null
+        })
+      } catch (error) {
+        if (!isMounted) return
+
+        setInvoices([])
+        setSelectedInvoiceId(null)
+        setLoadError(error instanceof Error ? error.message : 'Unable to load invoice records.')
+      } finally {
+        if (isMounted) setIsLoadingList(false)
+      }
     }
 
     void loadInvoices()
@@ -83,7 +99,7 @@ export function InvoiceWorkspace() {
     return () => {
       isMounted = false
     }
-  }, [dateFrom, dateTo, searchQuery, statusFilter])
+  }, [dateFrom, dateTo, refreshCount, searchQuery, statusFilter])
 
   useEffect(() => {
     let isMounted = true
@@ -132,8 +148,21 @@ export function InvoiceWorkspace() {
                 {isLoadingList ? 'Loading invoices' : `${totals.count} invoice${totals.count === 1 ? '' : 's'}`}
               </CardDescription>
             </div>
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Receipt aria-hidden="true" className="size-4" />
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-lg"
+                className={pressableButtonClass}
+                onClick={() => setRefreshCount((count) => count + 1)}
+                disabled={isLoadingList}
+                aria-label="Refresh invoices"
+              >
+                <RefreshCw aria-hidden="true" className={isLoadingList ? 'animate-spin' : undefined} />
+              </Button>
+              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Receipt aria-hidden="true" className="size-4" />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -189,7 +218,24 @@ export function InvoiceWorkspace() {
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto">
-            {invoices.length === 0 ? (
+            {loadError ? (
+              <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
+                <div className="max-w-xs">
+                  <p className="text-sm font-medium text-balance">Unable to load invoices</p>
+                  <p className="mt-1 text-sm text-muted-foreground text-pretty">{loadError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn('mt-3', pressableButtonClass)}
+                    onClick={() => setRefreshCount((count) => count + 1)}
+                  >
+                    <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            ) : invoices.length === 0 ? (
               <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
                 <div className="max-w-xs">
                   <p className="text-sm font-medium text-balance">No invoices found</p>

@@ -1,0 +1,365 @@
+{
+  "common": {
+    "search": "Search",
+    "clear": "Clear",
+    "update": "Update",
+    "create": "Create",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "error": "Error",
+    "status": "Status",
+    "notes": "Notes",
+    "all": "All",
+    "today": "Today",
+    "noRecords": "No records found.",
+    "actions": "Actions",
+    "remove": "Remove",
+    "configure": "Configure",
+    "test": "Test",
+    "online": "Online",
+    "offline": "Offline",
+    "notConfigured": "Not configured"
+  },
+  "navigation": {
+    "dashboard": {
+      "label": "Dashboard",
+      "description": "Overview"
+    },
+    "sales": {
+      "label": "Sales",
+      "description": "Checkout and payments"
+    },
+    "inventory": {
+      "label": "Inventory",
+      "description": "Parts and stock"
+    },
+    "workOrders": {
+      "label": "Work Orders",
+      "description": "Repairs in progress"
+    },
+    "customers": {
+      "label": "Customers",
+      "description": "Vehicle owners"
+    },
+    "invoices": {
+      "label": "Invoices",
+      "description": "Billing history"
+    },
+    "reports": {
+      "label": "Reports",
+      "description": "Sales and operations"
+    },
+    "users": {
+      "label": "Users",
+      "description": "Admin and cashier access"
+    },
+    "userGuide": {
+      "label": "User Guide",
+      "description": "How to use SimplePOS"
+    },
+    "settings": {
+      "label": "Settings",
+      "description": "Shop preferences"
+    }
+  },
+  "login": {
+    "title": "SimplePOS",
+    "subtitle": "Car Repair Shop Management",
+    "signIn": "Sign in",
+    "credentialsHint": "Enter your credentials to continue",
+    "email": "Email",
+    "password": "Password",
+    "signingIn": "Signing in",
+    "authUnavailable": "Authentication unavailable",
+    "dbChecking": "Checking database connection",
+    "dbUnavailable": "Database unavailable",
+    "version": "SimplePOS v1.0.0"
+  },
+  "dashboard": {
+    "sections": {
+      "dashboard": {
+        "eyebrow": "Today",
+        "title": "Dashboard",
+        "description": "A quick read on shop activity and operational status."
+      }
+    },
+    "user": "User",
+    "currentSession": "Current session",
+    "sales": "Sales",
+    "invoices": "Invoices",
+    "createdToday": "Created today",
+    "lowStock": "Low Stock",
+    "needsReview": "Needs review",
+    "recentTransactions": "Recent Transactions",
+    "transactionsHint": "Latest completed invoices and payments.",
+    "noActivity": "No checkout activity recorded yet.",
+    "table": {
+      "invoice": "Invoice",
+      "payment": "Payment",
+      "total": "Total",
+      "time": "Time"
+    }
+  },
+  "sales": {
+    "sections": {
+      "sales": {
+        "eyebrow": "Point of sale",
+        "title": "Sales",
+        "description": "Create repair sales, accept payments, and review current transactions."
+      }
+    },
+    "searchPlaceholder": "Search products, services, SKU, category...",
+    "itemsFound": "{{count}} item",
+    "itemsFound_plural": "{{count}} items",
+    "matching": " matching \"{{query}}\"",
+    "noItemsFound": "No items found",
+    "noItemsFoundHint": "Try another search term or category filter.",
+    "service": "Service",
+    "product": "Product",
+    "inCart": "{{count}} in cart",
+    "lowStock": "Low stock",
+    "inStock": "{{count}} in stock",
+    "serviceItem": "Service item",
+    "add": "Add",
+    "pagination": "Showing {{start}}-{{end}} of {{total}} · {{limit}} per page",
+    "currentSale": "Current Sale",
+    "noItemsInCart": "No items yet",
+    "cartEmptyHint": "Add products or services from the catalog to start a sale.",
+    "subtotal": "Subtotal",
+    "tax": "Tax 11%",
+    "total": "Total",
+    "checkout": "Checkout",
+    "completed": "Completed",
+    "clearCart": "Clear",
+    "checkoutSuccess": "Checkout successful",
+    "unableToReachDb": "Unable to reach the database.",
+    "onlyInStock": "Only {{count}} in stock for {{name}}"
+  },
+  "inventory": {
+    "sections": {
+      "inventory": {
+        "eyebrow": "Stock control",
+        "title": "Inventory",
+        "description": "Track spare parts, supplies, stock levels, and reorder needs."
+      }
+    },
+    "totalItems": "Total Items",
+    "activeSkus": "Active product SKUs",
+    "stockUnits": "Stock Units",
+    "availableQty": "Available quantity",
+    "lowStock": "Low Stock",
+    "atMinimum": "At or below minimum",
+    "productList": "Product List",
+    "stockValueHint": "{{value}} in current stock value.",
+    "searchPlaceholder": "Search inventory",
+    "table": {
+      "product": "Product",
+      "category": "Category",
+      "price": "Price",
+      "stock": "Stock",
+      "status": "Status",
+      "remove": "Remove"
+    },
+    "noProducts": "No products yet. Add one using the form.",
+    "noMatchingProducts": "No products match this search.",
+    "inStock": "In stock",
+    "lowStockStatus": "Low stock",
+    "createProduct": "Create Product",
+    "editProduct": "Edit Product",
+    "createHint": "Add a part or consumable to the inventory list.",
+    "editHint": "Update {{name}} details, price, and stock.",
+    "sku": "SKU",
+    "productName": "Product Name",
+    "barcode": "Barcode",
+    "optional": "(optional)",
+    "unitPrice": "Unit Price (IDR)",
+    "unitType": "Unit Type",
+    "openingStock": "Opening Stock",
+    "minimumStock": "Minimum Stock",
+    "noCategory": "— No category —",
+    "units": {
+      "piece": "piece",
+      "litre": "litre",
+      "set": "set",
+      "box": "box"
+    }
+  },
+  "customers": {
+    "sections": {
+      "customers": {
+        "eyebrow": "Customer records",
+        "title": "Customers",
+        "description": "Find customers, vehicles, service history, and contact details."
+      }
+    },
+    "activeRecords": "Active records",
+    "contacts": "Contacts",
+    "emailAvailable": "Email available",
+    "vehicles": "Vehicles",
+    "registeredAssets": "Registered assets",
+    "customerList": "Customer List",
+    "customerListHint": "Find customers by name, phone, email, or address.",
+    "searchPlaceholder": "Search customers",
+    "createCustomer": "Create Customer",
+    "editCustomer": "Edit Customer",
+    "table": {
+      "customer": "Customer",
+      "phone": "Phone",
+      "address": "Address",
+      "updated": "Updated"
+    },
+    "noMatchingCustomers": "No customers match this search.",
+    "noEmail": "No email",
+    "noAddress": "No address",
+    "vehicleList": "Vehicle List",
+    "vehicleListHint": "Vehicles linked to {{name}}.",
+    "selectCustomerHint": "Select a customer to manage vehicles.",
+    "createVehicle": "Create Vehicle",
+    "editVehicle": "Edit Vehicle",
+    "vehicleTable": {
+      "vehicle": "Vehicle",
+      "plate": "Plate",
+      "color": "Color",
+      "updated": "Updated"
+    },
+    "selectCustomerFirst": "Select a customer first.",
+    "noVehiclesLinked": "No vehicles linked to this customer.",
+    "yearUnknown": "Year unknown",
+    "noColor": "No color",
+    "form": {
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "address": "Address",
+      "notes": "Notes",
+      "namePlaceholder": "Customer name",
+      "phonePlaceholder": "+62 812...",
+      "emailPlaceholder": "customer@example.com",
+      "addressPlaceholder": "Street, area, city",
+      "notesPlaceholder": "Service preferences, billing notes...",
+      "plateNumber": "Plate Number",
+      "brand": "Brand",
+      "model": "Model",
+      "year": "Year",
+      "color": "Color",
+      "vin": "VIN",
+      "platePlaceholder": "DK 1234 AB",
+      "brandPlaceholder": "Toyota",
+      "modelPlaceholder": "Avanza",
+      "yearPlaceholder": "2021",
+      "colorPlaceholder": "Silver",
+      "vinPlaceholder": "Optional chassis/VIN",
+      "vehicleNotesPlaceholder": "Service intervals, known issues..."
+    },
+    "messages": {
+      "required": "Name and phone are required.",
+      "updated": "Customer updated",
+      "created": "Customer created",
+      "deleted": "Customer deleted",
+      "selectCustomerForVehicle": "Select a customer before adding a vehicle.",
+      "vehicleRequired": "Plate number, brand, and model are required.",
+      "vehicleUpdated": "Vehicle updated",
+      "vehicleCreated": "Vehicle created",
+      "vehicleDeleted": "Vehicle deleted"
+    }
+  },
+  "reports": {
+    "sections": {
+      "reports": {
+        "eyebrow": "Analytics",
+        "title": "Reports",
+        "description": "Review shop performance across sales, inventory, work orders, and invoices."
+      }
+    },
+    "filters": "Report Filters",
+    "dateRange": "Reviewing {{from}} to {{to}}.",
+    "period": "Period",
+    "exportPdf": "Export PDF",
+    "exportCsv": "Export CSV",
+    "periods": {
+      "today": "Today",
+      "week": "This Week",
+      "month": "This Month",
+      "quarter": "This Quarter"
+    },
+    "groups": {
+      "sales": {
+        "title": "Sales",
+        "description": "Revenue for the selected period.",
+        "helper": "{{count}} invoice"
+      },
+      "sales_plural": {
+        "helper": "{{count}} invoices"
+      },
+      "averageInvoice": {
+        "title": "Average Invoice",
+        "description": "Mean completed invoice value.",
+        "helper": "{{value}} tax collected"
+      },
+      "inventoryValue": {
+        "title": "Inventory Value",
+        "description": "Current active stock value.",
+        "helper": "{{count}} low-stock item"
+      },
+      "inventoryValue_plural": {
+        "helper": "{{count}} low-stock items"
+      },
+      "discounts": {
+        "title": "Discounts",
+        "description": "Discounts applied to paid invoices.",
+        "helper": "Selected period"
+      }
+    },
+    "topSelling": {
+      "title": "Top Selling Items",
+      "description": "Products and services ranked by revenue.",
+      "noSales": "No item sales in this period.",
+      "table": {
+        "item": "Item",
+        "qty": "Qty",
+        "revenue": "Revenue"
+      }
+    },
+    "paymentMethods": {
+      "title": "Payment Methods",
+      "description": "Paid invoices by method.",
+      "noPayments": "No payments in this period.",
+      "paymentCount": "{{count}} payment",
+      "paymentCount_plural": "{{count}} payments"
+    },
+    "lowStock": {
+      "title": "Low Stock",
+      "description": "Items at or below minimum stock.",
+      "noLowStock": "No low-stock items."
+    }
+  },
+  "settings": {
+    "sections": {
+      "settings": {
+        "eyebrow": "Configuration",
+        "title": "Settings",
+        "description": "Manage store profile, tax settings, users, and receipt defaults."
+      }
+    },
+    "externalDevices": "External Devices",
+    "devicesHint": "Manage hardware and service connections used by the POS.",
+    "deviceType": "Device type",
+    "connection": "Connection",
+    "deviceNotes": "Device Notes",
+    "notesPlaceholder": "Configuration placeholders for later integration.",
+    "printerScannerHint": "Printer and barcode scanner actions are UI-only until device discovery is connected.",
+    "healthCheckHint": "Connected indicators can be wired to IPC health checks when the hardware layer is added.",
+    "greenPulse": "Green pulse means the device is connected.",
+    "mutedDot": "Muted dot means the device is standby or not configured.",
+    "softwareUpdates": "Software Updates",
+    "updatesHint": "Updates are delivered from GitHub Releases.",
+    "percentDownloaded": "{{percent}}% downloaded",
+    "check": "Check",
+    "checking": "Checking",
+    "install": "Install"
+  }
+}

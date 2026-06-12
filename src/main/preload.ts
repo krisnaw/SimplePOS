@@ -41,6 +41,12 @@ contextBridge.exposeInMainWorld('simplepos', {
   checkout: {
     create: (input: Record<string, unknown>) => ipcRenderer.invoke('checkout:create', input),
   },
+  dashboard: {
+    getSummary: () => ipcRenderer.invoke('dashboard:getSummary'),
+  },
+  reports: {
+    getSummary: (input?: Record<string, unknown>) => ipcRenderer.invoke('reports:getSummary', input ?? {}),
+  },
   invoices: {
     list: (input?: Record<string, unknown>) => ipcRenderer.invoke('invoices:list', input ?? {}),
     get: (input: { id: number }) => ipcRenderer.invoke('invoices:get', input),

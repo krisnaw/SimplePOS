@@ -10,6 +10,8 @@ export { createCheckout } from './checkout.service'
 export type { CheckoutResult, CheckoutSummary } from './checkout.service'
 export { getInvoiceDetail, listInvoices } from './invoice.service'
 export type { InvoiceDetail, InvoiceSummary } from './invoice.service'
+export { getDashboardSummary, getReportSummary } from './report.service'
+export type { DashboardSummary, ReportSummary } from './report.service'
 export {
   createCustomer,
   createVehicle,
