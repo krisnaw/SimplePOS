@@ -1,4 +1,4 @@
-import { BookOpen, Boxes, LayoutDashboard, ShoppingCart } from 'lucide-react'
+import { BookOpen, Boxes, LayoutDashboard, Receipt, ShoppingCart, Users } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { cn } from '@/renderer/lib/utils'
 
@@ -27,9 +27,23 @@ const guideSections: GuideSection[] = [
     description: 'Use the dashboard for a quick read on shop activity.',
     steps: [
       'Open Dashboard from the sidebar to see session details and summary cards.',
-      'Review the current user, work order count, and inventory alerts.',
-      'Use the sidebar to move into Sales or Inventory when you are ready to work.',
+      'Review the current user, invoice activity, and inventory alerts.',
+      'Use the sidebar to move into Sales, Customers, or Invoices when you are ready to work.',
       'Check the System panel at the bottom of the sidebar for database, printer, and scanner status.',
+    ],
+  },
+  {
+    id: 'cashier-workflow',
+    title: 'Cashier Workflow',
+    description: 'Follow this flow for a normal customer-facing checkout.',
+    steps: [
+      'Start on Dashboard and confirm the database indicator is online before taking payments.',
+      'Open Customers if the buyer needs a saved customer or vehicle record. Add or update the customer before checkout when needed.',
+      'Open Sales and search for each product or service by name, SKU, category, or description.',
+      'Add products and services to Current Sale, then confirm the quantity, subtotal, tax, and total with the customer.',
+      'Click Checkout only after payment is confirmed. The app saves the sale, creates the invoice, records the payment, and reduces product stock.',
+      'Open Invoices to find the new invoice, review line items and payment details, then use Print or Export when a receipt is needed.',
+      'Return to Sales and start the next customer transaction.',
     ],
   },
   {
@@ -43,7 +57,32 @@ const guideSections: GuideSection[] = [
       'Click Add on a product to place it in the cart. Quantities can be increased until stock runs out.',
       'Adjust item quantities with the plus and minus controls in the order summary.',
       'Review subtotal, tax, and total in the Current Sale panel.',
-      'Click Checkout to complete the sale. Use Clear to reset the cart and start again.',
+      'Click Checkout to complete the sale after payment is received. Use Clear to reset the cart before checkout.',
+      'If checkout succeeds, the cart clears automatically and product stock is reduced.',
+    ],
+  },
+  {
+    id: 'customers',
+    title: 'Customers',
+    description: 'Use customer and vehicle records when a sale should be linked to a known buyer.',
+    steps: [
+      'Open Customers to search existing customer records before creating a duplicate.',
+      'Add a new customer when the buyer is not already listed.',
+      'Add or update vehicle details when the transaction relates to a specific vehicle.',
+      'Keep phone and notes accurate so future cashiers can identify the customer quickly.',
+      'Return to Sales after customer details are ready for the transaction.',
+    ],
+  },
+  {
+    id: 'invoices',
+    title: 'Invoices / Receipts',
+    description: 'Use invoices to review completed checkouts and provide receipt details.',
+    steps: [
+      'Open Invoices after checkout to find the sale by invoice number, customer, payment, status, or date.',
+      'Select an invoice to review customer details, product and service line items, totals, and payment status.',
+      'Use the receipt preview to confirm subtotal, discount, tax, total, and payment amount.',
+      'Use Print or Export when the customer asks for a copy.',
+      'If an invoice is missing, return to Sales and confirm checkout completed successfully.',
     ],
   },
   {
@@ -56,7 +95,7 @@ const guideSections: GuideSection[] = [
       'Select a product to review SKU, price, unit type, stock quantity, and minimum stock level.',
       'Use the product form on the right to add a new item or update an existing one.',
       'Set minimum stock carefully so low-stock warnings appear before items run out.',
-      'Mark products as sellable when they should appear in the Sales workspace.',
+      'Keep product records active when they should appear in the Sales workspace.',
       'Keep stock quantities accurate so Sales cannot oversell unavailable parts.',
     ],
   },
@@ -66,10 +105,10 @@ const guideSections: GuideSection[] = [
     description: 'A simple routine for running the shop with POS and inventory together.',
     steps: [
       'Start the day on the Dashboard and confirm system status is online.',
-      'Check Inventory for low-stock items and update quantities after deliveries arrive.',
-      'Use Sales throughout the day to add parts and service items to customer transactions.',
-      'Review Reports and completed sales as needed for end-of-day reconciliation.',
-      'Use Settings and Users to maintain shop preferences and staff access.',
+      'Cashiers should prepare Sales, Customers, and Invoices before serving customers.',
+      'Use Sales throughout the day to add products and service items to customer transactions.',
+      'Use Invoices to confirm completed checkouts and provide receipt details.',
+      'Tell an admin when inventory is low, prices are wrong, or a product/service is missing.',
     ],
   },
   {
@@ -79,6 +118,7 @@ const guideSections: GuideSection[] = [
     steps: [
       'If a product does not appear in Sales, confirm it exists in Inventory and is marked sellable.',
       'If stock errors appear during checkout, update the product quantity in Inventory first.',
+      'If an invoice does not appear, confirm the checkout success message was shown in Sales.',
       'If login fails, verify your email and password with your shop administrator.',
       'For access issues, printer setup, or missing features, contact your system administrator.',
     ],
@@ -88,7 +128,9 @@ const guideSections: GuideSection[] = [
 const quickLinks = [
   { id: 'getting-started', label: 'Getting Started', icon: BookOpen },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'cashier-workflow', label: 'Cashier Workflow', icon: Users },
   { id: 'sales', label: 'Sales / POS', icon: ShoppingCart },
+  { id: 'invoices', label: 'Invoices', icon: Receipt },
   { id: 'inventory', label: 'Inventory', icon: Boxes },
 ]
 
@@ -99,7 +141,7 @@ export function UserGuideWorkspace() {
         <CardHeader className="gap-2 pb-4">
           <CardTitle className="text-base text-balance">How to Use SimplePOS</CardTitle>
           <CardDescription className="text-pretty">
-            Practical instructions for using the POS and Inventory workspaces in this app.
+            Practical instructions for cashier checkout, invoices, customers, and inventory handoff.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
