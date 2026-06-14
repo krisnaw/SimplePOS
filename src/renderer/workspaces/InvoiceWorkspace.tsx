@@ -4,6 +4,7 @@ import { Button } from '@/renderer/components/ui/button'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
+import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
 
 type InvoiceSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['invoices']['list']>>[number]
@@ -178,18 +179,19 @@ export function InvoiceWorkspace() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                  Status
-                  <select
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value as InvoiceStatusFilter)}
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <option value="all">All</option>
-                    <option value="paid">Paid</option>
-                    <option value="void">Void</option>
-                  </select>
-                </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Status
+                <BaseSelect
+                  value={statusFilter}
+                  ariaLabel="Invoice status"
+                  options={[
+                    { value: 'all', label: 'All' },
+                    { value: 'paid', label: 'Paid' },
+                    { value: 'void', label: 'Void' },
+                  ]}
+                  onValueChange={(value) => setStatusFilter(value as InvoiceStatusFilter)}
+                />
+              </label>
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                   From
                   <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />

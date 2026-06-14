@@ -4,6 +4,7 @@ import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
+import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
 
 type ProductCategorySummary = {
@@ -387,19 +388,20 @@ export function InventoryWorkspace() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="inventory-category">Category</Label>
-              <select
+              <BaseSelect
                 id="inventory-category"
                 value={form.categoryId}
-                onChange={(e) => updateForm('categoryId', e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="">— No category —</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+                ariaLabel="Product category"
+                placeholder="No category"
+                options={[
+                  { value: '', label: 'No category' },
+                  ...categories.map((category) => ({
+                    value: String(category.id),
+                    label: category.name,
+                  })),
+                ]}
+                onValueChange={(value) => updateForm('categoryId', value)}
+              />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -418,18 +420,16 @@ export function InventoryWorkspace() {
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="inventory-unit">Unit Type</Label>
-                <select
+                <BaseSelect
                   id="inventory-unit"
                   value={form.unitType}
-                  onChange={(e) => updateForm('unitType', e.target.value as ProductFormState['unitType'])}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  {unitTypes.map((unitType) => (
-                    <option key={unitType} value={unitType}>
-                      {unitType}
-                    </option>
-                  ))}
-                </select>
+                  ariaLabel="Product unit type"
+                  options={unitTypes.map((unitType) => ({
+                    value: unitType,
+                    label: unitType,
+                  }))}
+                  onValueChange={(value) => updateForm('unitType', value as ProductFormState['unitType'])}
+                />
               </div>
             </div>
 

@@ -3,6 +3,7 @@ import { BarChart3, Boxes, ClipboardList, CreditCard, Download, Receipt } from '
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Label } from '@/renderer/components/ui/label'
+import { BaseSelect } from '@/renderer/components/ui/base-select'
 
 type ReportPeriod = 'today' | 'week' | 'month' | 'quarter'
 type ReportSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['reports']['getSummary']>>
@@ -130,17 +131,18 @@ export function ReportsWorkspace() {
         <CardContent className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-2">
             <Label htmlFor="report-period">Period</Label>
-            <select
+            <BaseSelect
               id="report-period"
               value={period}
-              onChange={(event) => setPeriod(event.target.value as ReportPeriod)}
-              className="h-9 min-w-48 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-            </select>
+              ariaLabel="Report period"
+              options={[
+                { value: 'today', label: 'Today' },
+                { value: 'week', label: 'This Week' },
+                { value: 'month', label: 'This Month' },
+                { value: 'quarter', label: 'This Quarter' },
+              ]}
+              onValueChange={(value) => setPeriod(value as ReportPeriod)}
+            />
           </div>
 
           <div className="flex gap-2">
