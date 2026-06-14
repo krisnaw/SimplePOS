@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, ClipboardList, Receipt, UserRound, WalletCards } from 'lucide-react'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
+import { formatCurrency, formatTime, formatPaymentMethod } from '@/renderer/lib/formatters'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { DashboardSummary } from './DashboardOverview.types'
+
 
 const emptySummary: DashboardSummary = {
   paidSalesTotal: 0,
@@ -12,30 +14,6 @@ const emptySummary: DashboardSummary = {
   inProgressWorkOrderCount: 0,
   completedWorkOrderCount: 0,
   recentTransactions: [],
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
-}
-
-function formatTime(value: string): string {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
-
-function formatPaymentMethod(value: string | null): string {
-  if (!value) return 'Unrecorded'
-  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 export function DashboardOverview({ user }: { user: AuthenticatedUser }) {

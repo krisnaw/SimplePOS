@@ -6,34 +6,11 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
+import { formatCurrency, formatDateTime, formatPaymentMethod } from '@/renderer/lib/formatters'
 import type { InvoiceSummary, InvoiceDetail, InvoiceStatusFilter } from './InvoiceWorkspace.types'
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
-}
-
-function formatDateTime(value: string): string {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date)
-}
-
-function formatPaymentMethod(value: string | null): string {
-  if (!value) return 'Unrecorded'
-  return value.charAt(0).toUpperCase() + value.slice(1)
-}
 
 function statusClass(status: string | null): string {
   if (status === 'paid') return 'bg-emerald-500/10 text-emerald-700'

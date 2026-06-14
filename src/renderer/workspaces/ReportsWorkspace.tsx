@@ -4,6 +4,7 @@ import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
+import { formatCurrency, formatDate, capitalize as formatLabel } from '@/renderer/lib/formatters'
 import type { ReportPeriod, ReportSummary } from './ReportsWorkspace.types'
 
 const emptyReport: ReportSummary = {
@@ -28,28 +29,6 @@ const emptyReport: ReportSummary = {
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-  }).format(date)
-}
-
-function formatLabel(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1)
-}
 
 export function ReportsWorkspace() {
   const [period, setPeriod] = useState<ReportPeriod>('today')

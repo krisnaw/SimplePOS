@@ -13,6 +13,7 @@ import {
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { cn } from '@/renderer/lib/utils'
+import { formatDate } from '@/renderer/lib/formatters'
 import type { CustomerSummary } from '@/shared/types/customer'
 import type { VehicleSummary } from '@/shared/types/vehicle'
 import type { CustomerFormState, VehicleFormState } from './CustomerWorkspace.types'
@@ -120,14 +121,6 @@ function toVehicleForm(vehicle: VehicleSummary): VehicleFormState {
     color: vehicle.color ?? '',
     notes: vehicle.notes ?? '',
   }
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(value))
 }
 
 function RequiredMark() {

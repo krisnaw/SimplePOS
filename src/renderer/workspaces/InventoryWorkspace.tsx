@@ -6,6 +6,7 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
+import { formatCurrency } from '@/renderer/lib/formatters'
 import type { ProductSummary, ProductCategorySummary } from '@/shared/types/product'
 import type { ProductFormState } from './InventoryWorkspace.types'
 
@@ -26,14 +27,6 @@ const productTableGrid =
   'grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)_104px_88px_84px_56px]'
 const iconHitAreaClass =
   'relative after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2'
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
-}
 
 function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock

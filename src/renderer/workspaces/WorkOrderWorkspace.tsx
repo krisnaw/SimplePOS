@@ -16,6 +16,7 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
+import { formatCurrency, formatDateTime as formatDate, capitalize } from '@/renderer/lib/formatters'
 import type { AuthenticatedUser, UserSummary } from '@/shared/types/user'
 import type { CustomerSummary } from '@/shared/types/customer'
 import type { VehicleSummary } from '@/shared/types/vehicle'
@@ -47,29 +48,12 @@ const statusOptions: Array<{ value: WorkOrderStatus | 'all'; label: string }> = 
 const statusFlow: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed', 'cancelled']
 const editableStatuses: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed']
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return 'Not set'
-
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
-
 function statusLabel(status: WorkOrderStatus): string {
   return status.replace('_', ' ')
 }
 
 function priorityLabel(priority: WorkOrderPriority): string {
-  return priority.charAt(0).toUpperCase() + priority.slice(1)
+  return capitalize(priority)
 }
 
 function statusClass(status: WorkOrderStatus): string {

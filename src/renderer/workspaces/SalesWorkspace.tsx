@@ -14,6 +14,7 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
+import { formatCurrency } from '@/renderer/lib/formatters'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { CustomerSummary } from '@/shared/types/customer'
 import type { SimplePosApi, SampleProduct, CartItem } from './SalesWorkspace.types'
@@ -100,14 +101,6 @@ const pressableButtonClass =
 
 const qtyButtonClass =
   'relative after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2'
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value).replace(/^Rp[\s\u00a0]*/, 'Rp')
-}
 
 function isUnlimitedStock(stock: number): boolean {
   return stock >= UNLIMITED_STOCK
