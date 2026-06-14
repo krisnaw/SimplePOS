@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm'
-import { invoices, payments, products, saleItems, sales } from '../db/schema/index'
+import { invoices, payments, products, saleItems, workOrders } from '../db/schema/index'
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 
@@ -17,6 +17,9 @@ export type DashboardSummary = {
   paidSalesTotal: number
   paidInvoiceCount: number
   lowStockCount: number
+  openWorkOrderCount: number
+  inProgressWorkOrderCount: number
+  completedWorkOrderCount: number
   recentTransactions: DashboardRecentTransaction[]
 }
 
@@ -53,6 +56,10 @@ export type ReportSummary = {
   taxTotal: number
   inventoryValue: number
   lowStockCount: number
+  workOrderCount: number
+  completedWorkOrderCount: number
+  invoicedWorkOrderCount: number
+  workOrderCompletionRate: number
   paymentMethods: PaymentMethodSummary[]
   lowStockItems: LowStockItemSummary[]
   topSellingItems: TopSellingItemSummary[]
@@ -129,12 +136,16 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       paidSalesTotal: 0,
       paidInvoiceCount: 0,
       lowStockCount: 0,
+      openWorkOrderCount: 0,
+      inProgressWorkOrderCount: 0,
+      completedWorkOrderCount: 0,
       recentTransactions: [],
     }
   }
 
   const invoiceRows = await repository.select().from(invoices).where(eq(invoices.status, 'paid'))
   const lowStockItems = await listLowStockItems()
+  const workOrderRows = await repository.select().from(workOrders)
 
   const recentRows = await repository
     .select({
@@ -153,6 +164,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     paidSalesTotal: invoiceRows.reduce((total, invoice) => total + invoice.total, 0),
     paidInvoiceCount: invoiceRows.length,
     lowStockCount: lowStockItems.length,
+    openWorkOrderCount: workOrderRows.filter((workOrder) => workOrder.status === 'open').length,
+    inProgressWorkOrderCount: workOrderRows.filter((workOrder) => workOrder.status === 'in_progress').length,
+    completedWorkOrderCount: workOrderRows.filter((workOrder) => workOrder.status === 'completed').length,
     recentTransactions: recentRows,
   }
 }
@@ -172,6 +186,10 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     taxTotal: 0,
     inventoryValue: 0,
     lowStockCount: 0,
+    workOrderCount: 0,
+    completedWorkOrderCount: 0,
+    invoicedWorkOrderCount: 0,
+    workOrderCompletionRate: 0,
     paymentMethods: [],
     lowStockItems: [],
     topSellingItems: [],
@@ -179,11 +197,12 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
 
   if (!repository) return emptySummary
 
-  const [invoiceRows, paymentRows, itemRows, productRows, lowStockItems] = await Promise.all([
+  const [invoiceRows, paymentRows, itemRows, productRows, workOrderRows, lowStockItems] = await Promise.all([
     repository.select().from(invoices).where(eq(invoices.status, 'paid')),
     repository.select().from(payments).where(eq(payments.status, 'paid')),
     repository.select().from(saleItems),
     repository.select().from(products).where(eq(products.isActive, true)),
+    repository.select().from(workOrders),
     listLowStockItems(),
   ])
 
@@ -196,6 +215,11 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
   const discountTotal = periodInvoices.reduce((total, invoice) => total + invoice.discount, 0)
   const taxTotal = periodInvoices.reduce((total, invoice) => total + invoice.tax, 0)
   const inventoryValue = productRows.reduce((total, product) => total + product.stockQty * product.unitPrice, 0)
+  const periodWorkOrders = workOrderRows.filter((workOrder) => isWithinRange(workOrder.createdAt, dateFrom, dateTo))
+  const completedWorkOrderCount = periodWorkOrders.filter((workOrder) =>
+    workOrder.status === 'completed' || workOrder.status === 'invoiced',
+  ).length
+  const invoicedWorkOrderCount = periodWorkOrders.filter((workOrder) => workOrder.status === 'invoiced').length
   const paymentByMethod = new Map<PaymentMethod, PaymentMethodSummary>()
   const itemByKey = new Map<string, TopSellingItemSummary>()
 
@@ -237,6 +261,12 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     taxTotal,
     inventoryValue,
     lowStockCount: lowStockItems.length,
+    workOrderCount: periodWorkOrders.length,
+    completedWorkOrderCount,
+    invoicedWorkOrderCount,
+    workOrderCompletionRate: periodWorkOrders.length > 0
+      ? Math.round((completedWorkOrderCount / periodWorkOrders.length) * 100)
+      : 0,
     paymentMethods: [...paymentByMethod.values()].sort((a, b) => b.total - a.total),
     lowStockItems: lowStockItems.slice(0, 8),
     topSellingItems: [...itemByKey.values()].sort((a, b) => b.total - a.total).slice(0, 8),

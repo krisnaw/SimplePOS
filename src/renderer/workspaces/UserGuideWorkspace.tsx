@@ -1,4 +1,4 @@
-import { BookOpen, Boxes, LayoutDashboard, Receipt, ShoppingCart, Users } from 'lucide-react'
+import { BookOpen, Boxes, ClipboardList, LayoutDashboard, Receipt, ShoppingCart, Users } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { cn } from '@/renderer/lib/utils'
 
@@ -44,6 +44,18 @@ const guideSections: GuideSection[] = [
       'Click Checkout only after payment is confirmed. The app saves the sale, creates the invoice, records the payment, and reduces product stock.',
       'Open Invoices to find the new invoice, review line items and payment details, then use Print or Export when a receipt is needed.',
       'Return to Sales and start the next customer transaction.',
+    ],
+  },
+  {
+    id: 'sales-vs-work-orders',
+    title: 'Sales vs Work Orders',
+    description: 'Choose the right workflow for immediate checkout or a repair job.',
+    steps: [
+      'Use Sales / POS when the customer pays immediately: Sales / POS -> Checkout -> Sale + Invoice + Payment.',
+      'Use Work Orders when a vehicle or repair job needs to be tracked before payment: Work Order -> Add services/products -> Complete -> Checkout -> Sale + Invoice + Payment.',
+      'A Work Order tracks the repair job: customer, vehicle, complaint, notes, assigned staff, status, services, and products.',
+      'A Sale records the financial transaction. The Invoice is the bill or receipt, and the Payment records how the customer paid.',
+      'When a completed Work Order is checked out, the app creates a normal Sale, Sale Items, Invoice, and Payment, then links them back to the Work Order.',
     ],
   },
   {
@@ -129,6 +141,7 @@ const quickLinks = [
   { id: 'getting-started', label: 'Getting Started', icon: BookOpen },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'cashier-workflow', label: 'Cashier Workflow', icon: Users },
+  { id: 'sales-vs-work-orders', label: 'Sales vs Work Orders', icon: ClipboardList },
   { id: 'sales', label: 'Sales / POS', icon: ShoppingCart },
   { id: 'invoices', label: 'Invoices', icon: Receipt },
   { id: 'inventory', label: 'Inventory', icon: Boxes },

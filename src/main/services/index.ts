@@ -13,6 +13,23 @@ export type { InvoiceDetail, InvoiceSummary } from './invoice.service'
 export { getDashboardSummary, getReportSummary } from './report.service'
 export type { DashboardSummary, ReportSummary } from './report.service'
 export {
+  addWorkOrderItem,
+  checkoutWorkOrder,
+  createWorkOrder,
+  deleteWorkOrderItem,
+  getWorkOrderDetail,
+  listWorkOrders,
+  updateWorkOrder,
+  updateWorkOrderItem,
+  updateWorkOrderStatus,
+} from './work-order.service'
+export type {
+  WorkOrderCheckoutResult,
+  WorkOrderDetail,
+  WorkOrderMutationResult,
+  WorkOrderSummary,
+} from './work-order.service'
+export {
   createCustomer,
   createVehicle,
   deleteCustomer,

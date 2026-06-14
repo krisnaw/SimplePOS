@@ -67,6 +67,15 @@ function hashPassword(password: string, salt: string): string {
   return scryptSync(password, salt, 64).toString('hex')
 }
 
+function addColumnIfMissing(database: SqlJsDatabase, tableName: string, columnName: string, definition: string): void {
+  const columns = database.exec(`PRAGMA table_info(${tableName})`)[0]?.values ?? []
+  const hasColumn = columns.some((column) => column[1] === columnName)
+
+  if (!hasColumn) {
+    database.run(`ALTER TABLE ${tableName} ADD COLUMN ${definition}`)
+  }
+}
+
 function runSchemaMigration(database: SqlJsDatabase): void {
   database.run(`
     CREATE TABLE IF NOT EXISTS app_database_status (
@@ -207,8 +216,51 @@ function runSchemaMigration(database: SqlJsDatabase): void {
   `)
 
   database.run(`
+    CREATE TABLE IF NOT EXISTS work_orders (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      order_number text NOT NULL,
+      customer_id integer NOT NULL REFERENCES customers(id),
+      vehicle_id integer NOT NULL REFERENCES vehicles(id),
+      assigned_user_id integer REFERENCES users(id),
+      status text NOT NULL DEFAULT ('open'),
+      priority text NOT NULL DEFAULT ('normal'),
+      complaint text NOT NULL,
+      notes text,
+      odometer integer,
+      subtotal integer NOT NULL DEFAULT (0),
+      discount integer NOT NULL DEFAULT (0),
+      tax integer NOT NULL DEFAULT (0),
+      total integer NOT NULL DEFAULT (0),
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      completed_at text,
+      invoiced_at text,
+      cancelled_at text,
+      CONSTRAINT UQ_work_orders_order_number UNIQUE (order_number)
+    )
+  `)
+
+  database.run(`
+    CREATE TABLE IF NOT EXISTS work_order_items (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      work_order_id integer NOT NULL REFERENCES work_orders(id),
+      item_type text NOT NULL,
+      product_id integer REFERENCES products(id),
+      service_id integer REFERENCES services(id),
+      name text NOT NULL,
+      sku text,
+      quantity integer NOT NULL,
+      unit_price integer NOT NULL,
+      line_total integer NOT NULL,
+      created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    )
+  `)
+
+  database.run(`
     CREATE TABLE IF NOT EXISTS sales (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      work_order_id integer REFERENCES work_orders(id),
       customer_id integer REFERENCES customers(id),
       created_by_id integer REFERENCES users(id),
       status text NOT NULL DEFAULT ('completed'),
@@ -242,6 +294,7 @@ function runSchemaMigration(database: SqlJsDatabase): void {
     CREATE TABLE IF NOT EXISTS invoices (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       sale_id integer NOT NULL REFERENCES sales(id),
+      work_order_id integer REFERENCES work_orders(id),
       invoice_number text NOT NULL,
       status text NOT NULL DEFAULT ('paid'),
       subtotal integer NOT NULL DEFAULT (0),
@@ -268,6 +321,9 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
     )
   `)
+
+  addColumnIfMissing(database, 'sales', 'work_order_id', 'work_order_id integer REFERENCES work_orders(id)')
+  addColumnIfMissing(database, 'invoices', 'work_order_id', 'work_order_id integer REFERENCES work_orders(id)')
 
   seedProductCatalog(database)
 }

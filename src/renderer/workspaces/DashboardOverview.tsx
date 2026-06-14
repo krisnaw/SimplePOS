@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Receipt, UserRound, WalletCards } from 'lucide-react'
+import { AlertTriangle, ClipboardList, Receipt, UserRound, WalletCards } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import type { AuthenticatedUser } from '@/shared/types/app'
 
@@ -9,6 +9,9 @@ const emptySummary: DashboardSummary = {
   paidSalesTotal: 0,
   paidInvoiceCount: 0,
   lowStockCount: 0,
+  openWorkOrderCount: 0,
+  inProgressWorkOrderCount: 0,
+  completedWorkOrderCount: 0,
   recentTransactions: [],
 }
 
@@ -64,7 +67,7 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
 
   return (
     <div className="stagger-children grid gap-4">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base text-balance">
@@ -76,6 +79,24 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
           <CardContent className="flex flex-col gap-1 text-sm">
             <span className="truncate text-pretty">{user.email}</span>
             <span className="capitalize text-muted-foreground text-pretty">{user.role}</span>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base text-balance">
+              <ClipboardList aria-hidden="true" className="size-4 text-muted-foreground" />
+              Work Orders
+            </CardTitle>
+            <CardDescription className="text-pretty">Active jobs</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1">
+            <p className="text-3xl font-semibold tabular-nums">
+              {isLoading ? '...' : summary.openWorkOrderCount + summary.inProgressWorkOrderCount}
+            </p>
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {summary.completedWorkOrderCount} ready for checkout
+            </p>
           </CardContent>
         </Card>
 

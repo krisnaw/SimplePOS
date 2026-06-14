@@ -12,12 +12,17 @@ import {
   createCheckout,
   createProduct,
   createService,
+  createWorkOrder,
   createUser,
   createVehicle,
+  addWorkOrderItem,
+  checkoutWorkOrder,
   deleteCustomer,
   deleteVehicle,
+  deleteWorkOrderItem,
   getDashboardSummary,
   getInvoiceDetail,
+  getWorkOrderDetail,
   getReportSummary,
   listCustomers,
   listInvoices,
@@ -26,11 +31,15 @@ import {
   listServices,
   listUsers,
   listVehicles,
+  listWorkOrders,
   updateCustomer,
   updateProduct,
   updateService,
   updateUser,
   updateVehicle,
+  updateWorkOrder,
+  updateWorkOrderItem,
+  updateWorkOrderStatus,
 } from './services'
 import { registerUpdateHandlers } from './services/update.service'
 
@@ -100,6 +109,15 @@ app.whenReady().then(async () => {
   ipcMain.handle('invoices:get', (_event, input: unknown) => getInvoiceDetail(input as { id?: unknown }))
   ipcMain.handle('dashboard:getSummary', () => getDashboardSummary())
   ipcMain.handle('reports:getSummary', (_event, input: unknown) => getReportSummary(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:list', (_event, input: unknown) => listWorkOrders(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:get', (_event, input: unknown) => getWorkOrderDetail(input as { id?: unknown }))
+  ipcMain.handle('workOrders:create', (_event, input: unknown) => createWorkOrder(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:update', (_event, input: unknown) => updateWorkOrder(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:updateStatus', (_event, input: unknown) => updateWorkOrderStatus(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:addItem', (_event, input: unknown) => addWorkOrderItem(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:updateItem', (_event, input: unknown) => updateWorkOrderItem(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:deleteItem', (_event, input: unknown) => deleteWorkOrderItem(input as Record<string, unknown>))
+  ipcMain.handle('workOrders:checkout', (_event, input: unknown) => checkoutWorkOrder(input as Record<string, unknown>))
   ipcMain.handle('customers:list', () => listCustomers())
   ipcMain.handle('customers:create', (_event, input: unknown) => createCustomer(input as Record<string, unknown>))
   ipcMain.handle('customers:update', (_event, input: unknown) => updateCustomer(input as Record<string, unknown>))

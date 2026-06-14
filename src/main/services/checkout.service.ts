@@ -11,6 +11,7 @@ export type CheckoutItemInput = {
 }
 
 export type CheckoutInput = {
+  workOrderId?: unknown
   customerId?: unknown
   createdById?: unknown
   paymentMethod?: unknown
@@ -53,7 +54,7 @@ export type CheckoutResult = {
   checkout?: CheckoutSummary
 }
 
-type PreparedCheckoutItem = {
+export type PreparedCheckoutLineItem = {
   itemType: SaleItemType
   productId: number | null
   serviceId: number | null
@@ -63,6 +64,18 @@ type PreparedCheckoutItem = {
   unitPrice: number
   lineTotal: number
   stockQty?: number
+}
+
+type PersistCheckoutInput = {
+  sourceWorkOrderId?: number | null
+  customerId: number | null
+  createdById: number | null
+  paymentMethod: PaymentMethod
+  amountPaid: number
+  discount: number
+  tax: number
+  notes: string | null
+  items: PreparedCheckoutLineItem[]
 }
 
 function isPaymentMethod(value: unknown): value is PaymentMethod {
@@ -91,13 +104,13 @@ function createInvoiceNumber(date = new Date()): string {
   return `INV-${timestamp}-${suffix}`
 }
 
-async function prepareCheckoutItems(inputItems: unknown): Promise<PreparedCheckoutItem[] | string> {
+async function prepareCheckoutItems(inputItems: unknown): Promise<PreparedCheckoutLineItem[] | string> {
   const repository = getCheckoutRepository()
 
   if (!repository) return 'Database unavailable'
   if (!Array.isArray(inputItems) || inputItems.length === 0) return 'Add at least one item before checkout'
 
-  const prepared: PreparedCheckoutItem[] = []
+  const prepared: PreparedCheckoutLineItem[] = []
 
   for (const rawItem of inputItems) {
     if (!rawItem || typeof rawItem !== 'object') return 'Invalid checkout item'
@@ -154,6 +167,7 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
 
   if (!repository) return { ok: false, message: 'Database unavailable' }
 
+  const sourceWorkOrderId = positiveInteger(input.workOrderId)
   const paymentMethod = isPaymentMethod(input.paymentMethod) ? input.paymentMethod : 'cash'
   const discount = nonNegativeInteger(input.discount) ?? 0
   const providedTax = nonNegativeInteger(input.tax)
@@ -181,24 +195,66 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
     return { ok: false, message: 'Amount paid cannot be less than total' }
   }
 
+  return persistCheckout({
+    sourceWorkOrderId,
+    customerId,
+    createdById,
+    paymentMethod,
+    amountPaid,
+    discount,
+    tax,
+    notes,
+    items: preparedItems,
+  })
+}
+
+export async function createCheckoutFromPreparedItems(input: PersistCheckoutInput): Promise<CheckoutResult> {
+  if (input.items.length === 0) {
+    return { ok: false, message: 'Add at least one item before checkout' }
+  }
+
+  const subtotal = input.items.reduce((total, item) => total + item.lineTotal, 0)
+
+  if (input.discount > subtotal) {
+    return { ok: false, message: 'Discount cannot exceed subtotal' }
+  }
+
+  const total = subtotal - input.discount + input.tax
+
+  if (input.amountPaid < total) {
+    return { ok: false, message: 'Amount paid cannot be less than total' }
+  }
+
+  return persistCheckout(input)
+}
+
+async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutResult> {
+  const repository = getCheckoutRepository()
+
+  if (!repository) return { ok: false, message: 'Database unavailable' }
+
+  const subtotal = input.items.reduce((total, item) => total + item.lineTotal, 0)
+  const total = subtotal - input.discount + input.tax
+
   const now = new Date().toISOString()
   const invoiceNumber = createInvoiceNumber()
 
   const checkout = repository.transaction((tx) => {
     const savedSale = tx.insert(sales).values({
-      customerId,
-      createdById,
+      workOrderId: input.sourceWorkOrderId,
+      customerId: input.customerId,
+      createdById: input.createdById,
       status: 'completed',
       subtotal,
-      discount,
-      tax,
+      discount: input.discount,
+      tax: input.tax,
       total,
-      notes,
+      notes: input.notes,
       createdAt: now,
       updatedAt: now,
     }).returning().get()
 
-    const savedItems = preparedItems.map((item) => {
+    const savedItems = input.items.map((item) => {
       const savedItem = tx.insert(saleItems).values({
         saleId: savedSale.id,
         itemType: item.itemType,
@@ -234,11 +290,12 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
 
     const savedInvoice = tx.insert(invoices).values({
       saleId: savedSale.id,
+      workOrderId: input.sourceWorkOrderId,
       invoiceNumber,
       status: 'paid',
       subtotal,
-      discount,
-      tax,
+      discount: input.discount,
+      tax: input.tax,
       total,
       issuedAt: now,
       createdAt: now,
@@ -248,9 +305,9 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
     const savedPayment = tx.insert(payments).values({
       saleId: savedSale.id,
       invoiceId: savedInvoice.id,
-      method: paymentMethod,
+      method: input.paymentMethod,
       status: 'paid',
-      amount: amountPaid,
+      amount: input.amountPaid,
       paidAt: now,
       createdAt: now,
       updatedAt: now,
@@ -262,11 +319,11 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
       invoiceNumber: savedInvoice.invoiceNumber,
       paymentId: savedPayment.id,
       subtotal,
-      discount,
-      tax,
+      discount: input.discount,
+      tax: input.tax,
       total,
-      amountPaid,
-      paymentMethod,
+      amountPaid: input.amountPaid,
+      paymentMethod: input.paymentMethod,
       items: savedItems,
     }
   })

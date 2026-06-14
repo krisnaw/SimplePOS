@@ -14,6 +14,7 @@ import { SectionWorkspace } from '@/renderer/workspaces/SectionWorkspace'
 import { SettingsWorkspace } from '@/renderer/workspaces/SettingsWorkspace'
 import { UserGuideWorkspace } from '@/renderer/workspaces/UserGuideWorkspace'
 import { UserManagement } from '@/renderer/workspaces/UserManagement'
+import { WorkOrderWorkspace } from '@/renderer/workspaces/WorkOrderWorkspace'
 import { cn } from '@/renderer/lib/utils'
 
 type DashboardLocationState = {
@@ -184,6 +185,7 @@ export default function Dashboard() {
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
               {activeSection === 'sales' ? <SalesWorkspace /> : null}
               {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
+              {activeSection === 'work-orders' ? <WorkOrderWorkspace currentUser={user} /> : null}
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
               {activeSection === 'invoices' ? <InvoiceWorkspace /> : null}
               {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
@@ -193,6 +195,7 @@ export default function Dashboard() {
               {activeSection !== 'dashboard' &&
               activeSection !== 'sales' &&
               activeSection !== 'inventory' &&
+              activeSection !== 'work-orders' &&
               activeSection !== 'customers' &&
               activeSection !== 'invoices' &&
               activeSection !== 'users' &&

@@ -235,6 +235,80 @@ type InvoiceDetail = InvoiceSummary & {
   payment: InvoicePaymentSummary | null
 }
 
+type WorkOrderStatus = 'draft' | 'open' | 'in_progress' | 'completed' | 'invoiced' | 'cancelled'
+type WorkOrderPriority = 'low' | 'normal' | 'high' | 'urgent'
+
+type WorkOrderItemSummary = {
+  id: number
+  itemType: 'product' | 'service'
+  productId: number | null
+  serviceId: number | null
+  name: string
+  sku: string | null
+  quantity: number
+  unitPrice: number
+  lineTotal: number
+  createdAt: string
+  updatedAt: string
+}
+
+type WorkOrderSummary = {
+  id: number
+  orderNumber: string
+  customerId: number
+  customerName: string
+  vehicleId: number
+  vehicleName: string
+  plateNumber: string
+  assignedUserId: number | null
+  assignedUserName: string | null
+  status: WorkOrderStatus
+  priority: WorkOrderPriority
+  complaint: string
+  notes: string | null
+  odometer: number | null
+  itemCount: number
+  subtotal: number
+  discount: number
+  tax: number
+  total: number
+  invoiceId: number | null
+  invoiceNumber: string | null
+  createdAt: string
+  updatedAt: string
+  completedAt: string | null
+  invoicedAt: string | null
+  cancelledAt: string | null
+}
+
+type WorkOrderDetail = WorkOrderSummary & {
+  customerPhone: string | null
+  customerEmail: string | null
+  customerAddress: string | null
+  vehicleBrand: string
+  vehicleModel: string
+  vehicleYear: number | null
+  vehicleColor: string | null
+  items: WorkOrderItemSummary[]
+}
+
+type WorkOrderListInput = {
+  search?: string
+  status?: WorkOrderStatus | 'all'
+  dateFrom?: string
+  dateTo?: string
+}
+
+type WorkOrderMutationResult = {
+  ok: boolean
+  message: string
+  workOrder?: WorkOrderDetail
+}
+
+type WorkOrderCheckoutResult = CheckoutResult & {
+  workOrder?: WorkOrderDetail
+}
+
 type ReportPeriod = 'today' | 'week' | 'month' | 'quarter'
 
 type DashboardRecentTransaction = {
@@ -249,6 +323,9 @@ type DashboardSummary = {
   paidSalesTotal: number
   paidInvoiceCount: number
   lowStockCount: number
+  openWorkOrderCount: number
+  inProgressWorkOrderCount: number
+  completedWorkOrderCount: number
   recentTransactions: DashboardRecentTransaction[]
 }
 
@@ -285,6 +362,10 @@ type ReportSummary = {
   taxTotal: number
   inventoryValue: number
   lowStockCount: number
+  workOrderCount: number
+  completedWorkOrderCount: number
+  invoicedWorkOrderCount: number
+  workOrderCompletionRate: number
   paymentMethods: PaymentMethodSummary[]
   lowStockItems: LowStockItemSummary[]
   topSellingItems: TopSellingItemSummary[]
@@ -336,6 +417,30 @@ declare global {
       invoices: {
         list: (input?: InvoiceListInput) => Promise<InvoiceSummary[]>
         get: (input: { id: number }) => Promise<InvoiceDetail | null>
+      }
+      workOrders: {
+        list: (input?: WorkOrderListInput) => Promise<WorkOrderSummary[]>
+        get: (input: { id: number }) => Promise<WorkOrderDetail | null>
+        create: (input: Record<string, unknown>) => Promise<WorkOrderMutationResult>
+        update: (input: Record<string, unknown>) => Promise<WorkOrderMutationResult>
+        updateStatus: (input: { id: number; status: WorkOrderStatus }) => Promise<WorkOrderMutationResult>
+        addItem: (input: {
+          workOrderId: number
+          itemType: 'product' | 'service'
+          id: number
+          quantity: number
+        }) => Promise<WorkOrderMutationResult>
+        updateItem: (input: { id: number; quantity: number }) => Promise<WorkOrderMutationResult>
+        deleteItem: (input: { id: number }) => Promise<WorkOrderMutationResult>
+        checkout: (input: {
+          id: number
+          createdById?: number | null
+          paymentMethod?: PaymentMethod
+          amountPaid?: number
+          discount?: number
+          tax?: number
+          notes?: string | null
+        }) => Promise<WorkOrderCheckoutResult>
       }
       customers: {
         list: () => Promise<CustomerSummary[]>

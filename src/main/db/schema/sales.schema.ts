@@ -4,6 +4,7 @@ import { customers } from './customer.schema'
 import { products } from './product.schema'
 import { services } from './service.schema'
 import { users } from './user.schema'
+import { workOrders } from './work-order.schema'
 
 export type SaleStatus = 'completed' | 'void'
 export type SaleItemType = 'product' | 'service'
@@ -13,6 +14,7 @@ export type PaymentStatus = 'paid' | 'refunded' | 'void'
 
 export const sales = sqliteTable('sales', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  workOrderId: integer('work_order_id').references(() => workOrders.id),
   customerId: integer('customer_id').references(() => customers.id),
   createdById: integer('created_by_id').references(() => users.id),
   status: text('status').notNull().$type<SaleStatus>().default('completed'),
@@ -48,6 +50,7 @@ export type NewSaleItem = typeof saleItems.$inferInsert
 export const invoices = sqliteTable('invoices', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   saleId: integer('sale_id').notNull().references(() => sales.id),
+  workOrderId: integer('work_order_id').references(() => workOrders.id),
   invoiceNumber: text('invoice_number').notNull().unique(),
   status: text('status').notNull().$type<InvoiceStatus>().default('paid'),
   subtotal: integer('subtotal').notNull().default(0),

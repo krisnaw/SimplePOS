@@ -381,12 +381,12 @@ export function SalesWorkspace() {
             />
             <Input
               ref={searchInputRef}
-              type="search"
+              type="text"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search products, services, SKU, category..."
               aria-label="Search products and services"
-              className="pl-9 pr-9"
+              className="h-10 pl-9 pr-11"
             />
             {searchQuery ? (
               <button
@@ -394,7 +394,7 @@ export function SalesWorkspace() {
                 aria-label="Clear search"
                 onClick={() => setSearchQuery('')}
                 className={cn(
-                  'absolute top-1/2 right-1 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]',
+                  'absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]',
                   qtyButtonClass,
                 )}
               >

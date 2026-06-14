@@ -51,6 +51,17 @@ contextBridge.exposeInMainWorld('simplepos', {
     list: (input?: Record<string, unknown>) => ipcRenderer.invoke('invoices:list', input ?? {}),
     get: (input: { id: number }) => ipcRenderer.invoke('invoices:get', input),
   },
+  workOrders: {
+    list: (input?: Record<string, unknown>) => ipcRenderer.invoke('workOrders:list', input ?? {}),
+    get: (input: { id: number }) => ipcRenderer.invoke('workOrders:get', input),
+    create: (input: Record<string, unknown>) => ipcRenderer.invoke('workOrders:create', input),
+    update: (input: Record<string, unknown>) => ipcRenderer.invoke('workOrders:update', input),
+    updateStatus: (input: Record<string, unknown>) => ipcRenderer.invoke('workOrders:updateStatus', input),
+    addItem: (input: Record<string, unknown>) => ipcRenderer.invoke('workOrders:addItem', input),
+    updateItem: (input: Record<string, unknown>) => ipcRenderer.invoke('workOrders:updateItem', input),
+    deleteItem: (input: { id: number }) => ipcRenderer.invoke('workOrders:deleteItem', input),
+    checkout: (input: Record<string, unknown>) => ipcRenderer.invoke('workOrders:checkout', input),
+  },
   customers: {
     list: () => ipcRenderer.invoke('customers:list'),
     create: (input: Record<string, unknown>) => ipcRenderer.invoke('customers:create', input),

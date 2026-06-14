@@ -18,6 +18,37 @@ The Dashboard is your command center.
 
 ---
 
+## Sales vs Work Orders
+
+SimplePOS has two related but separate workflows:
+
+```txt
+Direct Sale
+Sales / POS -> Checkout -> Sale + Invoice + Payment
+```
+
+```txt
+Repair Job
+Work Order -> Add services/products -> Complete -> Checkout -> Sale + Invoice + Payment
+```
+
+Use **Sales / POS** when the customer pays immediately. This is best for quick product sales, simple service charges, or any transaction where the items and payment are known right away.
+
+Use **Work Orders** when a vehicle or repair job needs to be tracked before payment. A work order records the customer, vehicle, complaint, notes, assigned staff, job status, services, and products while the repair is still being handled.
+
+The records have different purposes:
+
+| Record | Purpose |
+|---|---|
+| **Work Order** | Tracks the repair job before checkout. |
+| **Sale** | Records the financial transaction at checkout. |
+| **Invoice** | Provides the final bill or receipt from the sale. |
+| **Payment** | Records how the customer paid. |
+
+When a completed Work Order is checked out, SimplePOS creates a normal **Sale**, **Sale Items**, **Invoice**, and **Payment**. The sale and invoice are linked back to the original work order, so the job history and financial record stay connected.
+
+---
+
 ## 🚗 Managing Customers & Vehicles
 Before creating a work order, you need a customer and their vehicle in the system.
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, Boxes, CreditCard, Download, Receipt } from 'lucide-react'
+import { BarChart3, Boxes, ClipboardList, CreditCard, Download, Receipt } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Label } from '@/renderer/components/ui/label'
@@ -18,6 +18,10 @@ const emptyReport: ReportSummary = {
   taxTotal: 0,
   inventoryValue: 0,
   lowStockCount: 0,
+  workOrderCount: 0,
+  completedWorkOrderCount: 0,
+  invoicedWorkOrderCount: 0,
+  workOrderCompletionRate: 0,
   paymentMethods: [],
   lowStockItems: [],
   topSellingItems: [],
@@ -105,6 +109,13 @@ export function ReportsWorkspace() {
       helper: 'Selected period',
       icon: CreditCard,
     },
+    {
+      title: 'Work Orders',
+      description: 'Repair jobs opened in this period.',
+      value: String(report.workOrderCount),
+      helper: `${report.completedWorkOrderCount} completed · ${report.workOrderCompletionRate}% rate`,
+      icon: ClipboardList,
+    },
   ]
 
   return (
@@ -145,7 +156,7 @@ export function ReportsWorkspace() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {reportGroups.map((summary) => {
           const Icon = summary.icon
 
