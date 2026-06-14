@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Mail, MapPin, Pencil, Phone, Plus, Search } from 'lucide-react'
+import { ChevronLeft, Mail, MapPin, Pencil, Phone, Plus, Search, UserRound } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
@@ -172,6 +172,10 @@ function formatDate(value: string): string {
   }).format(new Date(value))
 }
 
+function RequiredMark() {
+  return <span className="ml-0.5 text-destructive" aria-hidden="true">*</span>
+}
+
 export function CustomerWorkspace() {
   const [customers, setCustomers] = useState<CustomerSummary[]>(customerSeeds)
   const [vehicles, setVehicles] = useState<VehicleSummary[]>(vehicleSeeds)
@@ -183,7 +187,12 @@ export function CustomerWorkspace() {
   const [message, setMessage] = useState('')
   const [vehicleMessage, setVehicleMessage] = useState('')
   const [isEditingCustomer, setIsEditingCustomer] = useState(false)
+  const [isEditingVehicle, setIsEditingVehicle] = useState(false)
   const [view, setView] = useState<'list' | 'detail'>('list')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isVehicleSubmitting, setIsVehicleSubmitting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingVehicleDelete, setConfirmingVehicleDelete] = useState(false)
 
   const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null
   const selectedVehicle = vehicles.find((vehicle) => vehicle.id === selectedVehicleId) ?? null
@@ -255,6 +264,9 @@ export function CustomerWorkspace() {
     setMessage('')
     setVehicleMessage('')
     setIsEditingCustomer(false)
+    setIsEditingVehicle(false)
+    setConfirmingDelete(false)
+    setConfirmingVehicleDelete(false)
     setView('detail')
   }
 
@@ -266,11 +278,15 @@ export function CustomerWorkspace() {
     setMessage('')
     setVehicleMessage('')
     setIsEditingCustomer(false)
+    setIsEditingVehicle(false)
   }
 
   function goBackToList() {
     setView('list')
     setIsEditingCustomer(false)
+    setIsEditingVehicle(false)
+    setConfirmingDelete(false)
+    setConfirmingVehicleDelete(false)
     setForm(emptyForm)
     setMessage('')
   }
@@ -295,11 +311,21 @@ export function CustomerWorkspace() {
     setSelectedVehicleId(vehicle.id)
     setVehicleForm(toVehicleForm(vehicle))
     setVehicleMessage('')
+    setConfirmingVehicleDelete(false)
+    setIsEditingVehicle(true)
   }
 
   function startNewVehicle() {
     setSelectedVehicleId(null)
     setVehicleForm(emptyVehicleForm)
+    setVehicleMessage('')
+    setConfirmingVehicleDelete(false)
+    setIsEditingVehicle(true)
+  }
+
+  function cancelVehicleEdit() {
+    setIsEditingVehicle(false)
+    setConfirmingVehicleDelete(false)
     setVehicleMessage('')
   }
 
@@ -317,6 +343,8 @@ export function CustomerWorkspace() {
       return
     }
 
+    setIsSubmitting(true)
+
     if (selectedCustomer) {
       const result = await window.simplepos?.customers.update({
         id: selectedCustomer.id,
@@ -326,6 +354,8 @@ export function CustomerWorkspace() {
         address,
         notes,
       })
+
+      setIsSubmitting(false)
 
       if (result && !result.ok) {
         setMessage(result.message)
@@ -361,6 +391,8 @@ export function CustomerWorkspace() {
       notes,
     })
 
+    setIsSubmitting(false)
+
     if (result && !result.ok) {
       setMessage(result.message)
       return
@@ -389,10 +421,16 @@ export function CustomerWorkspace() {
   async function handleDeleteCustomer() {
     if (!selectedCustomer) return
 
+    if (!confirmingDelete) {
+      setConfirmingDelete(true)
+      return
+    }
+
     const result = await window.simplepos?.customers.delete({ id: selectedCustomer.id })
 
     if (result && !result.ok) {
       setMessage(result.message)
+      setConfirmingDelete(false)
       return
     }
 
@@ -402,8 +440,7 @@ export function CustomerWorkspace() {
     setSelectedVehicleId(null)
     setForm(emptyForm)
     setVehicleForm(emptyVehicleForm)
-    setMessage(result?.message ?? 'Customer deleted')
-    setVehicleMessage('')
+    setConfirmingDelete(false)
     setView('list')
   }
 
@@ -428,6 +465,8 @@ export function CustomerWorkspace() {
       return
     }
 
+    setIsVehicleSubmitting(true)
+
     if (selectedVehicle) {
       const result = await window.simplepos?.vehicles.update({
         id: selectedVehicle.id,
@@ -440,6 +479,8 @@ export function CustomerWorkspace() {
         color,
         notes,
       })
+
+      setIsVehicleSubmitting(false)
 
       if (result && !result.ok) {
         setVehicleMessage(result.message)
@@ -465,6 +506,7 @@ export function CustomerWorkspace() {
         ),
       )
       setVehicleMessage(result?.message ?? 'Vehicle updated')
+      setIsEditingVehicle(false)
       return
     }
 
@@ -478,6 +520,8 @@ export function CustomerWorkspace() {
       color,
       notes,
     })
+
+    setIsVehicleSubmitting(false)
 
     if (result && !result.ok) {
       setVehicleMessage(result.message)
@@ -501,28 +545,37 @@ export function CustomerWorkspace() {
     setVehicles((current) => [nextVehicle, ...current])
     setSelectedVehicleId(nextVehicle.id)
     setVehicleMessage(result?.message ?? 'Vehicle created')
+    setIsEditingVehicle(false)
   }
 
   async function handleDeleteVehicle() {
     if (!selectedVehicle) return
 
+    if (!confirmingVehicleDelete) {
+      setConfirmingVehicleDelete(true)
+      return
+    }
+
     const result = await window.simplepos?.vehicles.delete({ id: selectedVehicle.id })
 
     if (result && !result.ok) {
       setVehicleMessage(result.message)
+      setConfirmingVehicleDelete(false)
       return
     }
 
     setVehicles((current) => current.filter((vehicle) => vehicle.id !== selectedVehicle.id))
     setSelectedVehicleId(null)
     setVehicleForm(emptyVehicleForm)
+    setConfirmingVehicleDelete(false)
+    setIsEditingVehicle(false)
     setVehicleMessage(result?.message ?? 'Vehicle deleted')
   }
 
   if (view === 'detail' && selectedCustomer) {
     return (
       <div className="flex min-h-0 flex-col gap-4">
-        <nav className="flex items-center gap-2 text-sm">
+        <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
           <button
             type="button"
             onClick={goBackToList}
@@ -531,22 +584,25 @@ export function CustomerWorkspace() {
             <ChevronLeft className="size-4" aria-hidden="true" />
             Customers
           </button>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium">{selectedCustomer.name}</span>
+          <span className="text-muted-foreground" aria-hidden="true">/</span>
+          <span className="font-medium" aria-current="page">{selectedCustomer.name}</span>
         </nav>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex flex-col gap-4">
+            {/* Customer info card */}
             <Card>
               <CardHeader>
                 <CardTitle>{selectedCustomer.name}</CardTitle>
                 <CardDescription>Updated {formatDate(selectedCustomer.updatedAt)}</CardDescription>
-                <CardAction>
-                  <Button size="sm" variant="outline" onClick={() => setIsEditingCustomer(true)}>
-                    <Pencil data-icon="inline-start" aria-hidden="true" />
-                    Edit
-                  </Button>
-                </CardAction>
+                {!isEditingCustomer ? (
+                  <CardAction>
+                    <Button size="sm" variant="outline" onClick={() => setIsEditingCustomer(true)}>
+                      <Pencil data-icon="inline-start" aria-hidden="true" />
+                      Edit
+                    </Button>
+                  </CardAction>
+                ) : null}
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-3 text-sm">
@@ -574,12 +630,40 @@ export function CustomerWorkspace() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="button" variant="destructive" size="sm" onClick={handleDeleteCustomer}>
-                  Delete Customer
-                </Button>
+                {confirmingDelete ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Delete this customer?</span>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteCustomer}
+                    >
+                      Yes, delete
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setConfirmingDelete(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeleteCustomer}
+                  >
+                    Delete Customer
+                  </Button>
+                )}
               </CardFooter>
             </Card>
 
+            {/* Vehicles card */}
             <Card>
               <CardHeader>
                 <CardTitle>Vehicles</CardTitle>
@@ -602,9 +686,21 @@ export function CustomerWorkspace() {
               </CardHeader>
               <CardContent>
                 {selectedCustomerVehicles.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No vehicles linked to this customer.</p>
+                  <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-background py-8 text-center">
+                    <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                      <Phone className="size-4 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">No vehicles yet</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Click + to link a vehicle to this customer.</p>
+                    </div>
+                    <Button type="button" size="sm" variant="outline" onClick={startNewVehicle}>
+                      <Plus data-icon="inline-start" aria-hidden="true" />
+                      Add Vehicle
+                    </Button>
+                  </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5">
                     {selectedCustomerVehicles.map((vehicle) => (
                       <button
                         key={vehicle.id}
@@ -612,7 +708,7 @@ export function CustomerWorkspace() {
                         onClick={() => selectVehicle(vehicle)}
                         className={cn(
                           'flex items-center justify-between rounded-lg border bg-background px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-150 ease-out hover:bg-muted/60',
-                          selectedVehicleId === vehicle.id && 'border-primary/40 bg-primary/5',
+                          selectedVehicleId === vehicle.id && isEditingVehicle && 'border-primary/40 bg-primary/5',
                         )}
                       >
                         <span className="min-w-0">
@@ -623,17 +719,24 @@ export function CustomerWorkspace() {
                             {vehicle.plateNumber}
                           </span>
                         </span>
-                        {vehicle.color ? (
-                          <span className="ml-3 shrink-0 text-xs text-muted-foreground">{vehicle.color}</span>
-                        ) : null}
+                        <span className="ml-3 flex shrink-0 items-center gap-2">
+                          {vehicle.color ? (
+                            <span className="text-xs text-muted-foreground">{vehicle.color}</span>
+                          ) : null}
+                          <Pencil className="size-3 text-muted-foreground/50" aria-hidden="true" />
+                        </span>
                       </button>
                     ))}
+                    {vehicleMessage && !isEditingVehicle ? (
+                      <p className="mt-1 text-sm text-muted-foreground" role="status">{vehicleMessage}</p>
+                    ) : null}
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
 
+          {/* Right column: edit forms */}
           <div className="flex flex-col gap-3">
             {isEditingCustomer ? (
               <Card>
@@ -642,20 +745,25 @@ export function CustomerWorkspace() {
                   <CardDescription>Update contact details for future work orders.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
+                  <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="customer-name">Name</Label>
+                      <Label htmlFor="customer-name">
+                        Name <RequiredMark />
+                      </Label>
                       <Input
                         id="customer-name"
                         value={form.name}
                         onChange={(event) => updateForm('name', event.target.value)}
                         placeholder="Customer name"
+                        autoComplete="name"
                         required
                       />
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="customer-phone">Phone</Label>
+                      <Label htmlFor="customer-phone">
+                        Phone <RequiredMark />
+                      </Label>
                       <div className="relative">
                         <Phone
                           className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -663,10 +771,12 @@ export function CustomerWorkspace() {
                         />
                         <Input
                           id="customer-phone"
+                          type="tel"
                           value={form.phone}
                           onChange={(event) => updateForm('phone', event.target.value)}
                           placeholder="+62 812..."
                           className="pl-8"
+                          autoComplete="tel"
                           required
                         />
                       </div>
@@ -686,6 +796,7 @@ export function CustomerWorkspace() {
                           onChange={(event) => updateForm('email', event.target.value)}
                           placeholder="customer@example.com"
                           className="pl-8"
+                          autoComplete="email"
                         />
                       </div>
                     </div>
@@ -703,6 +814,7 @@ export function CustomerWorkspace() {
                           onChange={(event) => updateForm('address', event.target.value)}
                           placeholder="Street, area, city"
                           className="pl-8"
+                          autoComplete="street-address"
                         />
                       </div>
                     </div>
@@ -725,119 +837,168 @@ export function CustomerWorkspace() {
                 </CardContent>
                 <CardFooter>
                   <div className="flex gap-2">
-                    <Button type="submit" form="customer-form" className="flex-1">Update</Button>
-                    <Button type="button" variant="outline" onClick={cancelEdit}>Cancel</Button>
+                    <Button type="submit" form="customer-form" className="flex-1" disabled={isSubmitting}>
+                      {isSubmitting ? 'Saving...' : 'Update'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={cancelEdit} disabled={isSubmitting}>
+                      Cancel
+                    </Button>
                   </div>
                 </CardFooter>
               </Card>
             ) : null}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{selectedVehicle ? 'Edit Vehicle' : 'Create Vehicle'}</CardTitle>
-                <CardDescription>Linked to {selectedCustomer.name}.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleVehicleSubmit} className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="vehicle-plate">Plate Number</Label>
-                    <Input
-                      id="vehicle-plate"
-                      value={vehicleForm.plateNumber}
-                      onChange={(event) => updateVehicleForm('plateNumber', event.target.value)}
-                      placeholder="DK 1234 AB"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
+            {/* Vehicle form: shown only when actively editing/creating */}
+            {isEditingVehicle ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{selectedVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</CardTitle>
+                  <CardDescription>Linked to {selectedCustomer.name}.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form id="vehicle-form" onSubmit={handleVehicleSubmit} className="flex flex-col gap-3" noValidate>
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="vehicle-brand">Brand</Label>
+                      <Label htmlFor="vehicle-plate">
+                        Plate Number <RequiredMark />
+                      </Label>
                       <Input
-                        id="vehicle-brand"
-                        value={vehicleForm.brand}
-                        onChange={(event) => updateVehicleForm('brand', event.target.value)}
-                        placeholder="Toyota"
+                        id="vehicle-plate"
+                        value={vehicleForm.plateNumber}
+                        onChange={(event) => updateVehicleForm('plateNumber', event.target.value)}
+                        placeholder="DK 1234 AB"
                         required
                       />
                     </div>
 
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="vehicle-brand">
+                          Brand <RequiredMark />
+                        </Label>
+                        <Input
+                          id="vehicle-brand"
+                          value={vehicleForm.brand}
+                          onChange={(event) => updateVehicleForm('brand', event.target.value)}
+                          placeholder="Toyota"
+                          required
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="vehicle-model">
+                          Model <RequiredMark />
+                        </Label>
+                        <Input
+                          id="vehicle-model"
+                          value={vehicleForm.model}
+                          onChange={(event) => updateVehicleForm('model', event.target.value)}
+                          placeholder="Avanza"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="vehicle-year">Year</Label>
+                        <Input
+                          id="vehicle-year"
+                          inputMode="numeric"
+                          value={vehicleForm.year}
+                          onChange={(event) => updateVehicleForm('year', event.target.value)}
+                          placeholder="2021"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="vehicle-color">Color</Label>
+                        <Input
+                          id="vehicle-color"
+                          value={vehicleForm.color}
+                          onChange={(event) => updateVehicleForm('color', event.target.value)}
+                          placeholder="Silver"
+                        />
+                      </div>
+                    </div>
+
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="vehicle-model">Model</Label>
+                      <Label htmlFor="vehicle-vin">VIN</Label>
                       <Input
-                        id="vehicle-model"
-                        value={vehicleForm.model}
-                        onChange={(event) => updateVehicleForm('model', event.target.value)}
-                        placeholder="Avanza"
-                        required
+                        id="vehicle-vin"
+                        value={vehicleForm.vin}
+                        onChange={(event) => updateVehicleForm('vin', event.target.value)}
+                        placeholder="Optional chassis/VIN"
                       />
                     </div>
-                  </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="vehicle-year">Year</Label>
-                      <Input
-                        id="vehicle-year"
-                        inputMode="numeric"
-                        value={vehicleForm.year}
-                        onChange={(event) => updateVehicleForm('year', event.target.value)}
-                        placeholder="2021"
+                      <Label htmlFor="vehicle-notes">Notes</Label>
+                      <textarea
+                        id="vehicle-notes"
+                        value={vehicleForm.notes}
+                        onChange={(event) => updateVehicleForm('notes', event.target.value)}
+                        placeholder="Service intervals, known issues..."
+                        className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       />
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="vehicle-color">Color</Label>
-                      <Input
-                        id="vehicle-color"
-                        value={vehicleForm.color}
-                        onChange={(event) => updateVehicleForm('color', event.target.value)}
-                        placeholder="Silver"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="vehicle-vin">VIN</Label>
-                    <Input
-                      id="vehicle-vin"
-                      value={vehicleForm.vin}
-                      onChange={(event) => updateVehicleForm('vin', event.target.value)}
-                      placeholder="Optional chassis/VIN"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="vehicle-notes">Notes</Label>
-                    <textarea
-                      id="vehicle-notes"
-                      value={vehicleForm.notes}
-                      onChange={(event) => updateVehicleForm('notes', event.target.value)}
-                      placeholder="Service intervals, known issues..."
-                      className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                    />
-                  </div>
-
-                  {vehicleMessage ? (
-                    <p className="text-sm text-muted-foreground" role="status">{vehicleMessage}</p>
-                  ) : null}
-
-                  <div className="flex gap-2">
-                    <Button type="submit" className="flex-1">
-                      {selectedVehicle ? 'Update' : 'Create'}
-                    </Button>
-                    {selectedVehicle ? (
-                      <Button type="button" variant="destructive" onClick={handleDeleteVehicle}>
-                        Delete
-                      </Button>
+                    {vehicleMessage ? (
+                      <p className="text-sm text-muted-foreground" role="status">{vehicleMessage}</p>
                     ) : null}
-                    <Button type="button" variant="outline" onClick={startNewVehicle}>
-                      Clear
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+
+                    <div className="flex gap-2">
+                      <Button type="submit" form="vehicle-form" className="flex-1" disabled={isVehicleSubmitting}>
+                        {isVehicleSubmitting ? 'Saving...' : selectedVehicle ? 'Update' : 'Add Vehicle'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={cancelVehicleEdit}
+                        disabled={isVehicleSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+
+                    {selectedVehicle ? (
+                      <div className="border-t pt-3">
+                        {confirmingVehicleDelete ? (
+                          <div className="flex items-center gap-2">
+                            <span className="flex-1 text-xs text-muted-foreground">Remove this vehicle?</span>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={handleDeleteVehicle}
+                            >
+                              Yes, remove
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setConfirmingVehicleDelete(false)}
+                            >
+                              No
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={handleDeleteVehicle}
+                          >
+                            Remove vehicle
+                          </Button>
+                        )}
+                      </div>
+                    ) : null}
+                  </form>
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
         </div>
       </div>
@@ -882,7 +1043,11 @@ export function CustomerWorkspace() {
         <Card>
           <CardHeader>
             <CardTitle>Customer List</CardTitle>
-            <CardDescription>Find customers by name, phone, email, or address.</CardDescription>
+            <CardDescription>
+              {searchQuery.trim()
+                ? `${filteredCustomers.length} of ${customers.length} customers`
+                : `${customers.length} customer${customers.length !== 1 ? 's' : ''}`}
+            </CardDescription>
             <CardAction>
               <Button
                 type="button"
@@ -906,43 +1071,60 @@ export function CustomerWorkspace() {
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search customers"
                 className="pl-8"
+                aria-label="Search customers"
               />
             </div>
-            <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
-              <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
-                <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
-                  <span>Customer</span>
-                  <span>Phone</span>
-                  <span>Address</span>
-                  <span className="text-right">Updated</span>
+
+            {customers.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-background py-12 text-center">
+                <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                  <UserRound className="size-5 text-muted-foreground" aria-hidden="true" />
                 </div>
-
-                <div className="min-h-0 flex-1 divide-y overflow-y-auto">
-                  {filteredCustomers.length === 0 ? (
-                    <div className="px-3 py-6 text-sm text-muted-foreground">No customers match this search.</div>
-                  ) : null}
-
-                  {filteredCustomers.map((customer) => (
-                    <button
-                      key={customer.id}
-                      type="button"
-                      onClick={() => selectCustomer(customer)}
-                      className="grid min-h-12 w-full grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 px-3 py-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/60 active:scale-[0.99]"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{customer.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{customer.email || 'No email'}</span>
-                      </span>
-                      <span className="truncate tabular-nums">{customer.phone}</span>
-                      <span className="truncate text-muted-foreground">{customer.address || 'No address'}</span>
-                      <span className="truncate text-right text-xs text-muted-foreground tabular-nums">
-                        {formatDate(customer.updatedAt)}
-                      </span>
-                    </button>
-                  ))}
+                <div>
+                  <p className="font-medium">No customers yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Add your first customer using the form on the right.</p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
+                <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
+                  <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    <span>Customer</span>
+                    <span>Phone</span>
+                    <span>Address</span>
+                    <span className="text-right">Updated</span>
+                  </div>
+
+                  <div className="min-h-0 flex-1 divide-y overflow-y-auto">
+                    {filteredCustomers.length === 0 ? (
+                      <div className="flex flex-col items-center gap-2 px-3 py-8 text-center">
+                        <p className="text-sm font-medium">No results for "{searchQuery}"</p>
+                        <p className="text-xs text-muted-foreground">Try a different name, phone, or address.</p>
+                      </div>
+                    ) : null}
+
+                    {filteredCustomers.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={() => selectCustomer(customer)}
+                        className="grid min-h-12 w-full grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 px-3 py-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/60 active:scale-[0.99]"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{customer.name}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{customer.email || 'No email'}</span>
+                        </span>
+                        <span className="truncate tabular-nums">{customer.phone}</span>
+                        <span className="truncate text-muted-foreground">{customer.address || 'No address'}</span>
+                        <span className="truncate text-right text-xs text-muted-foreground tabular-nums">
+                          {formatDate(customer.updatedAt)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -954,20 +1136,29 @@ export function CustomerWorkspace() {
             <CardDescription>Add a customer before linking vehicles.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+              <p className="text-xs text-muted-foreground">
+                Fields marked <span className="text-destructive">*</span> are required.
+              </p>
+
               <div className="flex flex-col gap-2">
-                <Label htmlFor="customer-name">Name</Label>
+                <Label htmlFor="customer-name">
+                  Name <RequiredMark />
+                </Label>
                 <Input
                   id="customer-name"
                   value={form.name}
                   onChange={(event) => updateForm('name', event.target.value)}
-                  placeholder="Customer name"
+                  placeholder="Budi Santoso"
+                  autoComplete="name"
                   required
                 />
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="customer-phone">Phone</Label>
+                <Label htmlFor="customer-phone">
+                  Phone <RequiredMark />
+                </Label>
                 <div className="relative">
                   <Phone
                     className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -975,10 +1166,12 @@ export function CustomerWorkspace() {
                   />
                   <Input
                     id="customer-phone"
+                    type="tel"
                     value={form.phone}
                     onChange={(event) => updateForm('phone', event.target.value)}
                     placeholder="+62 812..."
                     className="pl-8"
+                    autoComplete="tel"
                     required
                   />
                 </div>
@@ -998,6 +1191,7 @@ export function CustomerWorkspace() {
                     onChange={(event) => updateForm('email', event.target.value)}
                     placeholder="customer@example.com"
                     className="pl-8"
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -1015,6 +1209,7 @@ export function CustomerWorkspace() {
                     onChange={(event) => updateForm('address', event.target.value)}
                     placeholder="Street, area, city"
                     className="pl-8"
+                    autoComplete="street-address"
                   />
                 </div>
               </div>
@@ -1037,8 +1232,12 @@ export function CustomerWorkspace() {
           </CardContent>
           <CardFooter>
             <div className="flex gap-2">
-              <Button type="submit" form="customer-form" className="flex-1">Create</Button>
-              <Button type="button" variant="outline" onClick={startNewCustomer}>Clear</Button>
+              <Button type="submit" form="customer-form" className="flex-1" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Customer'}
+              </Button>
+              <Button type="button" variant="outline" onClick={startNewCustomer} disabled={isSubmitting}>
+                Clear
+              </Button>
             </div>
           </CardFooter>
         </Card>
