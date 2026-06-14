@@ -163,22 +163,18 @@ export function InvoiceWorkspace() {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-2">
-            <div className="grid shrink-0 gap-2">
-              <div className="relative">
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
+          <div className="grid grid-cols-4 gap-2">
+            <div className="col-span-3">
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Search
                 <Input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search invoice, work order, customer, payment"
-                  className="pl-8"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
+              </label>
+            </div>
+            <div>
               <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                 Status
                 <BaseSelect
@@ -192,14 +188,33 @@ export function InvoiceWorkspace() {
                   onValueChange={(value) => setStatusFilter(value as InvoiceStatusFilter)}
                 />
               </label>
-                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                  From
-                  <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
-                </label>
-                <label className="col-span-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                  To
-                  <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
-                </label>
+            </div>
+
+            <div className="col-span-2">
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                From
+                <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+              </label>
+            </div>
+
+            <div className="col-span-2">
+              <label className="col-span-2 flex flex-col gap-1 text-xs text-muted-foreground">
+                To
+                <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+              </label>
+            </div>
+          </div>
+
+
+          <div className="space-y-2">
+            <div className="grid shrink-0 gap-2">
+
+
+              <div className="grid grid-cols-2 gap-2">
+
+
+
+
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Car, Mail, MapPin, Phone, Plus, Search, UserRound } from 'lucide-react'
+import { ChevronLeft, Mail, MapPin, Pencil, Phone, Plus, Search } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
@@ -175,31 +175,15 @@ function formatDate(value: string): string {
 export function CustomerWorkspace() {
   const [customers, setCustomers] = useState<CustomerSummary[]>(customerSeeds)
   const [vehicles, setVehicles] = useState<VehicleSummary[]>(vehicleSeeds)
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(customerSeeds[0]?.id ?? null)
-  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(
-    vehicleSeeds.find((vehicle) => vehicle.customerId === customerSeeds[0]?.id)?.id ?? null,
-  )
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [form, setForm] = useState<CustomerFormState>(() => {
-    const firstCustomer = customerSeeds[0]
-
-    if (!firstCustomer) return emptyForm
-
-    return {
-      name: firstCustomer.name,
-      phone: firstCustomer.phone ?? '',
-      email: firstCustomer.email ?? '',
-      address: firstCustomer.address ?? '',
-      notes: firstCustomer.notes ?? '',
-    }
-  })
-  const [vehicleForm, setVehicleForm] = useState<VehicleFormState>(() => {
-    const firstVehicle = vehicleSeeds.find((vehicle) => vehicle.customerId === customerSeeds[0]?.id)
-
-    return firstVehicle ? toVehicleForm(firstVehicle) : emptyVehicleForm
-  })
+  const [form, setForm] = useState<CustomerFormState>(emptyForm)
+  const [vehicleForm, setVehicleForm] = useState<VehicleFormState>(emptyVehicleForm)
   const [message, setMessage] = useState('')
   const [vehicleMessage, setVehicleMessage] = useState('')
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false)
+  const [view, setView] = useState<'list' | 'detail'>('list')
 
   const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null
   const selectedVehicle = vehicles.find((vehicle) => vehicle.id === selectedVehicleId) ?? null
@@ -223,24 +207,6 @@ export function CustomerWorkspace() {
 
       setCustomers(customerList)
       setVehicles(vehicleList)
-
-      const firstCustomer = customerList[0] ?? null
-      const firstVehicle = firstCustomer
-        ? vehicleList.find((vehicle) => vehicle.customerId === firstCustomer.id && vehicle.isActive) ?? null
-        : null
-
-      setSelectedCustomerId(firstCustomer?.id ?? null)
-      setSelectedVehicleId(firstVehicle?.id ?? null)
-      setForm(firstCustomer
-        ? {
-            name: firstCustomer.name,
-            phone: firstCustomer.phone ?? '',
-            email: firstCustomer.email ?? '',
-            address: firstCustomer.address ?? '',
-            notes: firstCustomer.notes ?? '',
-          }
-        : emptyForm)
-      setVehicleForm(firstVehicle ? toVehicleForm(firstVehicle) : emptyVehicleForm)
     }
 
     void loadRecords().catch((error) => {
@@ -288,6 +254,8 @@ export function CustomerWorkspace() {
     setVehicleForm(nextVehicle ? toVehicleForm(nextVehicle) : emptyVehicleForm)
     setMessage('')
     setVehicleMessage('')
+    setIsEditingCustomer(false)
+    setView('detail')
   }
 
   function startNewCustomer() {
@@ -297,6 +265,30 @@ export function CustomerWorkspace() {
     setVehicleForm(emptyVehicleForm)
     setMessage('')
     setVehicleMessage('')
+    setIsEditingCustomer(false)
+  }
+
+  function goBackToList() {
+    setView('list')
+    setIsEditingCustomer(false)
+    setForm(emptyForm)
+    setMessage('')
+  }
+
+  function cancelEdit() {
+    if (selectedCustomer) {
+      setForm({
+        name: selectedCustomer.name,
+        phone: selectedCustomer.phone ?? '',
+        email: selectedCustomer.email ?? '',
+        address: selectedCustomer.address ?? '',
+        notes: selectedCustomer.notes ?? '',
+      })
+      setMessage('')
+      setIsEditingCustomer(false)
+    } else {
+      startNewCustomer()
+    }
   }
 
   function selectVehicle(vehicle: VehicleSummary) {
@@ -357,6 +349,7 @@ export function CustomerWorkspace() {
         ),
       )
       setMessage(result?.message ?? 'Customer updated')
+      setIsEditingCustomer(false)
       return
     }
 
@@ -389,6 +382,8 @@ export function CustomerWorkspace() {
     setSelectedVehicleId(null)
     setVehicleForm(emptyVehicleForm)
     setMessage(result?.message ?? 'Customer created')
+    setIsEditingCustomer(false)
+    setView('detail')
   }
 
   async function handleDeleteCustomer() {
@@ -409,6 +404,7 @@ export function CustomerWorkspace() {
     setVehicleForm(emptyVehicleForm)
     setMessage(result?.message ?? 'Customer deleted')
     setVehicleMessage('')
+    setView('list')
   }
 
   async function handleVehicleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -523,6 +519,331 @@ export function CustomerWorkspace() {
     setVehicleMessage(result?.message ?? 'Vehicle deleted')
   }
 
+  if (view === 'detail' && selectedCustomer) {
+    return (
+      <div className="flex min-h-0 flex-col gap-4">
+        <nav className="flex items-center gap-2 text-sm">
+          <button
+            type="button"
+            onClick={goBackToList}
+            className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ChevronLeft className="size-4" aria-hidden="true" />
+            Customers
+          </button>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-medium">{selectedCustomer.name}</span>
+        </nav>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex flex-col gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{selectedCustomer.name}</CardTitle>
+                <CardDescription>Updated {formatDate(selectedCustomer.updatedAt)}</CardDescription>
+                <CardAction>
+                  <Button size="sm" variant="outline" onClick={() => setIsEditingCustomer(true)}>
+                    <Pencil data-icon="inline-start" aria-hidden="true" />
+                    Edit
+                  </Button>
+                </CardAction>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Phone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <span className="truncate">{selectedCustomer.phone ?? 'No phone'}</span>
+                  </div>
+                  {selectedCustomer.email ? (
+                    <div className="flex items-center gap-2">
+                      <Mail className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <span className="truncate">{selectedCustomer.email}</span>
+                    </div>
+                  ) : null}
+                  {selectedCustomer.address ? (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <span className="text-pretty">{selectedCustomer.address}</span>
+                    </div>
+                  ) : null}
+                  {selectedCustomer.notes ? (
+                    <p className="rounded-lg bg-muted px-3 py-2 text-muted-foreground text-pretty">
+                      {selectedCustomer.notes}
+                    </p>
+                  ) : null}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="button" variant="destructive" size="sm" onClick={handleDeleteCustomer}>
+                  Delete Customer
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Vehicles</CardTitle>
+                <CardDescription>
+                  {selectedCustomerVehicles.length === 0
+                    ? 'No vehicles linked.'
+                    : `${selectedCustomerVehicles.length} vehicle${selectedCustomerVehicles.length !== 1 ? 's' : ''} linked.`}
+                </CardDescription>
+                <CardAction>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Add vehicle"
+                    onClick={startNewVehicle}
+                  >
+                    <Plus aria-hidden="true" />
+                  </Button>
+                </CardAction>
+              </CardHeader>
+              <CardContent>
+                {selectedCustomerVehicles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No vehicles linked to this customer.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {selectedCustomerVehicles.map((vehicle) => (
+                      <button
+                        key={vehicle.id}
+                        type="button"
+                        onClick={() => selectVehicle(vehicle)}
+                        className={cn(
+                          'flex items-center justify-between rounded-lg border bg-background px-3 py-2.5 text-left text-sm transition-[background-color,border-color] duration-150 ease-out hover:bg-muted/60',
+                          selectedVehicleId === vehicle.id && 'border-primary/40 bg-primary/5',
+                        )}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">
+                            {vehicle.brand} {vehicle.model} {vehicle.year}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground tabular-nums">
+                            {vehicle.plateNumber}
+                          </span>
+                        </span>
+                        {vehicle.color ? (
+                          <span className="ml-3 shrink-0 text-xs text-muted-foreground">{vehicle.color}</span>
+                        ) : null}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {isEditingCustomer ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Edit Customer</CardTitle>
+                  <CardDescription>Update contact details for future work orders.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="customer-name">Name</Label>
+                      <Input
+                        id="customer-name"
+                        value={form.name}
+                        onChange={(event) => updateForm('name', event.target.value)}
+                        placeholder="Customer name"
+                        required
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="customer-phone">Phone</Label>
+                      <div className="relative">
+                        <Phone
+                          className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                        <Input
+                          id="customer-phone"
+                          value={form.phone}
+                          onChange={(event) => updateForm('phone', event.target.value)}
+                          placeholder="+62 812..."
+                          className="pl-8"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="customer-email">Email</Label>
+                      <div className="relative">
+                        <Mail
+                          className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                        <Input
+                          id="customer-email"
+                          type="email"
+                          value={form.email}
+                          onChange={(event) => updateForm('email', event.target.value)}
+                          placeholder="customer@example.com"
+                          className="pl-8"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="customer-address">Address</Label>
+                      <div className="relative">
+                        <MapPin
+                          className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                        <Input
+                          id="customer-address"
+                          value={form.address}
+                          onChange={(event) => updateForm('address', event.target.value)}
+                          placeholder="Street, area, city"
+                          className="pl-8"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="customer-notes">Notes</Label>
+                      <textarea
+                        id="customer-notes"
+                        value={form.notes}
+                        onChange={(event) => updateForm('notes', event.target.value)}
+                        placeholder="Service preferences, billing notes..."
+                        className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      />
+                    </div>
+
+                    {message ? (
+                      <p className="text-sm text-muted-foreground" role="status">{message}</p>
+                    ) : null}
+                  </form>
+                </CardContent>
+                <CardFooter>
+                  <div className="flex gap-2">
+                    <Button type="submit" form="customer-form" className="flex-1">Update</Button>
+                    <Button type="button" variant="outline" onClick={cancelEdit}>Cancel</Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            ) : null}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{selectedVehicle ? 'Edit Vehicle' : 'Create Vehicle'}</CardTitle>
+                <CardDescription>Linked to {selectedCustomer.name}.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleVehicleSubmit} className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="vehicle-plate">Plate Number</Label>
+                    <Input
+                      id="vehicle-plate"
+                      value={vehicleForm.plateNumber}
+                      onChange={(event) => updateVehicleForm('plateNumber', event.target.value)}
+                      placeholder="DK 1234 AB"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="vehicle-brand">Brand</Label>
+                      <Input
+                        id="vehicle-brand"
+                        value={vehicleForm.brand}
+                        onChange={(event) => updateVehicleForm('brand', event.target.value)}
+                        placeholder="Toyota"
+                        required
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="vehicle-model">Model</Label>
+                      <Input
+                        id="vehicle-model"
+                        value={vehicleForm.model}
+                        onChange={(event) => updateVehicleForm('model', event.target.value)}
+                        placeholder="Avanza"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="vehicle-year">Year</Label>
+                      <Input
+                        id="vehicle-year"
+                        inputMode="numeric"
+                        value={vehicleForm.year}
+                        onChange={(event) => updateVehicleForm('year', event.target.value)}
+                        placeholder="2021"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="vehicle-color">Color</Label>
+                      <Input
+                        id="vehicle-color"
+                        value={vehicleForm.color}
+                        onChange={(event) => updateVehicleForm('color', event.target.value)}
+                        placeholder="Silver"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="vehicle-vin">VIN</Label>
+                    <Input
+                      id="vehicle-vin"
+                      value={vehicleForm.vin}
+                      onChange={(event) => updateVehicleForm('vin', event.target.value)}
+                      placeholder="Optional chassis/VIN"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="vehicle-notes">Notes</Label>
+                    <textarea
+                      id="vehicle-notes"
+                      value={vehicleForm.notes}
+                      onChange={(event) => updateVehicleForm('notes', event.target.value)}
+                      placeholder="Service intervals, known issues..."
+                      className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    />
+                  </div>
+
+                  {vehicleMessage ? (
+                    <p className="text-sm text-muted-foreground" role="status">{vehicleMessage}</p>
+                  ) : null}
+
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1">
+                      {selectedVehicle ? 'Update' : 'Create'}
+                    </Button>
+                    {selectedVehicle ? (
+                      <Button type="button" variant="destructive" onClick={handleDeleteVehicle}>
+                        Delete
+                      </Button>
+                    ) : null}
+                    <Button type="button" variant="outline" onClick={startNewVehicle}>
+                      Clear
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex min-h-0 flex-col gap-3">
@@ -588,106 +909,34 @@ export function CustomerWorkspace() {
               />
             </div>
             <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
-                <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
-                  <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
-                    <span>Customer</span>
-                    <span>Phone</span>
-                    <span>Address</span>
-                    <span className="text-right">Updated</span>
-                  </div>
-
-                  <div className="min-h-0 flex-1 divide-y overflow-y-auto">
-                    {filteredCustomers.length === 0 ? (
-                      <div className="px-3 py-6 text-sm text-muted-foreground">No customers match this search.</div>
-                    ) : null}
-
-                    {filteredCustomers.map((customer) => (
-                      <button
-                        key={customer.id}
-                        type="button"
-                        onClick={() => selectCustomer(customer)}
-                        className={cn(
-                          'grid min-h-12 w-full grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 px-3 py-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/60 active:scale-[0.99]',
-                          selectedCustomerId === customer.id && 'bg-muted',
-                        )}
-                      >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{customer.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{customer.email || 'No email'}</span>
-                      </span>
-                        <span className="truncate tabular-nums">{customer.phone}</span>
-                        <span className="truncate text-muted-foreground">{customer.address || 'No address'}</span>
-                        <span className="truncate text-right text-xs text-muted-foreground tabular-nums">
-                        {formatDate(customer.updatedAt)}
-                      </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Vehicle List</CardTitle>
-            <CardDescription>
-              {selectedCustomer ? `Vehicles linked to ${selectedCustomer.name}.` : 'Select a customer to manage vehicles.'}
-            </CardDescription>
-            <CardAction>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Create vehicle"
-                disabled={!selectedCustomer}
-                onClick={startNewVehicle}
-              >
-                <Plus aria-hidden="true" />
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent>
-            <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
               <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
-                <div className="grid shrink-0 grid-cols-[minmax(180px,1fr)_minmax(140px,0.8fr)_minmax(120px,0.7fr)_minmax(120px,0.7fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
-                  <span>Vehicle</span>
-                  <span>Plate</span>
-                  <span>Color</span>
+                <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
+                  <span>Customer</span>
+                  <span>Phone</span>
+                  <span>Address</span>
                   <span className="text-right">Updated</span>
                 </div>
 
                 <div className="min-h-0 flex-1 divide-y overflow-y-auto">
-                  {!selectedCustomer ? (
-                    <div className="px-3 py-6 text-sm text-muted-foreground">Select a customer first.</div>
+                  {filteredCustomers.length === 0 ? (
+                    <div className="px-3 py-6 text-sm text-muted-foreground">No customers match this search.</div>
                   ) : null}
 
-                  {selectedCustomer && selectedCustomerVehicles.length === 0 ? (
-                    <div className="px-3 py-6 text-sm text-muted-foreground">No vehicles linked to this customer.</div>
-                  ) : null}
-
-                  {selectedCustomerVehicles.map((vehicle) => (
+                  {filteredCustomers.map((customer) => (
                     <button
-                      key={vehicle.id}
+                      key={customer.id}
                       type="button"
-                      onClick={() => selectVehicle(vehicle)}
-                      className={cn(
-                        'grid min-h-12 w-full grid-cols-[minmax(180px,1fr)_minmax(140px,0.8fr)_minmax(120px,0.7fr)_minmax(120px,0.7fr)] items-center gap-3 px-3 py-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/60 active:scale-[0.99]',
-                        selectedVehicleId === vehicle.id && 'bg-muted',
-                      )}
+                      onClick={() => selectCustomer(customer)}
+                      className="grid min-h-12 w-full grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 px-3 py-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/60 active:scale-[0.99]"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-medium">
-                          {vehicle.brand} {vehicle.model}
-                        </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {vehicle.year || 'Year unknown'} {vehicle.vin ? `- ${vehicle.vin}` : ''}
-                        </span>
+                        <span className="block truncate font-medium">{customer.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{customer.email || 'No email'}</span>
                       </span>
-                      <span className="truncate font-medium tabular-nums">{vehicle.plateNumber}</span>
-                      <span className="truncate text-muted-foreground">{vehicle.color || 'No color'}</span>
+                      <span className="truncate tabular-nums">{customer.phone}</span>
+                      <span className="truncate text-muted-foreground">{customer.address || 'No address'}</span>
                       <span className="truncate text-right text-xs text-muted-foreground tabular-nums">
-                        {formatDate(vehicle.updatedAt)}
+                        {formatDate(customer.updatedAt)}
                       </span>
                     </button>
                   ))}
@@ -698,18 +947,11 @@ export function CustomerWorkspace() {
         </Card>
       </div>
 
-      <div className="flex min-h-0 flex-col gap-3 overflow-auto">
+      <div className="flex min-h-0 flex-col gap-3">
         <Card>
           <CardHeader>
-            <CardTitle>
-              {selectedCustomer ? 'Edit Customer' : 'Create Customer'}
-            </CardTitle>
-            <CardDescription>
-              {selectedCustomer ? 'Update contact details for future work orders.' : 'Add a customer before linking vehicles.'}
-            </CardDescription>
-            <CardAction>
-              <UserRound aria-hidden="true" />
-            </CardAction>
+            <CardTitle>Create Customer</CardTitle>
+            <CardDescription>Add a customer before linking vehicles.</CardDescription>
           </CardHeader>
           <CardContent>
             <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -789,149 +1031,16 @@ export function CustomerWorkspace() {
               </div>
 
               {message ? (
-                <p className="text-sm text-muted-foreground" role="status">
-                  {message}
-                </p>
+                <p className="text-sm text-muted-foreground" role="status">{message}</p>
               ) : null}
-
             </form>
           </CardContent>
           <CardFooter>
             <div className="flex gap-2">
-              <Button type="submit" form="customer-form" className="flex-1">
-                {selectedCustomer ? 'Update' : 'Create'}
-              </Button>
-              {selectedCustomer ? (
-                <Button type="button" variant="destructive" onClick={handleDeleteCustomer}>
-                  Delete
-                </Button>
-              ) : null}
-              <Button type="button" variant="outline" onClick={startNewCustomer}>
-                Clear
-              </Button>
+              <Button type="submit" form="customer-form" className="flex-1">Create</Button>
+              <Button type="button" variant="outline" onClick={startNewCustomer}>Clear</Button>
             </div>
           </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Car aria-hidden="true" />
-              {selectedVehicle ? 'Edit Vehicle' : 'Create Vehicle'}
-            </CardTitle>
-            <CardDescription>
-              {selectedCustomer ? `Linked to ${selectedCustomer.name}.` : 'Select a customer before adding a vehicle.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleVehicleSubmit} className="flex flex-col gap-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="vehicle-plate">Plate Number</Label>
-                <Input
-                  id="vehicle-plate"
-                  value={vehicleForm.plateNumber}
-                  onChange={(event) => updateVehicleForm('plateNumber', event.target.value)}
-                  placeholder="DK 1234 AB"
-                  disabled={!selectedCustomer}
-                  required
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="vehicle-brand">Brand</Label>
-                  <Input
-                    id="vehicle-brand"
-                    value={vehicleForm.brand}
-                    onChange={(event) => updateVehicleForm('brand', event.target.value)}
-                    placeholder="Toyota"
-                    disabled={!selectedCustomer}
-                    required
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="vehicle-model">Model</Label>
-                  <Input
-                    id="vehicle-model"
-                    value={vehicleForm.model}
-                    onChange={(event) => updateVehicleForm('model', event.target.value)}
-                    placeholder="Avanza"
-                    disabled={!selectedCustomer}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="vehicle-year">Year</Label>
-                  <Input
-                    id="vehicle-year"
-                    inputMode="numeric"
-                    value={vehicleForm.year}
-                    onChange={(event) => updateVehicleForm('year', event.target.value)}
-                    placeholder="2021"
-                    disabled={!selectedCustomer}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="vehicle-color">Color</Label>
-                  <Input
-                    id="vehicle-color"
-                    value={vehicleForm.color}
-                    onChange={(event) => updateVehicleForm('color', event.target.value)}
-                    placeholder="Silver"
-                    disabled={!selectedCustomer}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="vehicle-vin">VIN</Label>
-                <Input
-                  id="vehicle-vin"
-                  value={vehicleForm.vin}
-                  onChange={(event) => updateVehicleForm('vin', event.target.value)}
-                  placeholder="Optional chassis/VIN"
-                  disabled={!selectedCustomer}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="vehicle-notes">Notes</Label>
-                <textarea
-                  id="vehicle-notes"
-                  value={vehicleForm.notes}
-                  onChange={(event) => updateVehicleForm('notes', event.target.value)}
-                  placeholder="Service intervals, known issues..."
-                  disabled={!selectedCustomer}
-                  className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-
-              {vehicleMessage ? (
-                <p className="text-sm text-muted-foreground" role="status">
-                  {vehicleMessage}
-                </p>
-              ) : null}
-
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1" disabled={!selectedCustomer}>
-                  {selectedVehicle ? 'Update' : 'Create'}
-                </Button>
-                {selectedVehicle ? (
-                  <Button type="button" variant="destructive" onClick={handleDeleteVehicle}>
-                    Delete
-                  </Button>
-                ) : null}
-                <Button type="button" variant="outline" disabled={!selectedCustomer} onClick={startNewVehicle}>
-                  Clear
-                </Button>
-              </div>
-            </form>
-          </CardContent>
         </Card>
       </div>
     </div>
