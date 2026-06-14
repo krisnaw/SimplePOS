@@ -3,6 +3,7 @@ import {
   Check,
   ClipboardList,
   FileText,
+  Loader2,
   Minus,
   Plus,
   RefreshCw,
@@ -420,10 +421,15 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             </div>
           </div>
           {visibleWorkOrders.length === 0 ? (
-            <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed bg-background p-4 text-center shadow-border">
-              <p className="text-sm text-muted-foreground text-pretty">
-                {isLoading ? 'Loading work orders...' : 'No work orders found.'}
-              </p>
+            <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background p-4 text-center shadow-border">
+              {isLoading ? (
+                <>
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                  <p className="text-sm text-muted-foreground">Loading work orders...</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-pretty">No work orders found.</p>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-2">

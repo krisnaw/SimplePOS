@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronLeft, ChevronRight, Minus, Plus, Search, ShoppingCart, X } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Search, ShoppingCart, X } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
@@ -21,81 +21,6 @@ import type { SimplePosApi, SampleProduct, CartItem } from './SalesWorkspace.typ
 
 const UNLIMITED_STOCK = 999
 
-const sampleProducts: SampleProduct[] = [
-  {
-    id: 1,
-    itemType: 'product',
-    name: 'Engine Oil 10W-40',
-    category: 'Lubricants',
-    sku: 'OIL-10W40',
-    description: 'Semi-synthetic engine oil for routine maintenance and oil-change packages.',
-    compatibility: 'Gasoline engines, common passenger vehicles',
-    price: 85000,
-    stock: 24,
-    minStock: 5,
-  },
-  {
-    id: 2,
-    itemType: 'product',
-    name: 'Oil Filter',
-    category: 'Filters',
-    sku: 'FLT-OIL-01',
-    description: 'Standard spin-on oil filter for regular service work.',
-    compatibility: 'Most compact and mid-size vehicles',
-    price: 45000,
-    stock: 18,
-    minStock: 5,
-  },
-  {
-    id: 3,
-    itemType: 'product',
-    name: 'Brake Pad Set',
-    category: 'Brakes',
-    sku: 'BRK-PAD-SET',
-    description: 'Front brake pad set for brake replacement jobs.',
-    compatibility: 'Confirm by vehicle model before installation',
-    price: 320000,
-    stock: 8,
-    minStock: 5,
-  },
-  {
-    id: 4,
-    itemType: 'product',
-    name: 'Spark Plug',
-    category: 'Ignition',
-    sku: 'IGN-SPARK',
-    description: 'Single spark plug for ignition service and tune-ups.',
-    compatibility: 'Gasoline engines, model-specific fit',
-    price: 55000,
-    stock: 32,
-    minStock: 5,
-  },
-  {
-    id: 5,
-    itemType: 'product',
-    name: 'Air Filter',
-    category: 'Filters',
-    sku: 'FLT-AIR-01',
-    description: 'Engine air filter replacement for scheduled maintenance.',
-    compatibility: 'Confirm size by vehicle airbox',
-    price: 75000,
-    stock: 15,
-    minStock: 5,
-  },
-  {
-    id: 6,
-    itemType: 'service',
-    name: 'Standard Service Labor',
-    category: 'Service',
-    sku: 'SVC-STD',
-    description: 'Labor line item for standard inspection and service packages.',
-    compatibility: 'General shop service',
-    price: 150000,
-    stock: UNLIMITED_STOCK,
-    minStock: 0,
-  },
-]
-
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
 
@@ -116,7 +41,8 @@ function getCartKey(item: SampleProduct): string {
 
 export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const [catalogItems, setCatalogItems] = useState<SampleProduct[]>(sampleProducts)
+  const [catalogItems, setCatalogItems] = useState<SampleProduct[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [customers, setCustomers] = useState<CustomerSummary[]>([])
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -186,6 +112,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     let isMounted = true
 
     async function loadCatalog() {
+      setIsLoading(true)
       const [products, categories, services, customerList] = await Promise.all([
         window.simplepos?.products.list(),
         window.simplepos?.categories.list(),
@@ -226,10 +153,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       if (productItems.length > 0 || serviceItems.length > 0) {
         setCatalogItems([...serviceItems, ...productItems])
       }
+
+      setIsLoading(false)
     }
 
     void loadCatalog().catch(() => {
-      if (isMounted) setCatalogItems(sampleProducts)
+      if (isMounted) setIsLoading(false)
     })
 
     return () => {
@@ -424,16 +353,24 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             </p>
           </div>
 
-          {visibleProducts.length === 0 ? (
-            <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
-              <div className="flex max-w-xs flex-col gap-1">
-                <p className="text-sm font-medium text-balance">No items found</p>
-                <p className="text-sm text-muted-foreground text-pretty">
-                  Try another search term or category filter.
-                </p>
-              </div>
-            </div>
-          ) : (
+          {isLoading ? (
+             <div className="flex h-full min-h-64 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
+               <div className="flex flex-col items-center gap-3">
+                 <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                 <p className="text-sm text-muted-foreground">Loading catalog...</p>
+               </div>
+             </div>
+           ) : visibleProducts.length === 0 ? (
+             <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
+               <div className="flex max-w-xs flex-col gap-1">
+                 <p className="text-sm font-medium text-balance">No items found</p>
+                 <p className="text-sm text-muted-foreground text-pretty">
+                   Try another search term or category filter.
+                 </p>
+               </div>
+             </div>
+           ) : (
+
             <div className="stagger-children grid auto-rows-fr gap-3 overflow-hidden px-1 pt-1 pb-2 md:grid-cols-2 xl:grid-cols-3">
               {paginatedProducts.map((product) => {
                 const cartKey = getCartKey(product)

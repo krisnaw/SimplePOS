@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Checkbox } from '@/renderer/components/ui/checkbox'
@@ -133,7 +134,10 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
 
             <div className="divide-y">
               {isLoading ? (
-                <div className="px-3 py-6 text-sm text-muted-foreground">Loading users</div>
+                <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+                  <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden="true" />
+                  <p className="text-sm text-muted-foreground">Loading users...</p>
+                </div>
               ) : null}
 
               {!isLoading && users.length === 0 ? (

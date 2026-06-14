@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Download, Printer, Receipt, RefreshCw, Search } from 'lucide-react'
+import { CalendarDays, Download, Loader2, Printer, Receipt, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -204,7 +204,12 @@ export function InvoiceWorkspace() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-auto">
-              {loadError ? (
+              {isLoadingList ? (
+                <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background p-5 text-center">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                  <p className="text-sm text-muted-foreground">Loading invoices...</p>
+                </div>
+              ) : loadError ? (
                 <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
                   <div className="max-w-xs">
                     <p className="text-sm font-medium text-balance">Unable to load invoices</p>

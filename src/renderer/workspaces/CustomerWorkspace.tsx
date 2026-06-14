@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Mail, MapPin, Pencil, Phone, Plus, Search, UserRound } from 'lucide-react'
+import { ChevronLeft, Loader2, Mail, MapPin, Pencil, Phone, Plus, Search, UserRound } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
@@ -18,39 +18,6 @@ import type { CustomerSummary } from '@/shared/types/customer'
 import type { VehicleSummary } from '@/shared/types/vehicle'
 import type { CustomerFormState, VehicleFormState } from './CustomerWorkspace.types'
 
-const customerSeeds: CustomerSummary[] = [
-  {
-    id: 1,
-    name: 'Budi Santoso',
-    phone: '+62 812-4455-1901',
-    email: 'budi.santoso@example.com',
-    address: 'Jl. Ahmad Yani No. 18',
-    notes: 'Prefers WhatsApp updates before repair approval.',
-    isActive: true,
-    updatedAt: '2026-06-08T09:30:00.000Z',
-  },
-  {
-    id: 2,
-    name: 'Maya Putri',
-    phone: '+62 813-7721-8400',
-    email: 'maya.putri@example.com',
-    address: 'Jl. Gatot Subroto No. 42',
-    notes: 'Fleet contact for monthly maintenance.',
-    isActive: true,
-    updatedAt: '2026-06-07T14:10:00.000Z',
-  },
-  {
-    id: 3,
-    name: 'CV Nusantara Logistik',
-    phone: '+62 361-555-0188',
-    email: 'ops@nusantaralogistik.example',
-    address: 'Jl. Cargo Permai Blok C7',
-    notes: 'Business account, invoice after service completion.',
-    isActive: true,
-    updatedAt: '2026-06-05T11:45:00.000Z',
-  },
-]
-
 const emptyForm: CustomerFormState = {
   name: '',
   phone: '',
@@ -58,48 +25,6 @@ const emptyForm: CustomerFormState = {
   address: '',
   notes: '',
 }
-
-const vehicleSeeds: VehicleSummary[] = [
-  {
-    id: 1,
-    customerId: 1,
-    plateNumber: 'DK 1842 AB',
-    brand: 'Toyota',
-    model: 'Avanza',
-    year: 2019,
-    vin: 'MHKM5EA3JKK001842',
-    color: 'Silver',
-    notes: 'Routine service every 5,000 km.',
-    isActive: true,
-    updatedAt: '2026-06-08T10:15:00.000Z',
-  },
-  {
-    id: 2,
-    customerId: 2,
-    plateNumber: 'DK 9021 MP',
-    brand: 'Honda',
-    model: 'Brio',
-    year: 2021,
-    vin: 'MHRDD1850MJ009021',
-    color: 'White',
-    notes: 'Customer reported brake noise on last visit.',
-    isActive: true,
-    updatedAt: '2026-06-07T15:20:00.000Z',
-  },
-  {
-    id: 3,
-    customerId: 3,
-    plateNumber: 'DK 7710 NL',
-    brand: 'Mitsubishi',
-    model: 'L300',
-    year: 2018,
-    vin: 'MMBJNK740JK007710',
-    color: 'Black',
-    notes: 'Fleet vehicle, inspect suspension each visit.',
-    isActive: true,
-    updatedAt: '2026-06-05T13:00:00.000Z',
-  },
-]
 
 const emptyVehicleForm: VehicleFormState = {
   plateNumber: '',
@@ -128,8 +53,9 @@ function RequiredMark() {
 }
 
 export function CustomerWorkspace() {
-  const [customers, setCustomers] = useState<CustomerSummary[]>(customerSeeds)
-  const [vehicles, setVehicles] = useState<VehicleSummary[]>(vehicleSeeds)
+  const [customers, setCustomers] = useState<CustomerSummary[]>([])
+  const [vehicles, setVehicles] = useState<VehicleSummary[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -158,20 +84,26 @@ export function CustomerWorkspace() {
     let isMounted = true
 
     async function loadRecords() {
+      setIsLoading(true)
       const [customerList, vehicleList] = await Promise.all([
         window.simplepos?.customers.list(),
         window.simplepos?.vehicles.list(),
       ])
 
-      if (!isMounted || !customerList || !vehicleList) return
+      if (!isMounted) return
 
-      setCustomers(customerList)
-      setVehicles(vehicleList)
+      if (customerList && vehicleList) {
+        setCustomers(customerList)
+        setVehicles(vehicleList)
+      }
+
+      setIsLoading(false)
     }
 
     void loadRecords().catch((error) => {
       if (!isMounted) return
       setMessage(error instanceof Error ? error.message : 'Unable to load customers')
+      setIsLoading(false)
     })
 
     return () => {
@@ -1026,7 +958,12 @@ export function CustomerWorkspace() {
               />
             </div>
 
-            {customers.length === 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background py-20 text-center">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <p className="text-sm text-muted-foreground">Loading customers...</p>
+              </div>
+            ) : customers.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-background py-12 text-center">
                 <div className="flex size-12 items-center justify-center rounded-full bg-muted">
                   <UserRound className="size-5 text-muted-foreground" aria-hidden="true" />

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PackagePlus, Search, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Loader2, PackagePlus, Search, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -49,6 +49,7 @@ function toProductForm(product: ProductSummary): ProductFormState {
 export function InventoryWorkspace() {
   const [products, setProducts] = useState<ProductSummary[]>([])
   const [categories, setCategories] = useState<ProductCategorySummary[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [form, setForm] = useState<ProductFormState>(emptyForm)
   const [editingProduct, setEditingProduct] = useState<ProductSummary | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -56,11 +57,33 @@ export function InventoryWorkspace() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    void window.simplepos?.products.list().then(setProducts)
-    void window.simplepos?.categories.list().then((list) => {
-      setCategories(list)
-      if (list[0]) setForm((f) => ({ ...f, categoryId: String(list[0].id) }))
+    let isMounted = true
+
+    async function loadInventory() {
+      setIsLoading(true)
+      const [productList, categoryList] = await Promise.all([
+        window.simplepos?.products.list(),
+        window.simplepos?.categories.list(),
+      ])
+
+      if (!isMounted) return
+
+      if (productList) setProducts(productList)
+      if (categoryList) {
+        setCategories(categoryList)
+        if (categoryList[0]) setForm((f) => ({ ...f, categoryId: String(categoryList[0].id) }))
+      }
+
+      setIsLoading(false)
+    }
+
+    void loadInventory().catch(() => {
+      if (isMounted) setIsLoading(false)
     })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const filteredProducts = useMemo(() => {
@@ -214,13 +237,19 @@ export function InventoryWorkspace() {
               </div>
 
               <div className="divide-y">
-                {filteredProducts.length === 0 ? (
-                  <div className="px-3 py-6 text-sm text-muted-foreground">
-                    {products.length === 0 ? 'No products yet. Add one using the form.' : 'No products match this search.'}
-                  </div>
-                ) : null}
+               {isLoading ? (
+                 <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                   <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                   <p className="text-sm text-muted-foreground">Loading inventory...</p>
+                 </div>
+               ) : filteredProducts.length === 0 ? (
+                 <div className="px-3 py-6 text-sm text-muted-foreground">
+                   {products.length === 0 ? 'No products yet. Add one using the form.' : 'No products match this search.'}
+                 </div>
+               ) : null}
 
-                {filteredProducts.map((product) => {
+               {!isLoading && filteredProducts.map((product) => {
+
                   const categoryName = categories.find((c) => c.id === product.categoryId)?.name ?? '—'
                   const lowStock = isLowStock(product)
 
