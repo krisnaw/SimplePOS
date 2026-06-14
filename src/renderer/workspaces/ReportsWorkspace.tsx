@@ -128,7 +128,7 @@ export function ReportsWorkspace() {
             Reviewing {formatDate(report.dateFrom)} to {formatDate(report.dateTo)}.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <CardContent>
           <div className="flex flex-col gap-2">
             <Label htmlFor="report-period">Period</Label>
             <BaseSelect
@@ -171,7 +171,7 @@ export function ReportsWorkspace() {
                 </CardTitle>
                 <CardDescription>{summary.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-1">
+              <CardContent>
                 <p className="text-2xl font-semibold tabular-nums">{isLoading ? '...' : summary.value}</p>
                 <p className="text-sm text-muted-foreground text-pretty">{summary.helper}</p>
               </CardContent>

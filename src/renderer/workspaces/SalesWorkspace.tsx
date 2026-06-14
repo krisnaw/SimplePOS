@@ -394,11 +394,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   return (
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card>
-        <CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2">
             <div className="relative h-10">
-            <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
-              <Search aria-hidden="true" className="size-4" />
-            </span>
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
+                <Search aria-hidden="true" className="size-4" />
+              </span>
               <Input
                 ref={searchInputRef}
                 type="text"
@@ -448,9 +449,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               {searchQuery ? ` matching "${searchQuery.trim()}"` : null}
             </p>
           </div>
-        </CardHeader>
 
-        <CardContent>
           {visibleProducts.length === 0 ? (
             <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
               <div className="flex max-w-xs flex-col gap-1">
@@ -461,7 +460,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               </div>
             </div>
           ) : (
-            <div className="stagger-children grid h-full min-h-0 auto-rows-fr gap-3 overflow-hidden px-1 pt-1 pb-2 md:grid-cols-2 xl:grid-cols-3">
+            <div className="stagger-children grid auto-rows-fr gap-3 overflow-hidden px-1 pt-1 pb-2 md:grid-cols-2 xl:grid-cols-3">
               {paginatedProducts.map((product) => {
                 const cartKey = getCartKey(product)
                 const inCartQty = cartQuantityByProductId.get(cartKey) ?? 0
@@ -545,7 +544,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           </CardAction>
         </CardHeader>
 
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pt-3 pb-4">
+        <CardContent>
           <div className="flex shrink-0 flex-col gap-1.5">
             <Label htmlFor="sale-customer">Customer</Label>
             <BaseSelect

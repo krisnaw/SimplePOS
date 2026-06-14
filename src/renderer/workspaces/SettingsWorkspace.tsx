@@ -99,7 +99,7 @@ export function SettingsWorkspace() {
           <CardTitle>External Devices</CardTitle>
           <CardDescription>Manage hardware and service connections used by the POS.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent>
           {externalDevices.map((device) => {
             const Icon = device.icon
 
@@ -159,7 +159,7 @@ export function SettingsWorkspace() {
           <CardTitle>Device Notes</CardTitle>
           <CardDescription>Configuration placeholders for later integration.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
+        <CardContent>
           <p>Printer and barcode scanner actions are UI-only until device discovery is connected.</p>
           <p>Connected indicators can be wired to IPC health checks when the hardware layer is added.</p>
           <div className="flex flex-col gap-2 rounded-lg border bg-background p-3">
@@ -180,7 +180,7 @@ export function SettingsWorkspace() {
           <CardTitle>Software Updates</CardTitle>
           <CardDescription>Updates are delivered from GitHub Releases.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent>
           <div className="rounded-lg border bg-background p-3">
             <p className="text-sm font-medium">{updateStatus.message}</p>
             {typeof updateStatus.percent === 'number' ? (

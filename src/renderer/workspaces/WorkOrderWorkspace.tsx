@@ -376,13 +376,11 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
     <div className="grid min-h-0 min-w-0 gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <CardTitle>Work Orders</CardTitle>
-              <CardDescription>
-                Repair jobs before checkout
-              </CardDescription>
-            </div>
+          <CardTitle>Work Orders</CardTitle>
+          <CardDescription>
+            Repair jobs before checkout
+          </CardDescription>
+          <CardAction>
             <Button
               type="button"
               size="icon-sm"
@@ -393,57 +391,58 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             >
               <RefreshCw aria-hidden="true" />
             </Button>
-          </div>
-
-          <div className="relative">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search work orders..."
-              className="pl-9"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {statusOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={statusFilter === option.value}
-                onClick={() => setStatusFilter(option.value)}
-                className={cn(
-                  'rounded-full px-2.5 py-1 text-[11px] font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96]',
-                  statusFilter === option.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
-              aria-label="Filter work orders from date"
-            />
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
-              aria-label="Filter work orders to date"
-            />
-          </div>
+          </CardAction>
         </CardHeader>
 
-        <CardContent className="min-h-0 flex-1 overflow-auto px-2 py-2">
+        <CardContent>
+          <div className="flex flex-col gap-2">
+            <div className="relative">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search work orders..."
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {statusOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={statusFilter === option.value}
+                  onClick={() => setStatusFilter(option.value)}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[11px] font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96]',
+                    statusFilter === option.value
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(event) => setDateFrom(event.target.value)}
+                aria-label="Filter work orders from date"
+              />
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(event) => setDateTo(event.target.value)}
+                aria-label="Filter work orders to date"
+              />
+            </div>
+          </div>
           {visibleWorkOrders.length === 0 ? (
             <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed bg-background p-4 text-center shadow-border">
               <p className="text-sm text-muted-foreground text-pretty">
@@ -503,17 +502,15 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       <div className="grid min-h-0 min-w-0 gap-3 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <Card>
           <CardHeader>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <CardTitle>
-                  {selectedWorkOrder ? selectedWorkOrder.orderNumber : 'New Work Order'}
-                </CardTitle>
-                <CardDescription>
-                  Customer vehicle, complaint, assignment, and job status.
-                </CardDescription>
-              </div>
-              {selectedWorkOrder ? (
-                <div className="flex flex-wrap justify-start gap-1.5 sm:justify-end">
+            <CardTitle>
+              {selectedWorkOrder ? selectedWorkOrder.orderNumber : 'New Work Order'}
+            </CardTitle>
+            <CardDescription>
+              Customer vehicle, complaint, assignment, and job status.
+            </CardDescription>
+            {selectedWorkOrder ? (
+              <CardAction>
+                <div className="flex flex-wrap gap-1.5">
                   <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', statusClass(selectedWorkOrder.status))}>
                     {statusLabel(selectedWorkOrder.status)}
                   </span>
@@ -521,11 +518,11 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                     {priorityLabel(selectedWorkOrder.priority)}
                   </span>
                 </div>
-              ) : null}
-            </div>
+              </CardAction>
+            ) : null}
           </CardHeader>
 
-          <CardContent className="flex flex-col gap-3 px-4 pt-3 pb-4">
+          <CardContent>
             <div
               className={cn(
                 'grid transition-[grid-template-rows,opacity] duration-150 ease-in',
@@ -735,7 +732,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             </CardAction>
           </CardHeader>
 
-          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3">
+          <CardContent>
             {!selectedWorkOrder ? (
               <div className="flex min-h-40 flex-1 items-center justify-center rounded-lg border border-dashed bg-background p-4 text-center shadow-border">
                 <div className="flex max-w-xs flex-col items-center gap-2">

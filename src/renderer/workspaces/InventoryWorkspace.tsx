@@ -229,16 +229,15 @@ export function InventoryWorkspace() {
           <CardHeader>
             <CardTitle>Product List</CardTitle>
             <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
-            <CardAction>
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search inventory"
-              />
-            </CardAction>
           </CardHeader>
-          <CardContent className="min-h-0 min-w-0 flex-1 overflow-hidden pb-4">
-            <div className="h-full min-h-0 min-w-0 overflow-y-auto rounded-lg border bg-background">
+          <CardContent>
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search inventory"
+              className="mb-2"
+            />
+            <div className="overflow-y-auto rounded-lg border bg-background">
               <div
                 className={cn(
                   'sticky top-0 z-10 grid shrink-0 items-center gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur',
@@ -337,7 +336,7 @@ export function InventoryWorkspace() {
               : 'Add a part or consumable to the inventory list.'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="min-h-0 flex-1 overflow-auto">
+        <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor="inventory-sku">SKU</Label>

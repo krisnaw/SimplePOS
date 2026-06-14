@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, ClipboardList, Receipt, UserRound, WalletCards } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import type { AuthenticatedUser } from '@/shared/types/app'
 
 type DashboardSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['dashboard']['getSummary']>>
@@ -71,24 +71,30 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              <UserRound aria-hidden="true" className="size-4 text-muted-foreground" />
               User
             </CardTitle>
             <CardDescription>Current session</CardDescription>
+            <CardAction>
+              <UserRound aria-hidden="true" className="size-4 text-muted-foreground" />
+            </CardAction>
           </CardHeader>
           <CardContent>
-            <span className="truncate text-pretty">{user.email}</span>
-            <span className="capitalize text-muted-foreground text-pretty">{user.role}</span>
+            <div className="flex flex-col">
+              <span className="truncate text-pretty">{user.email}</span>
+              <span className="capitalize text-muted-foreground text-pretty">{user.role}</span>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>
-              <ClipboardList aria-hidden="true" className="size-4 text-muted-foreground" />
               Work Orders
             </CardTitle>
             <CardDescription>Active jobs</CardDescription>
+            <CardAction>
+              <ClipboardList aria-hidden="true" className="size-4 text-muted-foreground" />
+            </CardAction>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">
@@ -103,10 +109,13 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              <WalletCards aria-hidden="true" className="size-4 text-muted-foreground" />
+
               Sales
             </CardTitle>
             <CardDescription>Paid invoices</CardDescription>
+            <CardAction>
+              <WalletCards aria-hidden="true" className="size-4 text-muted-foreground" />
+            </CardAction>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold tabular-nums">
@@ -118,10 +127,12 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              <Receipt aria-hidden="true" className="size-4 text-muted-foreground" />
               Invoices
             </CardTitle>
             <CardDescription>Paid status</CardDescription>
+            <CardAction>
+              <Receipt aria-hidden="true" className="size-4 text-muted-foreground" />
+            </CardAction>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">
@@ -133,10 +144,12 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              <AlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
               Low Stock
             </CardTitle>
             <CardDescription>Needs review</CardDescription>
+            <CardAction>
+              <AlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
+            </CardAction>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">

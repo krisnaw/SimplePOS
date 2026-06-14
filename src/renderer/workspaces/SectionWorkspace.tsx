@@ -30,7 +30,7 @@ export function SectionWorkspace({ section }: { section: AppSection }) {
           <CardTitle>Quick Actions</CardTitle>
           <CardDescription>Common actions for this section</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2">
+        <CardContent>
           <Button variant="outline">Create New</Button>
           <Button variant="outline">Search Records</Button>
           <Button variant="outline">View Reports</Button>

@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Car, Mail, MapPin, Phone, Plus, Search, UserRound } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { cn } from '@/renderer/lib/utils'
@@ -565,31 +573,21 @@ export function CustomerWorkspace() {
                 <Plus aria-hidden="true" />
               </Button>
             </CardAction>
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-              <div>
-
-              </div>
-              <div className="flex gap-2">
-
-
-              </div>
-            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="relative min-w-56">
-                <Search
-                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search customers"
-                  className="pl-8"
-                />
-              </div>
-              <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
+            <div className="relative mb-2">
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search customers"
+                className="pl-8"
+              />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
                 <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
                   <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
                     <span>Customer</span>
@@ -627,7 +625,6 @@ export function CustomerWorkspace() {
                   </div>
                 </div>
               </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -650,7 +647,7 @@ export function CustomerWorkspace() {
               </Button>
             </CardAction>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
+          <CardContent>
             <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
               <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
                 <div className="grid shrink-0 grid-cols-[minmax(180px,1fr)_minmax(140px,0.8fr)_minmax(120px,0.7fr)_minmax(120px,0.7fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
@@ -705,15 +702,17 @@ export function CustomerWorkspace() {
         <Card>
           <CardHeader>
             <CardTitle>
-              <UserRound aria-hidden="true" />
               {selectedCustomer ? 'Edit Customer' : 'Create Customer'}
             </CardTitle>
             <CardDescription>
               {selectedCustomer ? 'Update contact details for future work orders.' : 'Add a customer before linking vehicles.'}
             </CardDescription>
+            <CardAction>
+              <UserRound aria-hidden="true" />
+            </CardAction>
           </CardHeader>
-          <CardContent className="min-h-0 overflow-auto">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <CardContent>
+            <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="customer-name">Name</Label>
                 <Input
@@ -795,21 +794,23 @@ export function CustomerWorkspace() {
                 </p>
               ) : null}
 
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  {selectedCustomer ? 'Update' : 'Create'}
-                </Button>
-                {selectedCustomer ? (
-                  <Button type="button" variant="destructive" onClick={handleDeleteCustomer}>
-                    Delete
-                  </Button>
-                ) : null}
-                <Button type="button" variant="outline" onClick={startNewCustomer}>
-                  Clear
-                </Button>
-              </div>
             </form>
           </CardContent>
+          <CardFooter>
+            <div className="flex gap-2">
+              <Button type="submit" form="customer-form" className="flex-1">
+                {selectedCustomer ? 'Update' : 'Create'}
+              </Button>
+              {selectedCustomer ? (
+                <Button type="button" variant="destructive" onClick={handleDeleteCustomer}>
+                  Delete
+                </Button>
+              ) : null}
+              <Button type="button" variant="outline" onClick={startNewCustomer}>
+                Clear
+              </Button>
+            </div>
+          </CardFooter>
         </Card>
 
         <Card>
@@ -822,7 +823,7 @@ export function CustomerWorkspace() {
               {selectedCustomer ? `Linked to ${selectedCustomer.name}.` : 'Select a customer before adding a vehicle.'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="min-h-0 overflow-auto">
+          <CardContent>
             <form onSubmit={handleVehicleSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="vehicle-plate">Plate Number</Label>
