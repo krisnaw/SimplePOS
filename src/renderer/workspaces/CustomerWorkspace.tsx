@@ -212,7 +212,7 @@ export function CustomerWorkspace() {
     setVehicleMessage('')
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const name = form.name.trim()
@@ -327,7 +327,7 @@ export function CustomerWorkspace() {
     setView('list')
   }
 
-  async function handleVehicleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleVehicleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (!selectedCustomer) {

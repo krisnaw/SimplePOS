@@ -75,7 +75,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
     setUsers(userList ?? [])
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (!canManageUsers) {
