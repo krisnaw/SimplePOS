@@ -193,6 +193,8 @@ type InvoiceListInput = {
 type InvoiceSummary = {
   id: number
   saleId: number
+  workOrderId: number | null
+  workOrderNumber: string | null
   invoiceNumber: string
   status: InvoiceStatus
   customerName: string | null

@@ -14,6 +14,7 @@ import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
+import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
 import type { AuthenticatedUser } from '@/shared/types/app'
 
@@ -51,7 +52,7 @@ const statusOptions: Array<{ value: WorkOrderStatus | 'all'; label: string }> = 
   { value: 'cancelled', label: 'Cancelled' },
 ]
 
-const statusFlow: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed', 'invoiced', 'cancelled']
+const statusFlow: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed', 'cancelled']
 const editableStatuses: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed']
 
 function formatCurrency(value: number): string {
@@ -91,6 +92,14 @@ function priorityClass(priority: WorkOrderPriority): string {
   if (priority === 'urgent') return 'bg-destructive/10 text-destructive'
   if (priority === 'high') return 'bg-primary/10 text-primary'
   return 'bg-muted text-muted-foreground'
+}
+
+function selectableStatuses(workOrder: NonNullable<WorkOrderDetail>): WorkOrderStatus[] {
+  if (workOrder.status === 'invoiced') {
+    return workOrder.invoiceNumber ? ['invoiced'] : ['invoiced', 'completed']
+  }
+
+  return statusFlow
 }
 
 function getVehicleLabel(vehicle: VehicleSummary): string {
@@ -365,8 +374,8 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
   return (
     <div className="grid min-h-0 min-w-0 gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <Card className="flex min-h-[560px] min-w-0 flex-col gap-0 overflow-hidden shadow-border">
-        <CardHeader className="gap-2 border-b px-4 py-3">
+      <Card className="flex min-h-140 min-w-0 flex-col gap-0 overflow-hidden py-0 shadow-border">
+        <CardHeader className="gap-2 border-b px-4 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <CardTitle className="text-sm text-balance">Work Orders</CardTitle>
@@ -492,8 +501,8 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       </Card>
 
       <div className="grid min-h-0 min-w-0 gap-3 2xl:grid-cols-[minmax(0,1fr)_420px]">
-        <Card className="min-w-0 shadow-border">
-          <CardHeader className="gap-1 px-4 py-3">
+        <Card className="min-w-0 gap-0 py-0 shadow-border">
+          <CardHeader className="gap-1 border-b px-4 py-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <CardTitle className="text-sm text-balance">
@@ -516,7 +525,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             </div>
           </CardHeader>
 
-          <CardContent className="flex flex-col gap-4 px-4 pb-4">
+          <CardContent className="flex flex-col gap-3 px-4 pt-3 pb-4">
             <div
               className={cn(
                 'grid transition-[grid-template-rows,opacity] duration-150 ease-in',
@@ -533,72 +542,71 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             <div className="grid gap-3 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="work-order-customer">Customer</Label>
-                <select
-                  id="work-order-customer"
+                <BaseSelect
                   value={customerId}
                   disabled={!canEditSelected}
-                  onChange={(event) => {
-                    const nextCustomerId = event.target.value
+                  ariaLabel="Customer"
+                  placeholder="Select customer"
+                  options={[
+                    { value: '', label: 'Select customer' },
+                    ...customers.map((customer) => ({ value: String(customer.id), label: customer.name })),
+                  ]}
+                  onValueChange={(nextCustomerId) => {
                     const nextVehicle = vehicles.find((vehicle) => vehicle.customerId === Number(nextCustomerId))
                     setCustomerId(nextCustomerId)
                     setVehicleId(nextVehicle ? String(nextVehicle.id) : '')
                   }}
-                  className="h-10 rounded-md border bg-background px-3 text-sm"
-                >
-                  <option value="">Select customer</option>
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>{customer.name}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="work-order-vehicle">Vehicle</Label>
-                <select
-                  id="work-order-vehicle"
+                <BaseSelect
                   value={vehicleId}
                   disabled={!canEditSelected}
-                  onChange={(event) => setVehicleId(event.target.value)}
-                  className="h-10 rounded-md border bg-background px-3 text-sm"
-                >
-                  <option value="">Select vehicle</option>
-                  {filteredVehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={vehicle.id}>{getVehicleLabel(vehicle)}</option>
-                  ))}
-                </select>
+                  ariaLabel="Vehicle"
+                  placeholder="Select vehicle"
+                  options={[
+                    { value: '', label: 'Select vehicle' },
+                    ...filteredVehicles.map((vehicle) => ({
+                      value: String(vehicle.id),
+                      label: getVehicleLabel(vehicle),
+                    })),
+                  ]}
+                  onValueChange={setVehicleId}
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="work-order-assignee">Assigned Staff</Label>
-                <select
-                  id="work-order-assignee"
+                <BaseSelect
                   value={assignedUserId}
                   disabled={!canEditSelected}
-                  onChange={(event) => setAssignedUserId(event.target.value)}
-                  className="h-10 rounded-md border bg-background px-3 text-sm"
-                >
-                  <option value="">Unassigned</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
-                  ))}
-                </select>
+                  ariaLabel="Assigned staff"
+                  placeholder="Unassigned"
+                  options={[
+                    { value: '', label: 'Unassigned' },
+                    ...users.map((user) => ({ value: String(user.id), label: user.name })),
+                  ]}
+                  onValueChange={setAssignedUserId}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="work-order-priority">Priority</Label>
-                  <select
-                    id="work-order-priority"
+                  <BaseSelect
                     value={priority}
                     disabled={!canEditSelected}
-                    onChange={(event) => setPriority(event.target.value as WorkOrderPriority)}
-                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                  >
-                    <option value="low">Low</option>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
+                    ariaLabel="Priority"
+                    options={[
+                      { value: 'low', label: 'Low' },
+                      { value: 'normal', label: 'Normal' },
+                      { value: 'high', label: 'High' },
+                      { value: 'urgent', label: 'Urgent' },
+                    ]}
+                    onValueChange={(nextPriority) => setPriority(nextPriority as WorkOrderPriority)}
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="work-order-odometer">Odometer</Label>
@@ -665,16 +673,15 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
               {selectedWorkOrder ? (
                 <>
-                  <select
+                  <BaseSelect
                     value={selectedWorkOrder.status}
-                    onChange={(event) => void handleStatusChange(event.target.value as WorkOrderStatus)}
-                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                    aria-label="Change work order status"
-                  >
-                    {statusFlow.map((status) => (
-                      <option key={status} value={status}>{statusLabel(status)}</option>
-                    ))}
-                  </select>
+                    ariaLabel="Change work order status"
+                    options={selectableStatuses(selectedWorkOrder).map((status) => ({
+                      value: status,
+                      label: statusLabel(status),
+                    }))}
+                    onValueChange={(nextStatus) => void handleStatusChange(nextStatus as WorkOrderStatus)}
+                  />
                   <Button
                     type="button"
                     variant="outline"
@@ -717,7 +724,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
           </CardContent>
         </Card>
 
-        <Card className="flex min-h-[560px] min-w-0 flex-col gap-0 overflow-hidden shadow-border">
+        <Card className="flex min-h-140 min-w-0 flex-col gap-0 overflow-hidden shadow-border">
           <CardHeader className="gap-1 border-b px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -743,30 +750,29 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             ) : (
               <>
                 <div className="grid gap-2 sm:grid-cols-[110px_1fr_76px_auto]">
-                  <select
+                  <BaseSelect
                     value={catalogType}
                     disabled={!canEditSelected}
-                    onChange={(event) => setCatalogType(event.target.value as 'service' | 'product')}
-                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                    aria-label="Item type"
-                  >
-                    <option value="service">Service</option>
-                    <option value="product">Product</option>
-                  </select>
-                  <select
+                    ariaLabel="Item type"
+                    options={[
+                      { value: 'service', label: 'Service' },
+                      { value: 'product', label: 'Product' },
+                    ]}
+                    onValueChange={(nextType) => setCatalogType(nextType as 'service' | 'product')}
+                  />
+                  <BaseSelect
                     value={catalogId}
                     disabled={!canEditSelected}
-                    onChange={(event) => setCatalogId(event.target.value)}
-                    className="h-10 min-w-0 rounded-md border bg-background px-3 text-sm"
-                    aria-label="Catalog item"
-                  >
-                    {catalogItems.map((item) => (
-                      <option key={`${item.itemType}:${item.id}`} value={item.id}>
-                        {item.name} · {formatCurrency(item.price)}
-                        {item.stockQty === null ? '' : ` · ${item.stockQty} stock`}
-                      </option>
-                    ))}
-                  </select>
+                    ariaLabel="Catalog item"
+                    placeholder="Select item"
+                    options={catalogItems.map((item) => ({
+                      value: String(item.id),
+                      label: `${item.name} · ${formatCurrency(item.price)}${
+                        item.stockQty === null ? '' : ` · ${item.stockQty} stock`
+                      }`,
+                    }))}
+                    onValueChange={setCatalogId}
+                  />
                   <Input
                     type="number"
                     min="1"

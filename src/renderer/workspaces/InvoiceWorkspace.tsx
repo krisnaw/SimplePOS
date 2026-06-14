@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, Download, Printer, Receipt, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { cn } from '@/renderer/lib/utils'
 
 type InvoiceSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['invoices']['list']>>[number]
 type InvoiceDetail = Awaited<ReturnType<NonNullable<typeof window.simplepos>['invoices']['get']>>
+type InvoiceStatusFilter = 'all' | InvoiceSummary['status']
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
@@ -48,7 +49,7 @@ export function InvoiceWorkspace() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetail>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatusFilter>('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [isLoadingList, setIsLoadingList] = useState(false)
@@ -139,129 +140,123 @@ export function InvoiceWorkspace() {
 
   return (
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-      <Card className="flex min-h-0 min-w-0 flex-col gap-0 overflow-hidden py-0 shadow-border">
-        <CardHeader className="shrink-0 border-b px-4 py-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base text-balance">Invoice History</CardTitle>
-              <CardDescription className="text-pretty">
-                {isLoadingList ? 'Loading invoices' : `${totals.count} invoice${totals.count === 1 ? '' : 's'}`}
-              </CardDescription>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-lg"
-                className={pressableButtonClass}
-                onClick={() => setRefreshCount((count) => count + 1)}
-                disabled={isLoadingList}
-                aria-label="Refresh invoices"
-              >
-                <RefreshCw aria-hidden="true" className={isLoadingList ? 'animate-spin' : undefined} />
-              </Button>
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Receipt aria-hidden="true" className="size-4" />
-              </div>
-            </div>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-balance">Invoice History</CardTitle>
+          <CardDescription className="text-pretty">
+            {isLoadingList ? 'Loading invoices' : `${totals.count} invoice${totals.count === 1 ? '' : 's'}`}
+          </CardDescription>
+          <CardAction>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-lg"
+              className={pressableButtonClass}
+              onClick={() => setRefreshCount((count) => count + 1)}
+              disabled={isLoadingList}
+              aria-label="Refresh invoices"
+            >
+              <RefreshCw aria-hidden="true" className={isLoadingList ? 'animate-spin' : undefined} />
+            </Button>
+          </CardAction>
         </CardHeader>
 
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3">
-          <div className="grid shrink-0 gap-2">
-            <div className="relative">
-              <Search
-                aria-hidden="true"
-                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search invoice, customer, payment"
-                className="pl-8"
-              />
-            </div>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="grid shrink-0 gap-2">
+              <div className="relative">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search invoice, work order, customer, payment"
+                  className="pl-8"
+                />
+              </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                Status
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                  className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  <option value="all">All</option>
-                  <option value="paid">Paid</option>
-                  <option value="void">Void</option>
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                From
-                <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
-              </label>
-              <label className="col-span-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                To
-                <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
-              </label>
-            </div>
-          </div>
-
-          <div className="grid shrink-0 grid-cols-2 gap-2">
-            <div className="rounded-lg bg-muted px-3 py-2">
-              <p className="text-xs text-muted-foreground">Paid</p>
-              <p className="text-lg font-semibold tabular-nums">{totals.paidCount}</p>
-            </div>
-            <div className="rounded-lg bg-muted px-3 py-2">
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="text-lg font-semibold tabular-nums">{formatCurrency(totals.total)}</p>
-            </div>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-auto">
-            {loadError ? (
-              <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
-                <div className="max-w-xs">
-                  <p className="text-sm font-medium text-balance">Unable to load invoices</p>
-                  <p className="mt-1 text-sm text-muted-foreground text-pretty">{loadError}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn('mt-3', pressableButtonClass)}
-                    onClick={() => setRefreshCount((count) => count + 1)}
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  Status
+                  <select
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value as InvoiceStatusFilter)}
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
-                    <RefreshCw data-icon="inline-start" aria-hidden="true" />
-                    Retry
-                  </Button>
-                </div>
+                    <option value="all">All</option>
+                    <option value="paid">Paid</option>
+                    <option value="void">Void</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  From
+                  <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+                </label>
+                <label className="col-span-2 flex flex-col gap-1 text-xs text-muted-foreground">
+                  To
+                  <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+                </label>
               </div>
-            ) : invoices.length === 0 ? (
-              <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
-                <div className="max-w-xs">
-                  <p className="text-sm font-medium text-balance">No invoices found</p>
-                  <p className="text-sm text-muted-foreground text-pretty">
-                    Completed checkouts will appear here once they match the current filters.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {invoices.map((invoice) => {
-                  const isSelected = invoice.id === selectedInvoiceId
+            </div>
 
-                  return (
-                    <button
-                      key={invoice.id}
+            <div className="grid shrink-0 grid-cols-2 gap-2">
+              <div className="rounded-lg bg-muted px-3 py-2">
+                <p className="text-xs text-muted-foreground">Paid</p>
+                <p className="text-lg font-semibold tabular-nums">{totals.paidCount}</p>
+              </div>
+              <div className="rounded-lg bg-muted px-3 py-2">
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-lg font-semibold tabular-nums">{formatCurrency(totals.total)}</p>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-auto">
+              {loadError ? (
+                <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
+                  <div className="max-w-xs">
+                    <p className="text-sm font-medium text-balance">Unable to load invoices</p>
+                    <p className="mt-1 text-sm text-muted-foreground text-pretty">{loadError}</p>
+                    <Button
                       type="button"
-                      aria-current={isSelected ? 'true' : undefined}
-                      onClick={() => setSelectedInvoiceId(invoice.id)}
-                      className={cn(
-                        'min-h-20 rounded-lg border bg-background p-3 text-left shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
-                        isSelected
-                          ? 'border-primary/50 bg-primary/5 shadow-border-hover'
-                          : 'hover:border-primary/30 hover:shadow-border-hover',
-                      )}
+                      variant="outline"
+                      size="sm"
+                      className={cn('mt-3', pressableButtonClass)}
+                      onClick={() => setRefreshCount((count) => count + 1)}
                     >
+                      <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+              ) : invoices.length === 0 ? (
+                <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
+                  <div className="max-w-xs">
+                    <p className="text-sm font-medium text-balance">No invoices found</p>
+                    <p className="text-sm text-muted-foreground text-pretty">
+                      Completed checkouts will appear here once they match the current filters.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {invoices.map((invoice) => {
+                    const isSelected = invoice.id === selectedInvoiceId
+
+                    return (
+                      <button
+                        key={invoice.id}
+                        type="button"
+                        aria-current={isSelected ? 'true' : undefined}
+                        onClick={() => setSelectedInvoiceId(invoice.id)}
+                        className={cn(
+                          'min-h-20 rounded-lg border bg-background p-3 text-left shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
+                          isSelected
+                            ? 'border-primary/50 bg-primary/5 shadow-border-hover'
+                            : 'hover:border-primary/30 hover:shadow-border-hover',
+                        )}
+                      >
                       <span className="flex items-start justify-between gap-3">
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-medium tabular-nums">
@@ -270,12 +265,17 @@ export function InvoiceWorkspace() {
                           <span className="mt-1 block truncate text-xs text-muted-foreground">
                             {invoice.customerName ?? 'Walk-in customer'}
                           </span>
+                          {invoice.workOrderNumber ? (
+                            <span className="mt-0.5 block truncate text-xs text-muted-foreground tabular-nums">
+                              Work Order {invoice.workOrderNumber}
+                            </span>
+                          ) : null}
                         </span>
                         <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', statusClass(invoice.status))}>
                           {invoice.status}
                         </span>
                       </span>
-                      <span className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                        <span className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                         <span className="flex min-w-0 items-center gap-1.5">
                           <CalendarDays aria-hidden="true" className="size-3.5 shrink-0" />
                           <span className="truncate">{formatDateTime(invoice.issuedAt)}</span>
@@ -284,44 +284,42 @@ export function InvoiceWorkspace() {
                           {formatCurrency(invoice.total)}
                         </span>
                       </span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
+
         </CardContent>
       </Card>
 
-      <Card className="flex min-h-0 min-w-0 flex-col gap-0 overflow-hidden py-0 shadow-border">
+      <Card>
         {selectedInvoice ? (
           <>
-            <CardHeader className="shrink-0 border-b px-4 py-3">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="min-w-0">
-                  <CardTitle className="truncate text-base tabular-nums">{selectedInvoice.invoiceNumber}</CardTitle>
-                  <CardDescription className="text-pretty">
-                    {selectedInvoice.customerName ?? 'Walk-in customer'} · {formatDateTime(selectedInvoice.issuedAt)}
-                  </CardDescription>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
-                    <Printer data-icon="inline-start" aria-hidden="true" />
-                    Print
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
-                    <Download data-icon="inline-start" aria-hidden="true" />
-                    Export
-                  </Button>
-                </div>
-              </div>
+            <CardHeader>
+              <CardTitle className="truncate text-base tabular-nums">{selectedInvoice.invoiceNumber}</CardTitle>
+              <CardDescription className="text-pretty">
+                {selectedInvoice.customerName ?? 'Walk-in customer'} · {formatDateTime(selectedInvoice.issuedAt)}
+              </CardDescription>
+              <CardAction className="inline-flex gap-2">
+                <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
+                  <Printer data-icon="inline-start" aria-hidden="true" />
+                  Print
+                </Button>
+                <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
+                  <Download data-icon="inline-start" aria-hidden="true" />
+                  Export
+                </Button>
+              </CardAction>
             </CardHeader>
 
-            <CardContent className="min-h-0 flex-1 overflow-auto px-4 py-4">
+            <CardContent>
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
                 <div className="flex min-w-0 flex-col gap-4">
                   <div className="rounded-lg border bg-background p-4">
-                    <div className="grid gap-3 md:grid-cols-3">
+                    <div className="grid gap-3 md:grid-cols-4">
                       <div>
                         <Label className="text-xs text-muted-foreground">Customer</Label>
                         <p className="mt-1 text-sm font-medium text-pretty">
@@ -338,6 +336,12 @@ export function InvoiceWorkspace() {
                         <Label className="text-xs text-muted-foreground">Payment</Label>
                         <p className="mt-1 text-sm font-medium">
                           {formatPaymentMethod(selectedInvoice.payment?.method ?? null)}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Work Order</Label>
+                        <p className="mt-1 text-sm font-medium tabular-nums">
+                          {selectedInvoice.workOrderNumber ?? 'Direct sale'}
                         </p>
                       </div>
                     </div>
@@ -420,7 +424,7 @@ export function InvoiceWorkspace() {
             </CardContent>
           </>
         ) : (
-          <CardContent className="flex min-h-96 flex-1 items-center justify-center p-6 text-center">
+          <CardContent>
             <div className="max-w-sm">
               <p className="text-sm font-medium text-balance">
                 {isLoadingDetail ? 'Loading invoice' : 'Select an invoice'}

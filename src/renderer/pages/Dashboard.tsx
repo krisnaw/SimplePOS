@@ -183,7 +183,7 @@ export default function Dashboard() {
               className={cn('flex flex-col gap-4', activeSection !== 'dashboard' && 'content-enter')}
             >
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
-              {activeSection === 'sales' ? <SalesWorkspace /> : null}
+              {activeSection === 'sales' ? <SalesWorkspace currentUser={user} /> : null}
               {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
               {activeSection === 'work-orders' ? <WorkOrderWorkspace currentUser={user} /> : null}
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}

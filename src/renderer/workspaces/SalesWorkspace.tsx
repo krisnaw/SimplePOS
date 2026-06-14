@@ -3,7 +3,13 @@ import { Check, ChevronLeft, ChevronRight, Minus, Plus, Search, ShoppingCart, X 
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
+import { Label } from '@/renderer/components/ui/label'
+import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
+import type { AuthenticatedUser } from '@/shared/types/app'
+
+type SimplePosApi = NonNullable<Window['simplepos']>
+type CustomerSummary = Awaited<ReturnType<SimplePosApi['customers']['list']>>[number]
 
 type SampleProduct = {
   id: number
@@ -126,9 +132,11 @@ function getCartKey(item: SampleProduct): string {
   return `${item.itemType}:${item.id}`
 }
 
-export function SalesWorkspace() {
+export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [catalogItems, setCatalogItems] = useState<SampleProduct[]>(sampleProducts)
+  const [customers, setCustomers] = useState<CustomerSummary[]>([])
+  const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [itemsPerPage, setItemsPerPage] = useState(6)
@@ -196,13 +204,16 @@ export function SalesWorkspace() {
     let isMounted = true
 
     async function loadCatalog() {
-      const [products, categories, services] = await Promise.all([
+      const [products, categories, services, customerList] = await Promise.all([
         window.simplepos?.products.list(),
         window.simplepos?.categories.list(),
         window.simplepos?.services.list(),
+        window.simplepos?.customers.list(),
       ])
 
       if (!isMounted) return
+
+      setCustomers(customerList ?? [])
 
       const categoryNames = new Map((categories ?? []).map((category) => [category.id, category.name]))
       const productItems = (products ?? []).map<SampleProduct>((product) => ({
@@ -319,6 +330,8 @@ export function SalesWorkspace() {
     setActionMessage('')
 
     const result = await window.simplepos?.checkout.create({
+      customerId: selectedCustomerId ? Number(selectedCustomerId) : null,
+      createdById: currentUser.id,
       paymentMethod: 'cash',
       amountPaid: total,
       discount: 0,
@@ -374,11 +387,10 @@ export function SalesWorkspace() {
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card className="flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden shadow-border">
         <div className="flex shrink-0 flex-col gap-2 px-4">
-          <div className="relative">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            />
+          <div className="relative h-10">
+            <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
+              <Search aria-hidden="true" className="size-4" />
+            </span>
             <Input
               ref={searchInputRef}
               type="text"
@@ -386,17 +398,14 @@ export function SalesWorkspace() {
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search products, services, SKU, category..."
               aria-label="Search products and services"
-              className="h-10 pl-9 pr-11"
+              className="h-10 pl-10 pr-10"
             />
             {searchQuery ? (
               <button
                 type="button"
                 aria-label="Clear search"
                 onClick={() => setSearchQuery('')}
-                className={cn(
-                  'absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]',
-                  qtyButtonClass,
-                )}
+                className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
@@ -563,6 +572,25 @@ export function SalesWorkspace() {
         </CardHeader>
 
         <CardContent className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pt-3 pb-4">
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <Label htmlFor="sale-customer">Customer</Label>
+            <BaseSelect
+              id="sale-customer"
+              value={selectedCustomerId}
+              ariaLabel="Sale customer"
+              placeholder="Walk-in customer"
+              disabled={checkoutComplete || isCheckingOut}
+              options={[
+                { value: '', label: 'Walk-in customer' },
+                ...customers.map((customer) => ({
+                  value: String(customer.id),
+                  label: `${customer.name}${customer.phone ? ` · ${customer.phone}` : ''}`,
+                })),
+              ]}
+              onValueChange={setSelectedCustomerId}
+            />
+          </div>
+
           <div
             className={cn(
               'grid shrink-0 transition-[grid-template-rows,opacity] duration-150 ease-in',

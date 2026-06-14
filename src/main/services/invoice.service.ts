@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm'
-import { customers, invoices, payments, saleItems, sales } from '../db/schema/index'
+import { customers, invoices, payments, saleItems, sales, workOrders } from '../db/schema/index'
 import type { InvoiceStatus, PaymentMethod, PaymentStatus, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 
@@ -13,6 +13,8 @@ export type InvoiceListInput = {
 export type InvoiceSummary = {
   id: number
   saleId: number
+  workOrderId: number | null
+  workOrderNumber: string | null
   invoiceNumber: string
   status: InvoiceStatus
   customerName: string | null
@@ -77,6 +79,8 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
     .select({
       id: invoices.id,
       saleId: invoices.saleId,
+      workOrderId: invoices.workOrderId,
+      workOrderNumber: workOrders.orderNumber,
       invoiceNumber: invoices.invoiceNumber,
       status: invoices.status,
       customerName: customers.name,
@@ -90,6 +94,7 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
     })
     .from(invoices)
     .innerJoin(sales, eq(invoices.saleId, sales.id))
+    .leftJoin(workOrders, eq(invoices.workOrderId, workOrders.id))
     .leftJoin(customers, eq(sales.customerId, customers.id))
     .leftJoin(payments, eq(payments.invoiceId, invoices.id))
     .orderBy(desc(invoices.issuedAt))
@@ -116,6 +121,8 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
     .map<InvoiceSummary>((invoice) => ({
       id: invoice.id,
       saleId: invoice.saleId,
+      workOrderId: invoice.workOrderId,
+      workOrderNumber: invoice.workOrderNumber,
       invoiceNumber: invoice.invoiceNumber,
       status: invoice.status,
       customerName: invoice.customerName,
@@ -137,6 +144,7 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
 
       return [
         invoice.invoiceNumber,
+        invoice.workOrderNumber ?? '',
         invoice.customerName ?? '',
         invoice.paymentMethod ?? '',
         invoice.paymentStatus ?? '',
@@ -153,6 +161,8 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
     .select({
       id: invoices.id,
       saleId: invoices.saleId,
+      workOrderId: invoices.workOrderId,
+      workOrderNumber: workOrders.orderNumber,
       invoiceNumber: invoices.invoiceNumber,
       status: invoices.status,
       customerName: customers.name,
@@ -173,6 +183,7 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
     })
     .from(invoices)
     .innerJoin(sales, eq(invoices.saleId, sales.id))
+    .leftJoin(workOrders, eq(invoices.workOrderId, workOrders.id))
     .leftJoin(customers, eq(sales.customerId, customers.id))
     .leftJoin(payments, eq(payments.invoiceId, invoices.id))
     .where(eq(invoices.id, input.id))
@@ -198,6 +209,8 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
   return {
     id: invoice.id,
     saleId: invoice.saleId,
+    workOrderId: invoice.workOrderId,
+    workOrderNumber: invoice.workOrderNumber,
     invoiceNumber: invoice.invoiceNumber,
     status: invoice.status,
     customerName: invoice.customerName,

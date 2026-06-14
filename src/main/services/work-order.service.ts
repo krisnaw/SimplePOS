@@ -135,7 +135,7 @@ function canTransition(from: WorkOrderStatus, to: WorkOrderStatus): boolean {
     draft: ['open', 'cancelled'],
     open: ['draft', 'in_progress', 'completed', 'cancelled'],
     in_progress: ['open', 'completed', 'cancelled'],
-    completed: ['in_progress', 'invoiced', 'cancelled'],
+    completed: ['in_progress', 'cancelled'],
   }
 
   return allowed[from].includes(to)
@@ -523,6 +523,29 @@ export async function updateWorkOrderStatus(input: Record<string, unknown>): Pro
 
   const [existing] = await repository.select().from(workOrders).where(eq(workOrders.id, id)).limit(1)
   if (!existing) return { ok: false, message: 'Work order not found' }
+
+  const existingInvoice = await getInvoiceByWorkOrderId(id)
+
+  if (nextStatus === 'invoiced' && !existingInvoice) {
+    return { ok: false, message: 'Use Checkout to create the invoice for this work order' }
+  }
+
+  if (existing.status === 'invoiced' && !existingInvoice && nextStatus === 'completed') {
+    const now = new Date().toISOString()
+    const [updated] = await repository.update(workOrders).set({
+      status: 'completed',
+      updatedAt: now,
+      invoicedAt: null,
+    }).where(eq(workOrders.id, id)).returning()
+
+    await flushDatabase()
+
+    const workOrder = await toWorkOrderDetail(updated)
+    return workOrder
+      ? { ok: true, message: 'Work order restored to completed. Use Checkout to create the invoice.', workOrder }
+      : { ok: false, message: 'Work order updated but could not be loaded' }
+  }
+
   if (!canTransition(existing.status, nextStatus)) {
     return { ok: false, message: `Cannot change status from ${existing.status} to ${nextStatus}` }
   }
