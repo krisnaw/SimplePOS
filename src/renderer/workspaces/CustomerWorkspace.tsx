@@ -13,51 +13,9 @@ import {
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { cn } from '@/renderer/lib/utils'
-
-type CustomerSummary = {
-  id: number
-  name: string
-  phone: string | null
-  email: string | null
-  address: string | null
-  notes: string | null
-  isActive: boolean
-  createdAt?: string
-  updatedAt: string
-}
-
-type CustomerFormState = {
-  name: string
-  phone: string
-  email: string
-  address: string
-  notes: string
-}
-
-type VehicleSummary = {
-  id: number
-  customerId: number
-  plateNumber: string
-  brand: string
-  model: string
-  year: number | null
-  vin: string | null
-  color: string | null
-  notes: string | null
-  isActive: boolean
-  createdAt?: string
-  updatedAt: string
-}
-
-type VehicleFormState = {
-  plateNumber: string
-  brand: string
-  model: string
-  year: string
-  vin: string
-  color: string
-  notes: string
-}
+import type { CustomerSummary } from '@/shared/types/customer'
+import type { VehicleSummary } from '@/shared/types/vehicle'
+import type { CustomerFormState, VehicleFormState } from './CustomerWorkspace.types'
 
 const customerSeeds: CustomerSummary[] = [
   {

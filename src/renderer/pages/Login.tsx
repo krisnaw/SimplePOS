@@ -6,13 +6,7 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { cn } from '@/renderer/lib/utils'
-
-type DatabaseConnectionState = 'checking' | 'connected_existing' | 'connected_created' | 'error'
-
-type DatabaseIndicator = {
-  state: DatabaseConnectionState
-  message: string
-}
+import type { DatabaseConnectionState, DatabaseIndicator } from './Login.types'
 
 export default function Login() {
   const navigate = useNavigate()

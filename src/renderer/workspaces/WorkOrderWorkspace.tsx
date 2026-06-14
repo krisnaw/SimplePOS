@@ -16,28 +16,20 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
-import type { AuthenticatedUser } from '@/shared/types/app'
+import type { AuthenticatedUser, UserSummary } from '@/shared/types/user'
+import type { CustomerSummary } from '@/shared/types/customer'
+import type { VehicleSummary } from '@/shared/types/vehicle'
+import type { ProductSummary } from '@/shared/types/product'
+import type { ServiceSummary } from '@/shared/types/service'
+import type {
+  WorkOrderSummary,
+  WorkOrderDetail,
+  WorkOrderStatus,
+  WorkOrderPriority,
+} from '@/shared/types/work-order'
+import type { CatalogItem } from './WorkOrderWorkspace.types'
 
 type SimplePosApi = NonNullable<Window['simplepos']>
-type WorkOrderSummary = Awaited<ReturnType<SimplePosApi['workOrders']['list']>>[number]
-type WorkOrderDetail = Awaited<ReturnType<SimplePosApi['workOrders']['get']>>
-type WorkOrderStatus = WorkOrderSummary['status']
-type WorkOrderPriority = WorkOrderSummary['priority']
-type CustomerSummary = Awaited<ReturnType<SimplePosApi['customers']['list']>>[number]
-type VehicleSummary = Awaited<ReturnType<SimplePosApi['vehicles']['list']>>[number]
-type ProductSummary = Awaited<ReturnType<SimplePosApi['products']['list']>>[number]
-type ServiceSummary = Awaited<ReturnType<SimplePosApi['services']['list']>>[number]
-type UserSummary = Awaited<ReturnType<SimplePosApi['users']['list']>>[number]
-
-type CatalogItem = {
-  id: number
-  itemType: 'product' | 'service'
-  name: string
-  code: string
-  category: string
-  price: number
-  stockQty: number | null
-}
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
@@ -108,7 +100,7 @@ function getVehicleLabel(vehicle: VehicleSummary): string {
 
 export function WorkOrderWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
   const [workOrders, setWorkOrders] = useState<WorkOrderSummary[]>([])
-  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrderDetail>(null)
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrderDetail | null>(null)
   const [customers, setCustomers] = useState<CustomerSummary[]>([])
   const [vehicles, setVehicles] = useState<VehicleSummary[]>([])
   const [products, setProducts] = useState<ProductSummary[]>([])

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, ClipboardList, Receipt, UserRound, WalletCards } from 'lucide-react'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
-import type { AuthenticatedUser } from '@/shared/types/app'
-
-type DashboardSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['dashboard']['getSummary']>>
+import type { AuthenticatedUser } from '@/shared/types/user'
+import type { DashboardSummary } from './DashboardOverview.types'
 
 const emptySummary: DashboardSummary = {
   paidSalesTotal: 0,

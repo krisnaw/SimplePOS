@@ -6,40 +6,8 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
-
-type ProductCategorySummary = {
-  id: number
-  name: string
-  description: string | null
-}
-
-type ProductSummary = {
-  id: number
-  categoryId: number | null
-  sku: string
-  barcode: string | null
-  name: string
-  description: string | null
-  unitPrice: number
-  unitType: 'piece' | 'litre' | 'set' | 'box'
-  stockQty: number
-  minStock: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-type ProductFormState = {
-  sku: string
-  barcode: string
-  name: string
-  description: string
-  categoryId: string
-  unitPrice: string
-  unitType: 'piece' | 'litre' | 'set' | 'box'
-  stockQty: string
-  minStock: string
-}
+import type { ProductSummary, ProductCategorySummary } from '@/shared/types/product'
+import type { ProductFormState } from './InventoryWorkspace.types'
 
 const emptyForm: ProductFormState = {
   sku: '',

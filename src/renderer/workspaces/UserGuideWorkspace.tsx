@@ -1,12 +1,6 @@
 import { BookOpen, Boxes, ClipboardList, LayoutDashboard, Receipt, ShoppingCart, Users } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
-
-type GuideSection = {
-  id: string
-  title: string
-  description: string
-  steps: string[]
-}
+import type { GuideSection, QuickLink } from './UserGuideWorkspace.types'
 
 const guideSections: GuideSection[] = [
   {
@@ -136,7 +130,7 @@ const guideSections: GuideSection[] = [
   },
 ]
 
-const quickLinks = [
+const quickLinks: QuickLink[] = [
   { id: 'getting-started', label: 'Getting Started', icon: BookOpen },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'cashier-workflow', label: 'Cashier Workflow', icon: Users },

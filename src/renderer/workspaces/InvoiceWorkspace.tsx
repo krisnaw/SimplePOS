@@ -6,10 +6,7 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
-
-type InvoiceSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['invoices']['list']>>[number]
-type InvoiceDetail = Awaited<ReturnType<NonNullable<typeof window.simplepos>['invoices']['get']>>
-type InvoiceStatusFilter = 'all' | InvoiceSummary['status']
+import type { InvoiceSummary, InvoiceDetail, InvoiceStatusFilter } from './InvoiceWorkspace.types'
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'

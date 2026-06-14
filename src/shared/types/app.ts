@@ -1,22 +1,6 @@
-export type UserRole = 'admin' | 'cashier'
+import type { UserRole, AuthenticatedUser, UserSummary } from './user'
 
-export type AuthenticatedUser = {
-  id: number
-  email: string
-  name: string
-  role: UserRole
-}
-
-export type UserSummary = {
-  id: number
-  email: string
-  name: string
-  role: UserRole
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  lastLoginAt: string | null
-}
+export type { UserRole, AuthenticatedUser, UserSummary }
 
 export type AppSection =
   | 'dashboard'

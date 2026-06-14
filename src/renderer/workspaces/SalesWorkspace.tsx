@@ -14,28 +14,9 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
-import type { AuthenticatedUser } from '@/shared/types/app'
-
-type SimplePosApi = NonNullable<Window['simplepos']>
-type CustomerSummary = Awaited<ReturnType<SimplePosApi['customers']['list']>>[number]
-
-type SampleProduct = {
-  id: number
-  itemType: 'product' | 'service'
-  name: string
-  category: string
-  sku: string
-  description: string
-  compatibility: string
-  price: number
-  stock: number
-  minStock: number
-}
-
-type CartItem = SampleProduct & {
-  cartKey: string
-  quantity: number
-}
+import type { AuthenticatedUser } from '@/shared/types/user'
+import type { CustomerSummary } from '@/shared/types/customer'
+import type { SimplePosApi, SampleProduct, CartItem } from './SalesWorkspace.types'
 
 const UNLIMITED_STOCK = 999
 

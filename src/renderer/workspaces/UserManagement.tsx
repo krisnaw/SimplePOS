@@ -6,7 +6,7 @@ import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
-import type { AuthenticatedUser, UserRole, UserSummary } from '@/shared/types/app'
+import type { AuthenticatedUser, UserRole, UserSummary } from '@/shared/types/user'
 
 export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser }) {
   const [users, setUsers] = useState<UserSummary[]>([])

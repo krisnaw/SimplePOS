@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Barcode, Database, FileText, LogOut, Printer } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { navigationItems, sectionDetails } from '@/renderer/navigation'
-import type { AppSection, AuthenticatedUser } from '@/shared/types/app'
+import type { AppSection } from '@/shared/types/app'
+import type { AuthenticatedUser } from '@/shared/types/user'
 import { CustomerWorkspace } from '@/renderer/workspaces/CustomerWorkspace'
 import { DashboardOverview } from '@/renderer/workspaces/DashboardOverview'
 import { InvoiceWorkspace } from '@/renderer/workspaces/InvoiceWorkspace'
@@ -16,10 +17,7 @@ import { UserGuideWorkspace } from '@/renderer/workspaces/UserGuideWorkspace'
 import { UserManagement } from '@/renderer/workspaces/UserManagement'
 import { WorkOrderWorkspace } from '@/renderer/workspaces/WorkOrderWorkspace'
 import { cn } from '@/renderer/lib/utils'
-
-type DashboardLocationState = {
-  user?: AuthenticatedUser
-}
+import type { DashboardLocationState } from './Dashboard.types'
 
 const systemIndicators = [
   {

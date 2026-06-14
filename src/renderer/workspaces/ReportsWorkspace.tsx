@@ -4,9 +4,7 @@ import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
-
-type ReportPeriod = 'today' | 'week' | 'month' | 'quarter'
-type ReportSummary = Awaited<ReturnType<NonNullable<typeof window.simplepos>['reports']['getSummary']>>
+import type { ReportPeriod, ReportSummary } from './ReportsWorkspace.types'
 
 const emptyReport: ReportSummary = {
   period: 'today',
