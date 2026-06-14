@@ -97,10 +97,10 @@ export default function Login() {
           <p className="text-sm text-muted-foreground text-pretty">Car Repair Shop Management</p>
         </div>
 
-        <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
-          <CardHeader className="flex flex-col gap-1 pb-4">
-            <CardTitle className="text-base text-balance">Sign in</CardTitle>
-            <CardDescription className="text-pretty">Enter your credentials to continue</CardDescription>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign in</CardTitle>
+            <CardDescription>Enter your credentials to continue</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -68,13 +68,13 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
   return (
     <div className="stagger-children grid gap-4">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-balance">
+            <CardTitle>
               <UserRound aria-hidden="true" className="size-4 text-muted-foreground" />
               User
             </CardTitle>
-            <CardDescription className="text-pretty">Current session</CardDescription>
+            <CardDescription>Current session</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-1 text-sm">
             <span className="truncate text-pretty">{user.email}</span>
@@ -82,13 +82,13 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-balance">
+            <CardTitle>
               <ClipboardList aria-hidden="true" className="size-4 text-muted-foreground" />
               Work Orders
             </CardTitle>
-            <CardDescription className="text-pretty">Active jobs</CardDescription>
+            <CardDescription>Active jobs</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-1">
             <p className="text-3xl font-semibold tabular-nums">
@@ -100,13 +100,13 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-balance">
+            <CardTitle>
               <WalletCards aria-hidden="true" className="size-4 text-muted-foreground" />
               Sales
             </CardTitle>
-            <CardDescription className="text-pretty">Paid invoices</CardDescription>
+            <CardDescription>Paid invoices</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold tabular-nums">
@@ -115,13 +115,13 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-balance">
+            <CardTitle>
               <Receipt aria-hidden="true" className="size-4 text-muted-foreground" />
               Invoices
             </CardTitle>
-            <CardDescription className="text-pretty">Paid status</CardDescription>
+            <CardDescription>Paid status</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">
@@ -130,13 +130,13 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-balance">
+            <CardTitle>
               <AlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
               Low Stock
             </CardTitle>
-            <CardDescription className="text-pretty">Needs review</CardDescription>
+            <CardDescription>Needs review</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">
@@ -146,10 +146,10 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         </Card>
       </div>
 
-      <Card className="border-0 shadow-border">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base text-balance">Recent Transactions</CardTitle>
-          <CardDescription className="text-pretty">Latest completed invoices and payments.</CardDescription>
+          <CardTitle>Recent Transactions</CardTitle>
+          <CardDescription>Latest completed invoices and payments.</CardDescription>
         </CardHeader>
         <CardContent>
           {summary.recentTransactions.length === 0 ? (

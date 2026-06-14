@@ -11,7 +11,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
@@ -374,12 +374,12 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
   return (
     <div className="grid min-h-0 min-w-0 gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
-      <Card className="flex min-h-140 min-w-0 flex-col gap-0 overflow-hidden py-0 shadow-border">
-        <CardHeader className="gap-2 border-b px-4 py-2.5">
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <CardTitle className="text-sm text-balance">Work Orders</CardTitle>
-              <CardDescription className="truncate text-xs text-pretty">
+              <CardTitle>Work Orders</CardTitle>
+              <CardDescription>
                 Repair jobs before checkout
               </CardDescription>
             </div>
@@ -501,14 +501,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       </Card>
 
       <div className="grid min-h-0 min-w-0 gap-3 2xl:grid-cols-[minmax(0,1fr)_420px]">
-        <Card className="min-w-0 gap-0 py-0 shadow-border">
-          <CardHeader className="gap-1 border-b px-4 py-3">
+        <Card>
+          <CardHeader>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <CardTitle className="text-sm text-balance">
+                <CardTitle>
                   {selectedWorkOrder ? selectedWorkOrder.orderNumber : 'New Work Order'}
                 </CardTitle>
-                <CardDescription className="text-xs text-pretty">
+                <CardDescription>
                   Customer vehicle, complaint, assignment, and job status.
                 </CardDescription>
               </div>
@@ -724,17 +724,15 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
           </CardContent>
         </Card>
 
-        <Card className="flex min-h-140 min-w-0 flex-col gap-0 overflow-hidden shadow-border">
-          <CardHeader className="gap-1 border-b px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <CardTitle className="text-sm text-balance">Items And Totals</CardTitle>
-                <CardDescription className="truncate text-xs text-pretty">
-                  Services and products attached to the repair job.
-                </CardDescription>
-              </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Items And Totals</CardTitle>
+            <CardDescription>
+              Services and products attached to the repair job.
+            </CardDescription>
+            <CardAction>
               <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            </div>
+            </CardAction>
           </CardHeader>
 
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3">

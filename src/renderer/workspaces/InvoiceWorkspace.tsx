@@ -143,8 +143,8 @@ export function InvoiceWorkspace() {
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base text-balance">Invoice History</CardTitle>
-          <CardDescription className="text-pretty">
+          <CardTitle>Invoice History</CardTitle>
+          <CardDescription>
             {isLoadingList ? 'Loading invoices' : `${totals.count} invoice${totals.count === 1 ? '' : 's'}`}
           </CardDescription>
           <CardAction>
@@ -301,11 +301,11 @@ export function InvoiceWorkspace() {
         {selectedInvoice ? (
           <>
             <CardHeader>
-              <CardTitle className="truncate text-base tabular-nums">{selectedInvoice.invoiceNumber}</CardTitle>
-              <CardDescription className="text-pretty">
+              <CardTitle>{selectedInvoice.invoiceNumber}</CardTitle>
+              <CardDescription>
                 {selectedInvoice.customerName ?? 'Walk-in customer'} · {formatDateTime(selectedInvoice.issuedAt)}
               </CardDescription>
-              <CardAction className="inline-flex gap-2">
+              <CardAction>
                 <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
                   <Printer data-icon="inline-start" aria-hidden="true" />
                   Print

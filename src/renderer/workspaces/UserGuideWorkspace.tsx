@@ -1,6 +1,5 @@
 import { BookOpen, Boxes, ClipboardList, LayoutDashboard, Receipt, ShoppingCart, Users } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
-import { cn } from '@/renderer/lib/utils'
 
 type GuideSection = {
   id: string
@@ -150,10 +149,10 @@ const quickLinks = [
 export function UserGuideWorkspace() {
   return (
     <div className="flex min-h-0 flex-col gap-4">
-      <Card className="border-0 shadow-border">
-        <CardHeader className="gap-2 pb-4">
-          <CardTitle className="text-base text-balance">How to Use SimplePOS</CardTitle>
-          <CardDescription className="text-pretty">
+      <Card>
+        <CardHeader>
+          <CardTitle>How to Use SimplePOS</CardTitle>
+          <CardDescription>
             Practical instructions for cashier checkout, invoices, customers, and inventory handoff.
           </CardDescription>
         </CardHeader>
@@ -180,11 +179,10 @@ export function UserGuideWorkspace() {
           <Card
             key={section.id}
             id={section.id}
-            className="scroll-mt-4 border-0 shadow-border"
           >
-            <CardHeader className="gap-1">
-              <CardTitle className="text-base text-balance">{section.title}</CardTitle>
-              <CardDescription className="text-pretty">{section.description}</CardDescription>
+            <CardHeader>
+              <CardTitle>{section.title}</CardTitle>
+              <CardDescription>{section.description}</CardDescription>
             </CardHeader>
             <CardContent>
               <ol className="flex list-decimal flex-col gap-2 pl-4 text-sm text-pretty">
@@ -199,10 +197,10 @@ export function UserGuideWorkspace() {
         ))}
       </div>
 
-      <Card className={cn('border-0 shadow-border')}>
-        <CardHeader className="gap-1">
-          <CardTitle className="text-base text-balance">Role Access</CardTitle>
-          <CardDescription className="text-pretty">What each account type is intended to do.</CardDescription>
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Access</CardTitle>
+          <CardDescription>What each account type is intended to do.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2">
           <div className="rounded-lg bg-muted/50 px-4 py-3">

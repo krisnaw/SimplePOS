@@ -96,7 +96,7 @@ export function SettingsWorkspace() {
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">External Devices</CardTitle>
+          <CardTitle>External Devices</CardTitle>
           <CardDescription>Manage hardware and service connections used by the POS.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
@@ -156,7 +156,7 @@ export function SettingsWorkspace() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Device Notes</CardTitle>
+          <CardTitle>Device Notes</CardTitle>
           <CardDescription>Configuration placeholders for later integration.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
@@ -175,9 +175,9 @@ export function SettingsWorkspace() {
         </CardContent>
       </Card>
 
-      <Card className="xl:col-start-2">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base">Software Updates</CardTitle>
+          <CardTitle>Software Updates</CardTitle>
           <CardDescription>Updates are delivered from GitHub Releases.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">

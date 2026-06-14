@@ -10,7 +10,7 @@ export function SectionWorkspace({ section }: { section: AppSection }) {
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{details.title} Workspace</CardTitle>
+          <CardTitle>{details.title} Workspace</CardTitle>
           <CardDescription>Primary tools and records will appear here.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -27,7 +27,7 @@ export function SectionWorkspace({ section }: { section: AppSection }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Quick Actions</CardTitle>
+          <CardTitle>Quick Actions</CardTitle>
           <CardDescription>Common actions for this section</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">

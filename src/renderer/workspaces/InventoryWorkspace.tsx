@@ -196,7 +196,7 @@ export function InventoryWorkspace() {
         <div className="grid shrink-0 gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Total Items</CardTitle>
+              <CardTitle>Total Items</CardTitle>
               <CardDescription>Active product SKUs</CardDescription>
             </CardHeader>
             <CardContent>
@@ -206,7 +206,7 @@ export function InventoryWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Stock Units</CardTitle>
+              <CardTitle>Stock Units</CardTitle>
               <CardDescription>Available quantity</CardDescription>
             </CardHeader>
             <CardContent>
@@ -216,7 +216,7 @@ export function InventoryWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Low Stock</CardTitle>
+              <CardTitle>Low Stock</CardTitle>
               <CardDescription>At or below minimum</CardDescription>
             </CardHeader>
             <CardContent>
@@ -225,11 +225,11 @@ export function InventoryWorkspace() {
           </Card>
         </div>
 
-        <Card className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <CardHeader className="shrink-0">
+        <Card>
+          <CardHeader>
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
-                <CardTitle className="text-base">Product List</CardTitle>
+                <CardTitle>Product List</CardTitle>
                 <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
               </div>
               <div className="flex gap-2">
@@ -340,10 +340,9 @@ export function InventoryWorkspace() {
         </Card>
       </div>
 
-      <Card className="flex min-h-0 min-w-0 flex-col overflow-hidden">
-        <CardHeader className="shrink-0">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <PackagePlus aria-hidden="true" />
+      <Card>
+        <CardHeader>
+          <CardTitle>
             {editingProduct ? 'Edit Product' : 'Create Product'}
           </CardTitle>
           <CardDescription>

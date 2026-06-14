@@ -121,10 +121,10 @@ export function ReportsWorkspace() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="shadow-border">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base text-balance">Report Filters</CardTitle>
-          <CardDescription className="text-pretty">
+          <CardTitle>Report Filters</CardTitle>
+          <CardDescription>
             Reviewing {formatDate(report.dateFrom)} to {formatDate(report.dateTo)}.
           </CardDescription>
         </CardHeader>
@@ -163,13 +163,13 @@ export function ReportsWorkspace() {
           const Icon = summary.icon
 
           return (
-            <Card key={summary.title} className="shadow-border transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+            <Card key={summary.title}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base text-balance">
+                <CardTitle>
                   <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
                   {summary.title}
                 </CardTitle>
-                <CardDescription className="text-pretty">{summary.description}</CardDescription>
+                <CardDescription>{summary.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-1">
                 <p className="text-2xl font-semibold tabular-nums">{isLoading ? '...' : summary.value}</p>
@@ -181,10 +181,10 @@ export function ReportsWorkspace() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="shadow-border md:col-span-2 xl:col-span-3">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base text-balance">Top Selling Items</CardTitle>
-            <CardDescription className="text-pretty">Products and services ranked by revenue.</CardDescription>
+            <CardTitle>Top Selling Items</CardTitle>
+            <CardDescription>Products and services ranked by revenue.</CardDescription>
           </CardHeader>
           <CardContent>
             {report.topSellingItems.length === 0 ? (
@@ -221,10 +221,10 @@ export function ReportsWorkspace() {
         </Card>
 
         <div className="flex flex-col gap-4">
-          <Card className="shadow-border">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-base text-balance">Payment Methods</CardTitle>
-              <CardDescription className="text-pretty">Paid invoices by method.</CardDescription>
+              <CardTitle>Payment Methods</CardTitle>
+              <CardDescription>Paid invoices by method.</CardDescription>
             </CardHeader>
             <CardContent>
               {report.paymentMethods.length === 0 ? (
@@ -249,10 +249,10 @@ export function ReportsWorkspace() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-border">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-base text-balance">Low Stock</CardTitle>
-              <CardDescription className="text-pretty">Items at or below minimum stock.</CardDescription>
+              <CardTitle>Low Stock</CardTitle>
+              <CardDescription>Items at or below minimum stock.</CardDescription>
             </CardHeader>
             <CardContent>
               {report.lowStockItems.length === 0 ? (

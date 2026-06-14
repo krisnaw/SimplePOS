@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { Checkbox } from '@/renderer/components/ui/checkbox'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
@@ -118,7 +119,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">User Accounts</CardTitle>
+          <CardTitle>User Accounts</CardTitle>
           <CardDescription>Admins can manage cashier and admin access.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -169,7 +170,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{selectedUser ? 'Edit User' : 'Create User'}</CardTitle>
+          <CardTitle>{selectedUser ? 'Edit User' : 'Create User'}</CardTitle>
           <CardDescription>
             {selectedUser ? 'Update account details or reset the password.' : 'Add an admin or cashier account.'}
           </CardDescription>
@@ -231,12 +232,10 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
               </div>
 
               {selectedUser ? (
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                <label className="flex min-h-10 items-center gap-2 text-sm">
+                  <Checkbox
                     checked={isActive}
-                    onChange={(event) => setIsActive(event.target.checked)}
-                    className="size-4"
+                    onCheckedChange={setIsActive}
                   />
                   Active account
                 </label>

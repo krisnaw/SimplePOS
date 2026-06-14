@@ -385,7 +385,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
   return (
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
-      <Card className="flex min-h-0 min-w-0 flex-col gap-2 overflow-hidden shadow-border">
+      <Card>
         <div className="flex shrink-0 flex-col gap-2 px-4">
           <div className="relative h-10">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
@@ -548,12 +548,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         </div>
       </Card>
 
-      <Card className="flex min-h-0 min-w-0 flex-col gap-0 overflow-hidden border-0 py-0 shadow-border">
-        <CardHeader className="shrink-0 gap-1 border-b px-4 py-2.5">
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-baseline gap-2">
-              <CardTitle className="text-sm text-balance">Current Sale</CardTitle>
-              <CardDescription className="truncate text-xs text-pretty">
+              <CardTitle>Current Sale</CardTitle>
+              <CardDescription>
                 {cartItemCount > 0
                   ? `${cartItemCount} item${cartItemCount === 1 ? '' : 's'}`
                   : 'No items yet'}

@@ -521,7 +521,7 @@ export function CustomerWorkspace() {
         <div className="grid gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Customers</CardTitle>
+              <CardTitle>Customers</CardTitle>
               <CardDescription>Active records</CardDescription>
             </CardHeader>
             <CardContent>
@@ -531,7 +531,7 @@ export function CustomerWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Contacts</CardTitle>
+              <CardTitle>Contacts</CardTitle>
               <CardDescription>Email available</CardDescription>
             </CardHeader>
             <CardContent>
@@ -541,7 +541,7 @@ export function CustomerWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Vehicles</CardTitle>
+              <CardTitle>Vehicles</CardTitle>
               <CardDescription>Registered assets</CardDescription>
             </CardHeader>
             <CardContent>
@@ -550,11 +550,11 @@ export function CustomerWorkspace() {
           </Card>
         </div>
 
-        <Card className="min-h-0">
+        <Card>
           <CardHeader>
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
-                <CardTitle className="text-base">Customer List</CardTitle>
+                <CardTitle>Customer List</CardTitle>
                 <CardDescription>Find customers by name, phone, email, or address.</CardDescription>
               </div>
               <div className="flex gap-2">
@@ -624,11 +624,11 @@ export function CustomerWorkspace() {
           </CardContent>
         </Card>
 
-        <Card className="min-h-0">
+        <Card>
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <CardTitle className="text-base">Vehicle List</CardTitle>
+                <CardTitle>Vehicle List</CardTitle>
                 <CardDescription>
                   {selectedCustomer ? `Vehicles linked to ${selectedCustomer.name}.` : 'Select a customer to manage vehicles.'}
                 </CardDescription>
@@ -697,9 +697,9 @@ export function CustomerWorkspace() {
       </div>
 
       <div className="flex min-h-0 flex-col gap-3 overflow-auto">
-        <Card className="min-h-0">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle>
               <UserRound aria-hidden="true" />
               {selectedCustomer ? 'Edit Customer' : 'Create Customer'}
             </CardTitle>
@@ -807,9 +807,9 @@ export function CustomerWorkspace() {
           </CardContent>
         </Card>
 
-        <Card className="min-h-0">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle>
               <Car aria-hidden="true" />
               {selectedVehicle ? 'Edit Vehicle' : 'Create Vehicle'}
             </CardTitle>
