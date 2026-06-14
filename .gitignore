@@ -7,3 +7,6 @@ release/
 simplepos.sqlite
 docs
 .claude/
+.agents
+.idea
+.claude
