@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Car, Mail, MapPin, Phone, Plus, Search, UserRound } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { cn } from '@/renderer/lib/utils'
@@ -552,72 +552,79 @@ export function CustomerWorkspace() {
 
         <Card>
           <CardHeader>
+            <CardTitle>Customer List</CardTitle>
+            <CardDescription>Find customers by name, phone, email, or address.</CardDescription>
+            <CardAction>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Create customer"
+                onClick={startNewCustomer}
+              >
+                <Plus aria-hidden="true" />
+              </Button>
+            </CardAction>
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
-                <CardTitle>Customer List</CardTitle>
-                <CardDescription>Find customers by name, phone, email, or address.</CardDescription>
+
               </div>
               <div className="flex gap-2">
-                <div className="relative min-w-56">
-                  <Search
-                    className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Input
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="Search customers"
-                    className="pl-8"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Create customer"
-                  onClick={startNewCustomer}
-                >
-                  <Plus aria-hidden="true" />
-                </Button>
+
+
               </div>
             </div>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
-            <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
-              <div className="flex min-h-0 min-w-[760px] flex-1 flex-col rounded-lg border bg-background">
-                <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
-                  <span>Customer</span>
-                  <span>Phone</span>
-                  <span>Address</span>
-                  <span className="text-right">Updated</span>
-                </div>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="relative min-w-56">
+                <Search
+                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search customers"
+                  className="pl-8"
+                />
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
+                <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
+                  <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    <span>Customer</span>
+                    <span>Phone</span>
+                    <span>Address</span>
+                    <span className="text-right">Updated</span>
+                  </div>
 
-                <div className="min-h-0 flex-1 divide-y overflow-y-auto">
-                  {filteredCustomers.length === 0 ? (
-                    <div className="px-3 py-6 text-sm text-muted-foreground">No customers match this search.</div>
-                  ) : null}
+                  <div className="min-h-0 flex-1 divide-y overflow-y-auto">
+                    {filteredCustomers.length === 0 ? (
+                      <div className="px-3 py-6 text-sm text-muted-foreground">No customers match this search.</div>
+                    ) : null}
 
-                  {filteredCustomers.map((customer) => (
-                    <button
-                      key={customer.id}
-                      type="button"
-                      onClick={() => selectCustomer(customer)}
-                      className={cn(
-                        'grid min-h-12 w-full grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 px-3 py-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/60 active:scale-[0.99]',
-                        selectedCustomerId === customer.id && 'bg-muted',
-                      )}
-                    >
+                    {filteredCustomers.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={() => selectCustomer(customer)}
+                        className={cn(
+                          'grid min-h-12 w-full grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 px-3 py-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/60 active:scale-[0.99]',
+                          selectedCustomerId === customer.id && 'bg-muted',
+                        )}
+                      >
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{customer.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{customer.email || 'No email'}</span>
                       </span>
-                      <span className="truncate tabular-nums">{customer.phone}</span>
-                      <span className="truncate text-muted-foreground">{customer.address || 'No address'}</span>
-                      <span className="truncate text-right text-xs text-muted-foreground tabular-nums">
+                        <span className="truncate tabular-nums">{customer.phone}</span>
+                        <span className="truncate text-muted-foreground">{customer.address || 'No address'}</span>
+                        <span className="truncate text-right text-xs text-muted-foreground tabular-nums">
                         {formatDate(customer.updatedAt)}
                       </span>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -626,13 +633,11 @@ export function CustomerWorkspace() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle>Vehicle List</CardTitle>
-                <CardDescription>
-                  {selectedCustomer ? `Vehicles linked to ${selectedCustomer.name}.` : 'Select a customer to manage vehicles.'}
-                </CardDescription>
-              </div>
+            <CardTitle>Vehicle List</CardTitle>
+            <CardDescription>
+              {selectedCustomer ? `Vehicles linked to ${selectedCustomer.name}.` : 'Select a customer to manage vehicles.'}
+            </CardDescription>
+            <CardAction>
               <Button
                 type="button"
                 variant="outline"
@@ -643,11 +648,11 @@ export function CustomerWorkspace() {
               >
                 <Plus aria-hidden="true" />
               </Button>
-            </div>
+            </CardAction>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
             <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
-              <div className="flex min-h-0 min-w-[760px] flex-1 flex-col rounded-lg border bg-background">
+              <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
                 <div className="grid shrink-0 grid-cols-[minmax(180px,1fr)_minmax(140px,0.8fr)_minmax(120px,0.7fr)_minmax(120px,0.7fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
                   <span>Vehicle</span>
                   <span>Plate</span>

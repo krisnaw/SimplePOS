@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PackagePlus, Search, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
@@ -227,29 +227,15 @@ export function InventoryWorkspace() {
 
         <Card>
           <CardHeader>
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-              <div>
-                <CardTitle>Product List</CardTitle>
-                <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <div className="relative min-w-56">
-                  <Search
-                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search inventory"
-                    className="pl-8"
-                  />
-                </div>
-                <Button type="button" variant="outline" size="icon" aria-label="Filter inventory">
-                  <SlidersHorizontal aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
+            <CardTitle>Product List</CardTitle>
+            <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
+            <CardAction>
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search inventory"
+              />
+            </CardAction>
           </CardHeader>
           <CardContent className="min-h-0 min-w-0 flex-1 overflow-hidden pb-4">
             <div className="h-full min-h-0 min-w-0 overflow-y-auto rounded-lg border bg-background">

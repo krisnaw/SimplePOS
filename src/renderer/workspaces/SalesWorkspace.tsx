@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronLeft, ChevronRight, Minus, Plus, Search, ShoppingCart, X } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
@@ -386,62 +394,63 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   return (
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card>
-        <div className="flex shrink-0 flex-col gap-2 px-4">
-          <div className="relative h-10">
+        <CardHeader>
+            <div className="relative h-10">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
               <Search aria-hidden="true" className="size-4" />
             </span>
-            <Input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search products, services, SKU, category..."
-              aria-label="Search products and services"
-              className="h-10 pl-10 pr-10"
-            />
-            {searchQuery ? (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {categories.map((category) => {
-              const isActive = categoryFilter === category
-
-              return (
+              <Input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search products, services, SKU, category..."
+                aria-label="Search products and services"
+                className="h-10 pl-10 pr-10"
+              />
+              {searchQuery ? (
                 <button
-                  key={category}
                   type="button"
-                  aria-pressed={isActive}
-                  onClick={() => setCategoryFilter(category)}
-                  className={cn(
-                    'rounded-full px-3 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96]',
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-                  )}
+                  aria-label="Clear search"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
                 >
-                  {category}
+                  <X className="size-4" aria-hidden="true" />
                 </button>
-              )
-            })}
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {categories.map((category) => {
+                const isActive = categoryFilter === category
+
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setCategoryFilter(category)}
+                    className={cn(
+                      'rounded-full px-3 py-1 text-xs font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96]',
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                    )}
+                  >
+                    {category}
+                  </button>
+                )
+              })}
+            </div>
+
+            <p className="text-xs text-muted-foreground text-pretty tabular-nums">
+              {visibleProducts.length} item{visibleProducts.length === 1 ? '' : 's'}
+              {searchQuery ? ` matching "${searchQuery.trim()}"` : null}
+            </p>
           </div>
+        </CardHeader>
 
-          <p className="text-xs text-muted-foreground text-pretty tabular-nums">
-            {visibleProducts.length} item{visibleProducts.length === 1 ? '' : 's'}
-            {searchQuery ? ` matching "${searchQuery.trim()}"` : null}
-          </p>
-        </div>
-
-        <CardContent className="min-h-0 flex-1 overflow-hidden px-3 pt-1 pb-2">
+        <CardContent>
           {visibleProducts.length === 0 ? (
             <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
               <div className="flex max-w-xs flex-col gap-1">
@@ -513,52 +522,17 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             </div>
           )}
         </CardContent>
-
-        <div className="flex shrink-0 flex-col gap-2 border-t px-4 pt-2.5 pb-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground tabular-nums">
-            Showing {shownStart}-{shownEnd} of {visibleProducts.length} · {itemsPerPage} per page
-          </p>
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              className={pressableButtonClass}
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              aria-label="Previous catalog page"
-            >
-              <ChevronLeft aria-hidden="true" />
-            </Button>
-            <span className="min-w-16 text-center text-xs font-medium tabular-nums text-muted-foreground">
-              {currentPage} / {pageCount}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              className={pressableButtonClass}
-              disabled={currentPage >= pageCount}
-              onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-              aria-label="Next catalog page"
-            >
-              <ChevronRight aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
       </Card>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-baseline gap-2">
-              <CardTitle>Current Sale</CardTitle>
-              <CardDescription>
-                {cartItemCount > 0
-                  ? `${cartItemCount} item${cartItemCount === 1 ? '' : 's'}`
-                  : 'No items yet'}
-              </CardDescription>
-            </div>
+          <CardTitle>Current Sale</CardTitle>
+          <CardDescription>
+            {cartItemCount > 0
+              ? `${cartItemCount} item${cartItemCount === 1 ? '' : 's'}`
+              : 'No items yet'}
+          </CardDescription>
+          <CardAction>
             {cartItemCount > 0 ? (
               <span className="relative flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ShoppingCart className="size-4" aria-hidden="true" />
@@ -568,7 +542,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 </span>
               </span>
             ) : null}
-          </div>
+          </CardAction>
         </CardHeader>
 
         <CardContent className="flex min-h-0 flex-1 flex-col gap-2.5 px-4 pt-3 pb-4">

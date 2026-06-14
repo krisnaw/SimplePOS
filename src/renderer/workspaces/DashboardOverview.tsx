@@ -76,7 +76,7 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
             </CardTitle>
             <CardDescription>Current session</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-1 text-sm">
+          <CardContent>
             <span className="truncate text-pretty">{user.email}</span>
             <span className="capitalize text-muted-foreground text-pretty">{user.role}</span>
           </CardContent>
@@ -90,7 +90,7 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
             </CardTitle>
             <CardDescription>Active jobs</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-1">
+          <CardContent>
             <p className="text-3xl font-semibold tabular-nums">
               {isLoading ? '...' : summary.openWorkOrderCount + summary.inProgressWorkOrderCount}
             </p>
