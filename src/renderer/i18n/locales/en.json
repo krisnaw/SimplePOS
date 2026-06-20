@@ -50,6 +50,10 @@
       "label": "Inventory",
       "description": "Parts and stock"
     },
+    "services": {
+      "label": "Services",
+      "description": "Labor and service catalog"
+    },
     "workOrders": {
       "label": "Work Orders",
       "description": "Repairs in progress"
@@ -205,6 +209,15 @@
       "litre": "litre",
       "set": "set",
       "box": "box"
+    }
+  },
+  "services": {
+    "sections": {
+      "services": {
+        "eyebrow": "Service catalog",
+        "title": "Services",
+        "description": "Manage labor, inspections, and service charges used in sales and work orders."
+      }
     }
   },
   "customers": {

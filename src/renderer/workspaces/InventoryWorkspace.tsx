@@ -209,22 +209,23 @@ export function InventoryWorkspace() {
           </Card>
         </div>
 
-        <Card>
+        <Card className="min-h-0 flex-1 overflow-hidden">
           <CardHeader>
             <CardTitle>Product List</CardTitle>
             <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search inventory"
-              className="mb-2"
+              className="shrink-0"
             />
-            <div className="overflow-y-auto rounded-lg border bg-background">
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-background">
               <div
                 className={cn(
                   'sticky top-0 z-10 grid shrink-0 items-center gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur',
+                  'rounded-t-[calc(var(--radius-lg)-1px)]',
                   productTableGrid,
                 )}
               >
@@ -315,7 +316,7 @@ export function InventoryWorkspace() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <CardTitle>
             {editingProduct ? 'Edit Product' : 'Create Product'}
@@ -326,7 +327,7 @@ export function InventoryWorkspace() {
               : 'Add a part or consumable to the inventory list.'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-h-0 flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor="inventory-sku">SKU</Label>

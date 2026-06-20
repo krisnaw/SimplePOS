@@ -50,6 +50,10 @@
       "label": "Inventaris",
       "description": "Suku cadang dan stok"
     },
+    "services": {
+      "label": "Layanan",
+      "description": "Katalog jasa dan layanan"
+    },
     "workOrders": {
       "label": "Perintah Kerja",
       "description": "Perbaikan sedang berjalan"
@@ -205,6 +209,15 @@
       "litre": "liter",
       "set": "set",
       "box": "dus"
+    }
+  },
+  "services": {
+    "sections": {
+      "services": {
+        "eyebrow": "Katalog layanan",
+        "title": "Layanan",
+        "description": "Kelola jasa, inspeksi, dan biaya layanan yang digunakan di penjualan dan perintah kerja."
+      }
     }
   },
   "customers": {

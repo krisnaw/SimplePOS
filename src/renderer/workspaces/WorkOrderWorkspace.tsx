@@ -371,7 +371,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
           </CardAction>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
             <div className="relative">
               <Search
@@ -504,19 +504,12 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             ) : null}
           </CardHeader>
 
-          <CardContent>
-            <div
-              className={cn(
-                'grid transition-[grid-template-rows,opacity] duration-150 ease-in',
-                message ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-              )}
-            >
-              <div className="overflow-hidden">
-                <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground text-pretty" role="status">
-                  {message || '\u00a0'}
-                </p>
-              </div>
-            </div>
+          <CardContent className="flex flex-col gap-3">
+            {message ? (
+              <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground text-pretty" role="status">
+                {message}
+              </p>
+            ) : null}
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
@@ -714,7 +707,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             </CardAction>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
             {!selectedWorkOrder ? (
               <div className="flex min-h-40 flex-1 items-center justify-center rounded-lg border border-dashed bg-background p-4 text-center shadow-border">
                 <div className="flex max-w-xs flex-col items-center gap-2">

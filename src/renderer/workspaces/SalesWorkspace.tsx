@@ -296,8 +296,8 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
   return (
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
-      <Card>
-        <CardContent>
+      <Card className="min-h-0 overflow-hidden">
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="flex flex-col gap-2">
             <div className="relative h-10">
               <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
@@ -354,24 +354,23 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           </div>
 
           {isLoading ? (
-             <div className="flex h-full min-h-64 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
-               <div className="flex flex-col items-center gap-3">
-                 <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-                 <p className="text-sm text-muted-foreground">Loading catalog...</p>
-               </div>
-             </div>
-           ) : visibleProducts.length === 0 ? (
-             <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
-               <div className="flex max-w-xs flex-col gap-1">
-                 <p className="text-sm font-medium text-balance">No items found</p>
-                 <p className="text-sm text-muted-foreground text-pretty">
-                   Try another search term or category filter.
-                 </p>
-               </div>
-             </div>
-           ) : (
-
-            <div className="stagger-children grid auto-rows-fr gap-3 overflow-hidden px-1 pt-1 pb-2 md:grid-cols-2 xl:grid-cols-3">
+            <div className="flex h-full min-h-64 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <p className="text-sm text-muted-foreground">Loading catalog...</p>
+              </div>
+            </div>
+          ) : visibleProducts.length === 0 ? (
+            <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
+              <div className="flex max-w-xs flex-col gap-1">
+                <p className="text-sm font-medium text-balance">No items found</p>
+                <p className="text-sm text-muted-foreground text-pretty">
+                  Try another search term or category filter.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="stagger-children grid min-h-0 flex-1 auto-rows-auto content-start gap-3 overflow-auto px-1 pt-1 pb-2 md:grid-cols-2 xl:grid-cols-3">
               {paginatedProducts.map((product) => {
                 const cartKey = getCartKey(product)
                 const inCartQty = cartQuantityByProductId.get(cartKey) ?? 0
@@ -434,7 +433,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <CardTitle>Current Sale</CardTitle>
           <CardDescription>
@@ -455,7 +454,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           </CardAction>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="flex shrink-0 flex-col gap-1.5">
             <Label htmlFor="sale-customer">Customer</Label>
             <BaseSelect
@@ -475,26 +474,18 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             />
           </div>
 
-          <div
-            className={cn(
-              'grid shrink-0 transition-[grid-template-rows,opacity] duration-150 ease-in',
-              actionMessage ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-            )}
-          >
-            <div className="overflow-hidden">
-              <p
-                className={cn(
-                  'rounded-lg px-3 py-2 text-sm transition-[transform] duration-150 ease-in text-pretty',
-                  checkoutComplete ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground',
-                  actionMessage ? 'translate-y-0' : '-translate-y-3',
-                )}
-                role="status"
-                aria-live="polite"
-              >
-                {actionMessage || '\u00a0'}
-              </p>
-            </div>
-          </div>
+          {actionMessage ? (
+            <p
+              className={cn(
+                'shrink-0 rounded-lg px-3 py-2 text-sm text-pretty',
+                checkoutComplete ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground',
+              )}
+              role="status"
+              aria-live="polite"
+            >
+              {actionMessage}
+            </p>
+          ) : null}
 
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
             {cartItems.length === 0 ? (

@@ -14,6 +14,7 @@ import { InventoryWorkspace } from '@/renderer/workspaces/InventoryWorkspace'
 import { ReportsWorkspace } from '@/renderer/workspaces/ReportsWorkspace'
 import { SalesWorkspace } from '@/renderer/workspaces/SalesWorkspace'
 import { SectionWorkspace } from '@/renderer/workspaces/SectionWorkspace'
+import { ServicesWorkspace } from '@/renderer/workspaces/ServicesWorkspace'
 import { SettingsWorkspace } from '@/renderer/workspaces/SettingsWorkspace'
 import { UserGuideWorkspace } from '@/renderer/workspaces/UserGuideWorkspace'
 import { UserManagement } from '@/renderer/workspaces/UserManagement'
@@ -49,6 +50,7 @@ const sectionTranslationKeys: Record<AppSection, string> = {
   dashboard: 'dashboard',
   sales: 'sales',
   inventory: 'inventory',
+  services: 'services',
   'work-orders': 'workOrders',
   customers: 'customers',
   invoices: 'invoices',
@@ -190,11 +192,17 @@ export default function Dashboard() {
           <div className="flex min-h-0 flex-1 flex-col overflow-auto p-3 md:p-4">
             <div
               key={activeSection}
-              className={cn('flex flex-col gap-4', activeSection !== 'dashboard' && 'content-enter')}
+              className={cn(
+                'flex flex-col gap-4',
+                (activeSection === 'sales' || activeSection === 'inventory' || activeSection === 'services') &&
+                  'min-h-0 flex-1 overflow-hidden',
+                activeSection !== 'dashboard' && 'content-enter',
+              )}
             >
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
               {activeSection === 'sales' ? <SalesWorkspace currentUser={user} /> : null}
               {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
+              {activeSection === 'services' ? <ServicesWorkspace /> : null}
               {activeSection === 'work-orders' ? <WorkOrderWorkspace currentUser={user} /> : null}
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
               {activeSection === 'invoices' ? <InvoiceWorkspace /> : null}
@@ -205,6 +213,7 @@ export default function Dashboard() {
               {activeSection !== 'dashboard' &&
               activeSection !== 'sales' &&
               activeSection !== 'inventory' &&
+              activeSection !== 'services' &&
               activeSection !== 'work-orders' &&
               activeSection !== 'customers' &&
               activeSection !== 'invoices' &&

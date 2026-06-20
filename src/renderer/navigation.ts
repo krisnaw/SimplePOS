@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Users,
+  Wrench,
 } from 'lucide-react'
 import type { AppSection, SectionDetail } from '@/shared/types/app'
 
@@ -35,6 +36,12 @@ export const navigationItems: Array<{
     label: 'Inventory',
     description: 'Parts and stock',
     icon: Boxes,
+  },
+  {
+    id: 'services',
+    label: 'Services',
+    description: 'Labor and service catalog',
+    icon: Wrench,
   },
   {
     id: 'work-orders',
@@ -95,6 +102,11 @@ export const sectionDetails: Record<AppSection, SectionDetail> = {
     eyebrow: 'Stock control',
     title: 'Inventory',
     description: 'Track spare parts, supplies, stock levels, and reorder needs.',
+  },
+  services: {
+    eyebrow: 'Service catalog',
+    title: 'Services',
+    description: 'Manage labor, inspections, and service charges used in sales and work orders.',
   },
   'work-orders': {
     eyebrow: 'Repair queue',
