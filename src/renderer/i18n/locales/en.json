@@ -1,4 +1,10 @@
 {
+  "app": {
+    "subtitle": "Car Repair Shop"
+  },
+  "auth": {
+    "signOut": "Sign out"
+  },
   "common": {
     "search": "Search",
     "clear": "Clear",
@@ -23,6 +29,13 @@
     "online": "Online",
     "offline": "Offline",
     "notConfigured": "Not configured"
+  },
+  "system": {
+    "label": "System",
+    "database": "Database",
+    "printer": "Printer",
+    "barcodeScanner": "Barcode Scanner",
+    "standby": "Standby"
   },
   "navigation": {
     "dashboard": {
@@ -89,8 +102,13 @@
     },
     "user": "User",
     "currentSession": "Current session",
+    "workOrders": "Work Orders",
+    "activeJobs": "Active jobs",
+    "readyForCheckout": "{{count}} ready for checkout",
     "sales": "Sales",
+    "paidInvoices": "Paid invoices",
     "invoices": "Invoices",
+    "paidStatus": "Paid status",
     "createdToday": "Created today",
     "lowStock": "Low Stock",
     "needsReview": "Needs review",
@@ -114,7 +132,8 @@
     },
     "searchPlaceholder": "Search products, services, SKU, category...",
     "itemsFound": "{{count}} item",
-    "itemsFound_plural": "{{count}} items",
+    "itemsFound_one": "{{count}} item",
+    "itemsFound_other": "{{count}} items",
     "matching": " matching \"{{query}}\"",
     "noItemsFound": "No items found",
     "noItemsFoundHint": "Try another search term or category filter.",
@@ -290,10 +309,9 @@
       "sales": {
         "title": "Sales",
         "description": "Revenue for the selected period.",
-        "helper": "{{count}} invoice"
-      },
-      "sales_plural": {
-        "helper": "{{count}} invoices"
+        "helper": "{{count}} invoice",
+        "helper_one": "{{count}} invoice",
+        "helper_other": "{{count}} invoices"
       },
       "averageInvoice": {
         "title": "Average Invoice",
@@ -303,15 +321,19 @@
       "inventoryValue": {
         "title": "Inventory Value",
         "description": "Current active stock value.",
-        "helper": "{{count}} low-stock item"
-      },
-      "inventoryValue_plural": {
-        "helper": "{{count}} low-stock items"
+        "helper": "{{count}} low-stock item",
+        "helper_one": "{{count}} low-stock item",
+        "helper_other": "{{count}} low-stock items"
       },
       "discounts": {
         "title": "Discounts",
         "description": "Discounts applied to paid invoices.",
         "helper": "Selected period"
+      },
+      "workOrders": {
+        "title": "Work Orders",
+        "description": "Repair jobs opened in this period.",
+        "helper": "{{count}} completed · {{rate}}% rate"
       }
     },
     "topSelling": {
@@ -329,7 +351,8 @@
       "description": "Paid invoices by method.",
       "noPayments": "No payments in this period.",
       "paymentCount": "{{count}} payment",
-      "paymentCount_plural": "{{count}} payments"
+      "paymentCount_one": "{{count}} payment",
+      "paymentCount_other": "{{count}} payments"
     },
     "lowStock": {
       "title": "Low Stock",
@@ -347,6 +370,17 @@
     },
     "externalDevices": "External Devices",
     "devicesHint": "Manage hardware and service connections used by the POS.",
+    "devices": {
+      "database": {
+        "description": "Local POS data storage"
+      },
+      "printer": {
+        "description": "Default receipt output device"
+      },
+      "barcodeScanner": {
+        "description": "Product lookup input device"
+      }
+    },
     "deviceType": "Device type",
     "connection": "Connection",
     "deviceNotes": "Device Notes",
@@ -357,6 +391,10 @@
     "mutedDot": "Muted dot means the device is standby or not configured.",
     "softwareUpdates": "Software Updates",
     "updatesHint": "Updates are delivered from GitHub Releases.",
+    "updatesNotChecked": "Updates have not been checked yet",
+    "unableToCheckUpdates": "Unable to check for updates",
+    "language": "Language",
+    "languageHint": "Choose the display language for this device.",
     "percentDownloaded": "{{percent}}% downloaded",
     "check": "Check",
     "checking": "Checking",

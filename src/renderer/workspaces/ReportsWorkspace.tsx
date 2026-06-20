@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BarChart3, Boxes, ClipboardList, CreditCard, Download, Receipt } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Label } from '@/renderer/components/ui/label'
@@ -31,6 +32,7 @@ const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
 
 export function ReportsWorkspace() {
+  const { t } = useTranslation()
   const [period, setPeriod] = useState<ReportPeriod>('today')
   const [report, setReport] = useState<ReportSummary>(emptyReport)
   const [isLoading, setIsLoading] = useState(true)
@@ -60,38 +62,41 @@ export function ReportsWorkspace() {
 
   const reportGroups = [
     {
-      title: 'Sales',
-      description: 'Revenue for the selected period.',
+      title: t('reports.groups.sales.title'),
+      description: t('reports.groups.sales.description'),
       value: formatCurrency(report.salesTotal),
-      helper: `${report.invoiceCount} invoice${report.invoiceCount === 1 ? '' : 's'}`,
+      helper: t('reports.groups.sales.helper', { count: report.invoiceCount }),
       icon: BarChart3,
     },
     {
-      title: 'Average Invoice',
-      description: 'Mean completed invoice value.',
+      title: t('reports.groups.averageInvoice.title'),
+      description: t('reports.groups.averageInvoice.description'),
       value: formatCurrency(report.averageInvoiceTotal),
-      helper: `${formatCurrency(report.taxTotal)} tax collected`,
+      helper: t('reports.groups.averageInvoice.helper', { value: formatCurrency(report.taxTotal) }),
       icon: Receipt,
     },
     {
-      title: 'Inventory Value',
-      description: 'Current active stock value.',
+      title: t('reports.groups.inventoryValue.title'),
+      description: t('reports.groups.inventoryValue.description'),
       value: formatCurrency(report.inventoryValue),
-      helper: `${report.lowStockCount} low-stock item${report.lowStockCount === 1 ? '' : 's'}`,
+      helper: t('reports.groups.inventoryValue.helper', { count: report.lowStockCount }),
       icon: Boxes,
     },
     {
-      title: 'Discounts',
-      description: 'Discounts applied to paid invoices.',
+      title: t('reports.groups.discounts.title'),
+      description: t('reports.groups.discounts.description'),
       value: formatCurrency(report.discountTotal),
-      helper: 'Selected period',
+      helper: t('reports.groups.discounts.helper'),
       icon: CreditCard,
     },
     {
-      title: 'Work Orders',
-      description: 'Repair jobs opened in this period.',
+      title: t('reports.groups.workOrders.title'),
+      description: t('reports.groups.workOrders.description'),
       value: String(report.workOrderCount),
-      helper: `${report.completedWorkOrderCount} completed · ${report.workOrderCompletionRate}% rate`,
+      helper: t('reports.groups.workOrders.helper', {
+        count: report.completedWorkOrderCount,
+        rate: report.workOrderCompletionRate,
+      }),
       icon: ClipboardList,
     },
   ]
@@ -100,23 +105,23 @@ export function ReportsWorkspace() {
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Report Filters</CardTitle>
+          <CardTitle>{t('reports.filters')}</CardTitle>
           <CardDescription>
-            Reviewing {formatDate(report.dateFrom)} to {formatDate(report.dateTo)}.
+            {t('reports.dateRange', { from: formatDate(report.dateFrom), to: formatDate(report.dateTo) })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="report-period">Period</Label>
+            <Label htmlFor="report-period">{t('reports.period')}</Label>
             <BaseSelect
               id="report-period"
               value={period}
-              ariaLabel="Report period"
+              ariaLabel={t('reports.period')}
               options={[
-                { value: 'today', label: 'Today' },
-                { value: 'week', label: 'This Week' },
-                { value: 'month', label: 'This Month' },
-                { value: 'quarter', label: 'This Quarter' },
+                { value: 'today', label: t('reports.periods.today') },
+                { value: 'week', label: t('reports.periods.week') },
+                { value: 'month', label: t('reports.periods.month') },
+                { value: 'quarter', label: t('reports.periods.quarter') },
               ]}
               onValueChange={(value) => setPeriod(value as ReportPeriod)}
             />
@@ -125,11 +130,11 @@ export function ReportsWorkspace() {
           <div className="flex gap-2">
             <Button variant="outline" className={pressableButtonClass}>
               <Download data-icon="inline-start" aria-hidden="true" />
-              Export PDF
+              {t('reports.exportPdf')}
             </Button>
             <Button variant="outline" className={pressableButtonClass}>
               <Download data-icon="inline-start" aria-hidden="true" />
-              Export CSV
+              {t('reports.exportCsv')}
             </Button>
           </div>
         </CardContent>
@@ -160,20 +165,20 @@ export function ReportsWorkspace() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle>Top Selling Items</CardTitle>
-            <CardDescription>Products and services ranked by revenue.</CardDescription>
+            <CardTitle>{t('reports.topSelling.title')}</CardTitle>
+            <CardDescription>{t('reports.topSelling.description')}</CardDescription>
           </CardHeader>
           <CardContent>
             {report.topSellingItems.length === 0 ? (
               <div className="flex min-h-52 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center">
-                <p className="text-sm text-muted-foreground text-pretty">No item sales in this period.</p>
+                <p className="text-sm text-muted-foreground text-pretty">{t('reports.topSelling.noSales')}</p>
               </div>
             ) : (
               <div className="overflow-hidden rounded-lg border bg-background">
                 <div className="grid grid-cols-[minmax(0,1fr)_80px_116px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
-                  <span>Item</span>
-                  <span className="text-right">Qty</span>
-                  <span className="text-right">Revenue</span>
+                  <span>{t('reports.topSelling.table.item')}</span>
+                  <span className="text-right">{t('reports.topSelling.table.qty')}</span>
+                  <span className="text-right">{t('reports.topSelling.table.revenue')}</span>
                 </div>
                 <div className="divide-y">
                   {report.topSellingItems.map((item) => (
@@ -200,13 +205,13 @@ export function ReportsWorkspace() {
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Payment Methods</CardTitle>
-              <CardDescription>Paid invoices by method.</CardDescription>
+              <CardTitle>{t('reports.paymentMethods.title')}</CardTitle>
+              <CardDescription>{t('reports.paymentMethods.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               {report.paymentMethods.length === 0 ? (
                 <p className="rounded-lg border border-dashed bg-background p-4 text-center text-sm text-muted-foreground">
-                  No payments in this period.
+                  {t('reports.paymentMethods.noPayments')}
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -217,7 +222,7 @@ export function ReportsWorkspace() {
                         <span className="tabular-nums">{formatCurrency(payment.total)}</span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                        {payment.count} payment{payment.count === 1 ? '' : 's'}
+                        {t('reports.paymentMethods.paymentCount', { count: payment.count })}
                       </p>
                     </div>
                   ))}
@@ -228,13 +233,13 @@ export function ReportsWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Low Stock</CardTitle>
-              <CardDescription>Items at or below minimum stock.</CardDescription>
+              <CardTitle>{t('reports.lowStock.title')}</CardTitle>
+              <CardDescription>{t('reports.lowStock.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               {report.lowStockItems.length === 0 ? (
                 <p className="rounded-lg border border-dashed bg-background p-4 text-center text-sm text-muted-foreground">
-                  No low-stock items.
+                  {t('reports.lowStock.noLowStock')}
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Barcode, Database, FileText, LogOut, Printer } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { LanguageSelect } from '@/renderer/components/LanguageSelect'
 import { Button } from '@/renderer/components/ui/button'
 import { navigationItems, sectionDetails } from '@/renderer/navigation'
 import type { AppSection } from '@/shared/types/app'
@@ -21,34 +23,49 @@ import type { DashboardLocationState } from './Dashboard.types'
 
 const systemIndicators = [
   {
-    label: 'Database',
-    status: 'Online',
+    labelKey: 'system.database',
+    statusKey: 'common.online',
     icon: Database,
     tone: 'bg-green-500',
     connected: true,
   },
   {
-    label: 'Printer',
-    status: 'Online',
+    labelKey: 'system.printer',
+    statusKey: 'common.online',
     icon: Printer,
     tone: 'bg-green-500',
     connected: true,
   },
   {
-    label: 'Barcode Scanner',
-    status: 'Standby',
+    labelKey: 'system.barcodeScanner',
+    statusKey: 'system.standby',
     icon: Barcode,
     tone: 'bg-muted-foreground',
     connected: false,
   },
 ]
 
+const sectionTranslationKeys: Record<AppSection, string> = {
+  dashboard: 'dashboard',
+  sales: 'sales',
+  inventory: 'inventory',
+  'work-orders': 'workOrders',
+  customers: 'customers',
+  invoices: 'invoices',
+  reports: 'reports',
+  users: 'users',
+  'user-guide': 'userGuide',
+  settings: 'settings',
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const user = (location.state as DashboardLocationState | null)?.user
   const [activeSection, setActiveSection] = useState<AppSection>('dashboard')
   const activeDetails = sectionDetails[activeSection]
+  const activeDetailsKey = `${sectionTranslationKeys[activeSection]}.sections.${sectionTranslationKeys[activeSection]}`
 
   useEffect(() => {
     if (!user) {
@@ -69,7 +86,7 @@ export default function Dashboard() {
               </div>
               <div className="min-w-0">
                 <h1 className="truncate text-base font-semibold text-balance">SimplePOS</h1>
-                <p className="truncate text-[11px] leading-4 text-muted-foreground text-pretty">Car Repair Shop</p>
+                <p className="truncate text-[11px] leading-4 text-muted-foreground text-pretty">{t('app.subtitle')}</p>
               </div>
             </div>
 
@@ -84,7 +101,7 @@ export default function Dashboard() {
                     type="button"
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => setActiveSection(item.id)}
-                    title={item.description}
+                    title={t(`navigation.${sectionTranslationKeys[item.id]}.description`)}
                     className={cn(
                       'flex min-h-10 min-w-36 items-center gap-2.5 rounded-md px-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96] lg:min-w-0',
                       isActive
@@ -93,7 +110,9 @@ export default function Dashboard() {
                     )}
                   >
                     <Icon aria-hidden="true" className="size-4 shrink-0" data-icon="inline-start" />
-                    <span className="min-w-0 truncate font-medium">{item.label}</span>
+                    <span className="min-w-0 truncate font-medium">
+                      {t(`navigation.${sectionTranslationKeys[item.id]}.label`)}
+                    </span>
                   </button>
                 )
               })}
@@ -102,7 +121,7 @@ export default function Dashboard() {
             <div className="hidden border-t px-2 py-2 lg:block">
               <div className="flex flex-col gap-1.5">
                 <p className="px-1 text-[10px] font-medium uppercase leading-4 tracking-wide text-muted-foreground">
-                  System
+                  {t('system.label')}
                 </p>
                 <div className="flex flex-col gap-1">
                   {systemIndicators.map((item) => {
@@ -110,12 +129,12 @@ export default function Dashboard() {
 
                     return (
                       <div
-                        key={item.label}
+                        key={item.labelKey}
                         className="flex min-h-8 items-center justify-between gap-2 rounded-md px-1.5 text-xs"
                       >
                         <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
                           <Icon aria-hidden="true" className="size-3.5 shrink-0" />
-                          <span className="truncate">{item.label}</span>
+                          <span className="truncate">{t(item.labelKey)}</span>
                         </span>
                         <span className="flex shrink-0 items-center gap-2 text-xs font-medium">
                           <span
@@ -126,7 +145,7 @@ export default function Dashboard() {
                             )}
                             aria-hidden="true"
                           />
-                          {item.status}
+                          {t(item.statusKey)}
                         </span>
                       </div>
                     )
@@ -148,7 +167,7 @@ export default function Dashboard() {
                   onClick={() => navigate('/', { replace: true })}
                 >
                   <LogOut data-icon="inline-start" aria-hidden="true" />
-                  Sign out
+                  {t('auth.signOut')}
                 </Button>
               </div>
             </div>
@@ -159,20 +178,13 @@ export default function Dashboard() {
           <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b bg-background px-3 md:px-4">
             <div className="flex min-w-0 flex-col gap-0.5">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground text-pretty leading-none">
-                {activeDetails.eyebrow}
+                {t(`${activeDetailsKey}.eyebrow`, { defaultValue: activeDetails.eyebrow })}
               </p>
               <h2 className="truncate text-base font-semibold tracking-tight text-balance leading-none">
-                {activeDetails.title}
+                {t(`${activeDetailsKey}.title`, { defaultValue: activeDetails.title })}
               </h2>
             </div>
-            <Button
-              className="hidden transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0 md:inline-flex"
-              variant="outline"
-              onClick={() => navigate('/', { replace: true })}
-            >
-              <LogOut data-icon="inline-start" aria-hidden="true" />
-              Sign out
-            </Button>
+            <LanguageSelect className="shrink-0" />
           </header>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-auto p-3 md:p-4">

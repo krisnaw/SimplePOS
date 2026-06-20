@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { LanguageSelect } from '@/renderer/components/LanguageSelect'
 import { Button } from '@/renderer/components/ui/button'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
@@ -10,11 +12,12 @@ import type { DatabaseConnectionState, DatabaseIndicator } from './Login.types'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [database, setDatabase] = useState<DatabaseIndicator>({
     state: 'checking',
-    message: 'Checking database connection',
+    message: t('login.dbChecking'),
   })
   const [authMessage, setAuthMessage] = useState('')
   const [authIsError, setAuthIsError] = useState(false)
@@ -26,7 +29,7 @@ export default function Login() {
     const promise = window.simplepos?.db?.getStatus()
 
     if (!promise) {
-      setDatabase({ state: 'error', message: 'Database unavailable' })
+      setDatabase({ state: 'error', message: t('login.dbUnavailable') })
       return
     }
 
@@ -44,14 +47,14 @@ export default function Login() {
 
         setDatabase({
           state: 'error',
-          message: error instanceof Error ? error.message : 'Database unavailable',
+          message: error instanceof Error ? error.message : t('login.dbUnavailable'),
         })
       })
 
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [t])
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault()
@@ -63,7 +66,7 @@ export default function Login() {
     try {
       const result = await window.simplepos?.auth.login({ email, password })
 
-      setAuthMessage(result?.message ?? 'Authentication unavailable')
+      setAuthMessage(result?.message ?? t('login.authUnavailable'))
       setAuthIsError(!result?.ok)
 
       if (result?.ok && result.user) {
@@ -75,7 +78,7 @@ export default function Login() {
         })
       }
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : 'Authentication unavailable')
+      setAuthMessage(error instanceof Error ? error.message : t('login.authUnavailable'))
       setAuthIsError(true)
     } finally {
       setIsSubmitting(false)
@@ -87,19 +90,19 @@ export default function Login() {
       <div className="w-full max-w-sm flex flex-col gap-6 login-stagger">
 
         <div className="text-center flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">SimplePOS</h1>
-          <p className="text-sm text-muted-foreground text-pretty">Car Repair Shop Management</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-balance">{t('login.title')}</h1>
+          <p className="text-sm text-muted-foreground text-pretty">{t('login.subtitle')}</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>Enter your credentials to continue</CardDescription>
+            <CardTitle>{t('login.signIn')}</CardTitle>
+            <CardDescription>{t('login.credentialsHint')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('login.email')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -111,7 +114,7 @@ export default function Login() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('login.password')}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -158,7 +161,7 @@ export default function Login() {
                         : 'scale-100 opacity-100 blur-0',
                     )}
                   >
-                    Sign in
+                    {t('login.signIn')}
                   </span>
                   <span
                     className={cn(
@@ -169,7 +172,7 @@ export default function Login() {
                     )}
                   >
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    Signing in
+                    {t('login.signingIn')}
                   </span>
                 </span>
               </Button>
@@ -178,8 +181,10 @@ export default function Login() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground text-pretty">
-          SimplePOS v1.0.0
+          {t('login.version')}
         </p>
+
+        <LanguageSelect className="flex items-center justify-center gap-2" />
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <span

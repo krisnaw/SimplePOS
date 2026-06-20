@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, ClipboardList, Receipt, UserRound, WalletCards } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { formatCurrency, formatTime, formatPaymentMethod } from '@/renderer/lib/formatters'
 import type { AuthenticatedUser } from '@/shared/types/user'
@@ -17,6 +18,7 @@ const emptySummary: DashboardSummary = {
 }
 
 export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
+  const { t } = useTranslation()
   const [summary, setSummary] = useState<DashboardSummary>(emptySummary)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -48,9 +50,9 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              User
+              {t('dashboard.user')}
             </CardTitle>
-            <CardDescription>Current session</CardDescription>
+            <CardDescription>{t('dashboard.currentSession')}</CardDescription>
             <CardAction>
               <UserRound aria-hidden="true" className="size-4 text-muted-foreground" />
             </CardAction>
@@ -66,9 +68,9 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              Work Orders
+              {t('dashboard.workOrders')}
             </CardTitle>
-            <CardDescription>Active jobs</CardDescription>
+            <CardDescription>{t('dashboard.activeJobs')}</CardDescription>
             <CardAction>
               <ClipboardList aria-hidden="true" className="size-4 text-muted-foreground" />
             </CardAction>
@@ -78,7 +80,7 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
               {isLoading ? '...' : summary.openWorkOrderCount + summary.inProgressWorkOrderCount}
             </p>
             <p className="text-xs text-muted-foreground tabular-nums">
-              {summary.completedWorkOrderCount} ready for checkout
+              {t('dashboard.readyForCheckout', { count: summary.completedWorkOrderCount })}
             </p>
           </CardContent>
         </Card>
@@ -87,9 +89,9 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
           <CardHeader>
             <CardTitle>
 
-              Sales
+              {t('dashboard.sales')}
             </CardTitle>
-            <CardDescription>Paid invoices</CardDescription>
+            <CardDescription>{t('dashboard.paidInvoices')}</CardDescription>
             <CardAction>
               <WalletCards aria-hidden="true" className="size-4 text-muted-foreground" />
             </CardAction>
@@ -104,9 +106,9 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              Invoices
+              {t('dashboard.invoices')}
             </CardTitle>
-            <CardDescription>Paid status</CardDescription>
+            <CardDescription>{t('dashboard.paidStatus')}</CardDescription>
             <CardAction>
               <Receipt aria-hidden="true" className="size-4 text-muted-foreground" />
             </CardAction>
@@ -121,9 +123,9 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              Low Stock
+              {t('dashboard.lowStock')}
             </CardTitle>
-            <CardDescription>Needs review</CardDescription>
+            <CardDescription>{t('dashboard.needsReview')}</CardDescription>
             <CardAction>
               <AlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
             </CardAction>
@@ -138,21 +140,21 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>Latest completed invoices and payments.</CardDescription>
+          <CardTitle>{t('dashboard.recentTransactions')}</CardTitle>
+          <CardDescription>{t('dashboard.transactionsHint')}</CardDescription>
         </CardHeader>
         <CardContent>
           {summary.recentTransactions.length === 0 ? (
             <div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed bg-background p-5 text-center">
-              <p className="text-sm text-muted-foreground text-pretty">No checkout activity recorded yet.</p>
+              <p className="text-sm text-muted-foreground text-pretty">{t('dashboard.noActivity')}</p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg border bg-background">
               <div className="grid grid-cols-[minmax(0,1fr)_100px_120px_72px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
-                <span>Invoice</span>
-                <span>Payment</span>
-                <span className="text-right">Total</span>
-                <span className="text-right">Time</span>
+                <span>{t('dashboard.table.invoice')}</span>
+                <span>{t('dashboard.table.payment')}</span>
+                <span className="text-right">{t('dashboard.table.total')}</span>
+                <span className="text-right">{t('dashboard.table.time')}</span>
               </div>
               <div className="divide-y">
                 {summary.recentTransactions.map((transaction) => (

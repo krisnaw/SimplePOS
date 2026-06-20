@@ -1,4 +1,10 @@
 {
+  "app": {
+    "subtitle": "Bengkel Mobil"
+  },
+  "auth": {
+    "signOut": "Keluar"
+  },
   "common": {
     "search": "Cari",
     "clear": "Bersihkan",
@@ -23,6 +29,13 @@
     "online": "Online",
     "offline": "Offline",
     "notConfigured": "Belum dikonfigurasi"
+  },
+  "system": {
+    "label": "Sistem",
+    "database": "Database",
+    "printer": "Printer",
+    "barcodeScanner": "Pemindai Barcode",
+    "standby": "Siaga"
   },
   "navigation": {
     "dashboard": {
@@ -89,8 +102,13 @@
     },
     "user": "Pengguna",
     "currentSession": "Sesi saat ini",
+    "workOrders": "Perintah Kerja",
+    "activeJobs": "Pekerjaan aktif",
+    "readyForCheckout": "{{count}} siap untuk checkout",
     "sales": "Penjualan",
+    "paidInvoices": "Faktur dibayar",
     "invoices": "Faktur",
+    "paidStatus": "Status dibayar",
     "createdToday": "Dibuat hari ini",
     "lowStock": "Stok Menipis",
     "needsReview": "Perlu ditinjau",
@@ -114,7 +132,8 @@
     },
     "searchPlaceholder": "Cari produk, layanan, SKU, kategori...",
     "itemsFound": "{{count}} item ditemukan",
-    "itemsFound_plural": "{{count}} item ditemukan",
+    "itemsFound_one": "{{count}} item ditemukan",
+    "itemsFound_other": "{{count}} item ditemukan",
     "matching": " cocok dengan \"{{query}}\"",
     "noItemsFound": "Item tidak ditemukan",
     "noItemsFoundHint": "Coba istilah pencarian atau filter kategori lain.",
@@ -290,10 +309,9 @@
       "sales": {
         "title": "Penjualan",
         "description": "Pendapatan untuk periode yang dipilih.",
-        "helper": "{{count}} faktur"
-      },
-      "sales_plural": {
-        "helper": "{{count}} faktur"
+        "helper": "{{count}} faktur",
+        "helper_one": "{{count}} faktur",
+        "helper_other": "{{count}} faktur"
       },
       "averageInvoice": {
         "title": "Rata-rata Faktur",
@@ -303,15 +321,19 @@
       "inventoryValue": {
         "title": "Nilai Inventaris",
         "description": "Nilai stok aktif saat ini.",
-        "helper": "{{count}} item stok rendah"
-      },
-      "inventoryValue_plural": {
-        "helper": "{{count}} item stok rendah"
+        "helper": "{{count}} item stok rendah",
+        "helper_one": "{{count}} item stok rendah",
+        "helper_other": "{{count}} item stok rendah"
       },
       "discounts": {
         "title": "Diskon",
         "description": "Diskon yang diterapkan pada faktur berbayar.",
         "helper": "Periode terpilih"
+      },
+      "workOrders": {
+        "title": "Perintah Kerja",
+        "description": "Pekerjaan perbaikan yang dibuka pada periode ini.",
+        "helper": "{{count}} selesai · tingkat {{rate}}%"
       }
     },
     "topSelling": {
@@ -329,7 +351,8 @@
       "description": "Faktur dibayar berdasarkan metode.",
       "noPayments": "Tidak ada pembayaran pada periode ini.",
       "paymentCount": "{{count}} pembayaran",
-      "paymentCount_plural": "{{count}} pembayaran"
+      "paymentCount_one": "{{count}} pembayaran",
+      "paymentCount_other": "{{count}} pembayaran"
     },
     "lowStock": {
       "title": "Stok Menipis",
@@ -347,6 +370,17 @@
     },
     "externalDevices": "Perangkat Eksternal",
     "devicesHint": "Kelola koneksi perangkat keras dan layanan yang digunakan oleh POS.",
+    "devices": {
+      "database": {
+        "description": "Penyimpanan data POS lokal"
+      },
+      "printer": {
+        "description": "Perangkat keluaran struk default"
+      },
+      "barcodeScanner": {
+        "description": "Perangkat input pencarian produk"
+      }
+    },
     "deviceType": "Tipe perangkat",
     "connection": "Koneksi",
     "deviceNotes": "Catatan Perangkat",
@@ -357,6 +391,10 @@
     "mutedDot": "Titik pudar berarti perangkat standby atau belum dikonfigurasi.",
     "softwareUpdates": "Pembaruan Perangkat Lunak",
     "updatesHint": "Pembaruan dikirim dari GitHub Releases.",
+    "updatesNotChecked": "Pembaruan belum diperiksa",
+    "unableToCheckUpdates": "Tidak dapat memeriksa pembaruan",
+    "language": "Bahasa",
+    "languageHint": "Pilih bahasa tampilan untuk perangkat ini.",
     "percentDownloaded": "{{percent}}% terunduh",
     "check": "Periksa",
     "checking": "Memeriksa",
