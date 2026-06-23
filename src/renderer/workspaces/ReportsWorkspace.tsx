@@ -5,6 +5,7 @@ import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
+import { cn } from '@/renderer/lib/utils'
 import { formatCurrency, formatDate, capitalize as formatLabel } from '@/renderer/lib/formatters'
 import type { ReportPeriod, ReportSummary } from './ReportsWorkspace.types'
 
@@ -106,31 +107,33 @@ export function ReportsWorkspace() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="report-period">{t('reports.period')}</Label>
-            <BaseSelect
-              id="report-period"
-              value={period}
-              ariaLabel={t('reports.period')}
-              options={[
-                { value: 'today', label: t('reports.periods.today') },
-                { value: 'week', label: t('reports.periods.week') },
-                { value: 'month', label: t('reports.periods.month') },
-                { value: 'quarter', label: t('reports.periods.quarter') },
-              ]}
-              onValueChange={(value) => setPeriod(value as ReportPeriod)}
-            />
-          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-xs">
+              <Label htmlFor="report-period">{t('reports.period')}</Label>
+              <BaseSelect
+                id="report-period"
+                value={period}
+                ariaLabel={t('reports.period')}
+                options={[
+                  { value: 'today', label: t('reports.periods.today') },
+                  { value: 'week', label: t('reports.periods.week') },
+                  { value: 'month', label: t('reports.periods.month') },
+                  { value: 'quarter', label: t('reports.periods.quarter') },
+                ]}
+                onValueChange={(value) => setPeriod(value as ReportPeriod)}
+              />
+            </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" className={pressableButtonClass}>
-              <Download data-icon="inline-start" aria-hidden="true" />
-              {t('reports.exportPdf')}
-            </Button>
-            <Button variant="outline" className={pressableButtonClass}>
-              <Download data-icon="inline-start" aria-hidden="true" />
-              {t('reports.exportCsv')}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className={cn('h-10', pressableButtonClass)}>
+                <Download data-icon="inline-start" aria-hidden="true" />
+                {t('reports.exportPdf')}
+              </Button>
+              <Button variant="outline" className={cn('h-10', pressableButtonClass)}>
+                <Download data-icon="inline-start" aria-hidden="true" />
+                {t('reports.exportCsv')}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -152,104 +155,44 @@ export function ReportsWorkspace() {
         })}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('reports.topSelling.title')}</CardTitle>
-            <CardDescription>{t('reports.topSelling.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {report.topSellingItems.length === 0 ? (
-              <div className="flex min-h-52 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center">
-                <p className="text-sm text-muted-foreground text-pretty">{t('reports.topSelling.noSales')}</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('reports.topSelling.title')}</CardTitle>
+          <CardDescription>{t('reports.topSelling.description')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {report.topSellingItems.length === 0 ? (
+            <div className="flex min-h-52 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center">
+              <p className="text-sm text-muted-foreground text-pretty">{t('reports.topSelling.noSales')}</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-lg border bg-background">
+              <div className="grid grid-cols-[minmax(0,1fr)_80px_116px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
+                <span>{t('reports.topSelling.table.item')}</span>
+                <span className="text-right">{t('reports.topSelling.table.qty')}</span>
+                <span className="text-right">{t('reports.topSelling.table.revenue')}</span>
               </div>
-            ) : (
-              <div className="overflow-hidden rounded-lg border bg-background">
-                <div className="grid grid-cols-[minmax(0,1fr)_80px_116px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
-                  <span>{t('reports.topSelling.table.item')}</span>
-                  <span className="text-right">{t('reports.topSelling.table.qty')}</span>
-                  <span className="text-right">{t('reports.topSelling.table.revenue')}</span>
-                </div>
-                <div className="divide-y">
-                  {report.topSellingItems.map((item) => (
-                    <div
-                      key={`${item.itemType}:${item.sku ?? item.name}`}
-                      className="grid grid-cols-[minmax(0,1fr)_80px_116px] gap-3 px-3 py-2.5 text-sm"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-balance">{item.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {formatLabel(item.itemType)} · {item.sku ?? 'No SKU'}
-                        </p>
-                      </div>
-                      <span className="text-right tabular-nums">{item.quantity}</span>
-                      <span className="text-right font-medium tabular-nums">{formatCurrency(item.total)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('reports.paymentMethods.title')}</CardTitle>
-              <CardDescription>{t('reports.paymentMethods.description')}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {report.paymentMethods.length === 0 ? (
-                <p className="rounded-lg border border-dashed bg-background p-4 text-center text-sm text-muted-foreground">
-                  {t('reports.paymentMethods.noPayments')}
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {report.paymentMethods.map((payment) => (
-                    <div key={payment.method} className="rounded-lg bg-muted px-3 py-2">
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="font-medium">{formatLabel(payment.method)}</span>
-                        <span className="tabular-nums">{formatCurrency(payment.total)}</span>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                        {t('reports.paymentMethods.paymentCount', { count: payment.count })}
+              <div className="divide-y">
+                {report.topSellingItems.map((item) => (
+                  <div
+                    key={`${item.itemType}:${item.sku ?? item.name}`}
+                    className="grid grid-cols-[minmax(0,1fr)_80px_116px] gap-3 px-3 py-2.5 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-balance">{item.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {formatLabel(item.itemType)} · {item.sku ?? 'No SKU'}
                       </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('reports.lowStock.title')}</CardTitle>
-              <CardDescription>{t('reports.lowStock.description')}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {report.lowStockItems.length === 0 ? (
-                <p className="rounded-lg border border-dashed bg-background p-4 text-center text-sm text-muted-foreground">
-                  {t('reports.lowStock.noLowStock')}
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {report.lowStockItems.map((item) => (
-                    <div key={item.id} className="rounded-lg bg-muted px-3 py-2">
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="min-w-0 truncate font-medium">{item.name}</span>
-                        <span className="shrink-0 tabular-nums">
-                          {item.stockQty}/{item.minStock}
-                        </span>
-                      </div>
-                      <p className="mt-1 truncate text-xs text-muted-foreground tabular-nums">{item.sku}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                    <span className="text-right tabular-nums">{item.quantity}</span>
+                    <span className="text-right font-medium tabular-nums">{formatCurrency(item.total)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
