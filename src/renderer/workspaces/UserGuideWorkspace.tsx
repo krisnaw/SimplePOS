@@ -1,6 +1,5 @@
-import { BookOpen, Boxes, ClipboardList, LayoutDashboard, Receipt, ShoppingCart, Users } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
-import type { GuideSection, QuickLink } from './UserGuideWorkspace.types'
+import type { GuideSection } from './UserGuideWorkspace.types'
 
 const guideSections: GuideSection[] = [
   {
@@ -130,43 +129,9 @@ const guideSections: GuideSection[] = [
   },
 ]
 
-const quickLinks: QuickLink[] = [
-  { id: 'getting-started', label: 'Getting Started', icon: BookOpen },
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'cashier-workflow', label: 'Cashier Workflow', icon: Users },
-  { id: 'sales-vs-work-orders', label: 'Sales vs Work Orders', icon: ClipboardList },
-  { id: 'sales', label: 'Sales / POS', icon: ShoppingCart },
-  { id: 'invoices', label: 'Invoices', icon: Receipt },
-  { id: 'inventory', label: 'Inventory', icon: Boxes },
-]
-
 export function UserGuideWorkspace() {
   return (
     <div className="flex min-h-0 flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>How to Use SimplePOS</CardTitle>
-          <CardDescription>
-            Practical instructions for cashier checkout, invoices, customers, and inventory handoff.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2 pb-4">
-          {quickLinks.map((link) => {
-            const Icon = link.icon
-
-            return (
-              <a
-                key={link.id}
-                href={`#${link.id}`}
-                className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted/80 hover:text-foreground active:scale-[0.96]"
-              >
-                <Icon className="size-3.5" aria-hidden="true" />
-                {link.label}
-              </a>
-            )
-          })}
-        </CardContent>
-      </Card>
 
       <div className="stagger-children grid gap-4 xl:grid-cols-2">
         {guideSections.map((section) => (

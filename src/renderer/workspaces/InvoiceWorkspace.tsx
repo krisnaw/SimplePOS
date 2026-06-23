@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Download, Loader2, Printer, RefreshCw, Search } from 'lucide-react'
+import { CalendarDays, Loader2, Printer, RefreshCw, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
@@ -455,10 +455,6 @@ export function InvoiceWorkspace() {
                 <Button type="button" variant="outline" size="sm" className={pressableButtonClass} onClick={handlePrint}>
                   <Printer data-icon="inline-start" aria-hidden="true" />
                   {t('invoices.print')}
-                </Button>
-                <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
-                  <Download data-icon="inline-start" aria-hidden="true" />
-                  {t('invoices.export')}
                 </Button>
               </CardAction>
             </CardHeader>

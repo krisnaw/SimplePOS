@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
@@ -105,11 +105,8 @@ export function ReportsWorkspace() {
           <CardDescription>
             {t('reports.dateRange', { from: formatDate(report.dateFrom), to: formatDate(report.dateTo) })}
           </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-xs">
-              <Label htmlFor="report-period">{t('reports.period')}</Label>
+          <CardAction className="flex flex-wrap items-center gap-2">
+            <div className="w-40">
               <BaseSelect
                 id="report-period"
                 value={period}
@@ -123,19 +120,16 @@ export function ReportsWorkspace() {
                 onValueChange={(value) => setPeriod(value as ReportPeriod)}
               />
             </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline" className={cn('h-10', pressableButtonClass)}>
-                <Download data-icon="inline-start" aria-hidden="true" />
-                {t('reports.exportPdf')}
-              </Button>
-              <Button variant="outline" className={cn('h-10', pressableButtonClass)}>
-                <Download data-icon="inline-start" aria-hidden="true" />
-                {t('reports.exportCsv')}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
+            <Button variant="outline" className={cn('h-10', pressableButtonClass)}>
+              <Download data-icon="inline-start" aria-hidden="true" />
+              {t('reports.exportPdf')}
+            </Button>
+            <Button variant="outline" className={cn('h-10', pressableButtonClass)}>
+              <Download data-icon="inline-start" aria-hidden="true" />
+              {t('reports.exportCsv')}
+            </Button>
+          </CardAction>
+        </CardHeader>
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -144,7 +138,6 @@ export function ReportsWorkspace() {
             <Card key={summary.title}>
               <CardHeader>
                 <CardTitle>{summary.title}</CardTitle>
-                <CardDescription>{summary.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-1">
                 <p className="text-2xl font-semibold tabular-nums">{isLoading ? '...' : summary.value}</p>

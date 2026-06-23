@@ -75,6 +75,28 @@ export default function Dashboard() {
     }
   }, [navigate, user])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const modifier = event.altKey || event.ctrlKey || event.metaKey
+      if (!modifier) return
+
+      const match = event.code.match(/^Digit([1-9])$/)
+      if (!match) return
+
+      const num = parseInt(match[1], 10)
+      const item = navigationItems[num - 1]
+      if (item) {
+        event.preventDefault()
+        setActiveSection(item.id)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
   if (!user) return null
 
   return (
@@ -93,7 +115,7 @@ export default function Dashboard() {
             </div>
 
             <nav className="flex min-h-0 gap-1.5 overflow-x-auto p-2 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden">
-              {navigationItems.map((item) => {
+              {navigationItems.map((item, index) => {
                 const Icon = item.icon
                 const isActive = item.id === activeSection
 
@@ -112,9 +134,21 @@ export default function Dashboard() {
                     )}
                   >
                     <Icon aria-hidden="true" className="size-4 shrink-0" data-icon="inline-start" />
-                    <span className="min-w-0 truncate font-medium">
+                    <span className="min-w-0 flex-1 truncate font-medium">
                       {t(`navigation.${sectionTranslationKeys[item.id]}.label`)}
                     </span>
+                    {index < 9 ? (
+                      <span
+                        className={cn(
+                          'hidden font-mono text-sm font-light lg:inline-block shrink-0',
+                          isActive
+                            ? 'text-primary-foreground/40'
+                            : 'text-muted-foreground/40',
+                        )}
+                      >
+                        {index === 0 ? <span className="inline-flex items-center gap-0"><span className="text-xl leading-none">⌘</span><span>1</span></span> : index + 1}
+                      </span>
+                    ) : null}
                   </button>
                 )
               })}
