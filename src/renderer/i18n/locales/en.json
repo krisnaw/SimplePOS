@@ -161,7 +161,11 @@
     "clearCart": "Clear",
     "checkoutSuccess": "Checkout successful",
     "unableToReachDb": "Unable to reach the database.",
-    "onlyInStock": "Only {{count}} in stock for {{name}}"
+    "onlyInStock": "Only {{count}} in stock for {{name}}",
+    "confirmCheckoutTitle": "Confirm Checkout",
+    "confirmCheckoutDescription": "You are about to complete this sale for {{total}}. This action cannot be undone.",
+    "confirmCheckout": "Confirm",
+    "cancelCheckout": "Cancel"
   },
   "invoices": {
     "invoiceHistory": "Invoice History",

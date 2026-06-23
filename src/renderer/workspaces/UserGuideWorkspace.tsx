@@ -150,7 +150,7 @@ export function UserGuideWorkspace() {
             Practical instructions for cashier checkout, invoices, customers, and inventory handoff.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap gap-2 pb-4">
           {quickLinks.map((link) => {
             const Icon = link.icon
 
@@ -196,7 +196,7 @@ export function UserGuideWorkspace() {
           <CardTitle>Role Access</CardTitle>
           <CardDescription>What each account type is intended to do.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3 pb-4">
           <div className="rounded-lg bg-muted/50 px-4 py-3">
             <p className="text-sm font-medium">Admin</p>
             <p className="mt-1 text-sm text-muted-foreground text-pretty">

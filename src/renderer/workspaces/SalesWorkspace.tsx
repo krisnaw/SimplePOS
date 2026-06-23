@@ -3,6 +3,15 @@ import { Check, ChevronLeft, ChevronRight, LayoutGrid, List, Loader2, Minus, Pac
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogClose,
+  AlertDialogDescription,
+  AlertDialogPopup,
+  AlertDialogPortal,
+  AlertDialogTitle,
+} from '@/renderer/components/ui/alert-dialog'
+import {
   Card,
   CardAction,
   CardContent,
@@ -70,6 +79,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   const [actionMessage, setActionMessage] = useState('')
   const [checkoutComplete, setCheckoutComplete] = useState(false)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
   const categories = useMemo(() => ['All', ...new Set(catalogItems.map((item) => item.category))], [catalogItems])
@@ -660,28 +670,55 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           </div>
 
           <div className="flex shrink-0 gap-2">
-            <Button
-              className={cn('h-10 flex-1', pressableButtonClass)}
-              disabled={cartItems.length === 0 || checkoutComplete || isCheckingOut}
-              onClick={handleCheckout}
-            >
-              {isCheckingOut ? (
-                <>
-                  <ShoppingCart data-icon="inline-start" aria-hidden="true" />
-                  {t('sales.saving')}
-                </>
-              ) : checkoutComplete ? (
-                <>
-                  <Check data-icon="inline-start" aria-hidden="true" />
-                  {t('sales.completed')}
-                </>
-              ) : (
-                <>
-                  <ShoppingCart data-icon="inline-start" aria-hidden="true" />
-                  {t('sales.checkout')}
-                </>
-              )}
-            </Button>
+            <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+              <Button
+                className={cn('h-10 flex-1', pressableButtonClass)}
+                disabled={cartItems.length === 0 || checkoutComplete || isCheckingOut}
+                onClick={() => setIsConfirmOpen(true)}
+              >
+                {isCheckingOut ? (
+                  <>
+                    <ShoppingCart data-icon="inline-start" aria-hidden="true" />
+                    {t('sales.saving')}
+                  </>
+                ) : checkoutComplete ? (
+                  <>
+                    <Check data-icon="inline-start" aria-hidden="true" />
+                    {t('sales.completed')}
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart data-icon="inline-start" aria-hidden="true" />
+                    {t('sales.checkout')}
+                  </>
+                )}
+              </Button>
+              <AlertDialogPortal>
+                <AlertDialogBackdrop />
+                <AlertDialogPopup>
+                  <AlertDialogTitle>{t('sales.confirmCheckoutTitle')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('sales.confirmCheckoutDescription', { total: formatCurrency(total) })}
+                  </AlertDialogDescription>
+                  <div className="mt-5 flex justify-end gap-2">
+                    <AlertDialogClose render={
+                      <Button type="button" variant="outline" className={pressableButtonClass}>
+                        {t('sales.cancelCheckout')}
+                      </Button>
+                    } />
+                    <AlertDialogClose render={
+                      <Button
+                        type="button"
+                        className={pressableButtonClass}
+                        onClick={handleCheckout}
+                      >
+                        {t('sales.confirmCheckout')}
+                      </Button>
+                    } />
+                  </div>
+                </AlertDialogPopup>
+              </AlertDialogPortal>
+            </AlertDialog>
             <Button
               type="button"
               variant="outline"

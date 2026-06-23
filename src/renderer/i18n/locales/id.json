@@ -161,7 +161,11 @@
     "clearCart": "Bersihkan",
     "checkoutSuccess": "Pembayaran berhasil",
     "unableToReachDb": "Tidak dapat terhubung ke database.",
-    "onlyInStock": "Hanya tersisa {{count}} stok untuk {{name}}"
+    "onlyInStock": "Hanya tersisa {{count}} stok untuk {{name}}",
+    "confirmCheckoutTitle": "Konfirmasi Pembayaran",
+    "confirmCheckoutDescription": "Anda akan menyelesaikan penjualan ini senilai {{total}}. Tindakan ini tidak dapat dibatalkan.",
+    "confirmCheckout": "Konfirmasi",
+    "cancelCheckout": "Batal"
   },
   "invoices": {
     "invoiceHistory": "Riwayat Faktur",
