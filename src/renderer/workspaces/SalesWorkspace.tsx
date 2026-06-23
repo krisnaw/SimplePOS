@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Search, ShoppingCart, X } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, LayoutGrid, List, Loader2, Minus, Package, Plus, Search, ShoppingCart, Wrench, X } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
@@ -27,6 +27,8 @@ const pressableButtonClass =
 const qtyButtonClass =
   'relative after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2'
 
+type CatalogViewMode = 'grid' | 'list'
+
 function isUnlimitedStock(stock: number): boolean {
   return stock >= UNLIMITED_STOCK
 }
@@ -39,6 +41,22 @@ function getCartKey(item: SampleProduct): string {
   return `${item.itemType}:${item.id}`
 }
 
+function getItemTypeLabel(item: SampleProduct): string {
+  return item.itemType === 'service' ? 'Service' : 'Product'
+}
+
+function getItemTypeClasses(item: SampleProduct): string {
+  return item.itemType === 'service'
+    ? 'bg-amber-500/10 text-amber-700 ring-amber-500/20'
+    : 'bg-sky-500/10 text-sky-700 ring-sky-500/20'
+}
+
+function ItemTypeIcon({ item }: { item: SampleProduct }) {
+  const Icon = item.itemType === 'service' ? Wrench : Package
+
+  return <Icon className="size-3.5" aria-hidden="true" />
+}
+
 export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [catalogItems, setCatalogItems] = useState<SampleProduct[]>([])
@@ -47,7 +65,8 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('All')
-  const [itemsPerPage, setItemsPerPage] = useState(6)
+  const [viewMode, setViewMode] = useState<CatalogViewMode>('list')
+  const [itemsPerPage] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [actionMessage, setActionMessage] = useState('')
@@ -96,19 +115,6 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   }, [])
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(min-width: 1280px)')
-
-    function syncItemsPerPage() {
-      setItemsPerPage(mediaQuery.matches ? 9 : 6)
-    }
-
-    syncItemsPerPage()
-    mediaQuery.addEventListener('change', syncItemsPerPage)
-
-    return () => mediaQuery.removeEventListener('change', syncItemsPerPage)
-  }, [])
-
-  useEffect(() => {
     let isMounted = true
 
     async function loadCatalog() {
@@ -151,7 +157,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       }))
 
       if (productItems.length > 0 || serviceItems.length > 0) {
-        setCatalogItems([...serviceItems, ...productItems])
+        setCatalogItems([...productItems, ...serviceItems])
       }
 
       setIsLoading(false)
@@ -175,7 +181,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [categoryFilter, itemsPerPage, normalizedSearchQuery])
+  }, [categoryFilter, itemsPerPage, normalizedSearchQuery, viewMode])
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, pageCount))
@@ -299,29 +305,64 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       <Card className="min-h-0 overflow-hidden">
         <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="flex flex-col gap-2">
-            <div className="relative h-10">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
-                <Search aria-hidden="true" className="size-4" />
-              </span>
-              <Input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search products, services, SKU, category..."
-                aria-label="Search products and services"
-                className="h-10 pl-10 pr-10"
-              />
-              {searchQuery ? (
+            <div className="flex gap-2">
+              <div className="relative h-10 min-w-0 flex-1">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex size-10 items-center justify-center text-muted-foreground">
+                  <Search aria-hidden="true" className="size-4" />
+                </span>
+                <Input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search products, services, SKU, category..."
+                  aria-label="Search products and services"
+                  className="h-10 pl-10 pr-10"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="flex h-10 shrink-0 items-center gap-1 rounded-lg bg-muted p-1" role="group" aria-label="Catalog view">
                 <button
                   type="button"
-                  aria-label="Clear search"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === 'grid'}
+                  title="Grid view"
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    'flex size-8 items-center justify-center rounded-md transition-[background-color,color,transform,box-shadow] duration-150 ease-out active:scale-[0.96]',
+                    viewMode === 'grid'
+                      ? 'bg-background text-foreground shadow-border'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
                 >
-                  <X className="size-4" aria-hidden="true" />
+                  <LayoutGrid className="size-4" aria-hidden="true" />
                 </button>
-              ) : null}
+                <button
+                  type="button"
+                  aria-label="List view"
+                  aria-pressed={viewMode === 'list'}
+                  title="List view"
+                  onClick={() => setViewMode('list')}
+                  className={cn(
+                    'flex size-8 items-center justify-center rounded-md transition-[background-color,color,transform,box-shadow] duration-150 ease-out active:scale-[0.96]',
+                    viewMode === 'list'
+                      ? 'bg-background text-foreground shadow-border'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <List className="size-4" aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -370,14 +411,65 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               </div>
             </div>
           ) : (
-            <div className="stagger-children grid min-h-0 flex-1 auto-rows-auto content-start gap-3 overflow-auto px-1 pt-1 pb-2 md:grid-cols-2 xl:grid-cols-3">
+            <div
+              className={cn(
+                'stagger-children min-h-0 flex-1 gap-3 overflow-auto px-1 pt-1 pb-2',
+                viewMode === 'grid'
+                  ? 'grid auto-rows-auto content-start md:grid-cols-2 xl:grid-cols-3'
+                  : 'flex flex-col',
+              )}
+            >
               {paginatedProducts.map((product) => {
                 const cartKey = getCartKey(product)
                 const inCartQty = cartQuantityByProductId.get(cartKey) ?? 0
                 const available = getAvailableQuantity(product)
                 const outOfStock = !isUnlimitedStock(product.stock) && available === 0
 
-                return (
+                return viewMode === 'list' ? (
+                  <div
+                    key={cartKey}
+                    className="flex min-h-[92px] items-center justify-between gap-3 overflow-hidden rounded-lg border bg-background p-3 text-left shadow-sm transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <span
+                        className={cn(
+                          'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ring-1 tabular-nums',
+                          getItemTypeClasses(product),
+                        )}
+                      >
+                        <ItemTypeIcon item={product} />
+                        {getItemTypeLabel(product)}
+                      </span>
+                      <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <span className="min-w-0 truncate text-sm font-medium text-balance">{product.name}</span>
+                        <span className="text-xs text-muted-foreground text-pretty">{product.category}</span>
+                      </div>
+                      <div className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span className="tabular-nums">{product.sku}</span>
+                        <span className="line-clamp-1 text-pretty">{product.description}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-3">
+                      <div className="hidden min-w-24 flex-col items-end gap-0.5 sm:flex">
+                        <span className="text-sm font-semibold tabular-nums">{formatCurrency(product.price)}</span>
+                        <span className="text-sm font-medium text-muted-foreground tabular-nums">
+                          {product.itemType === 'service' ? 'Service item' : `${product.stock} in stock`}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={outOfStock}
+                        className={pressableButtonClass}
+                        onClick={() => addToCart(product)}
+                      >
+                        <Plus data-icon="inline-start" aria-hidden="true" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                   <div
                     key={cartKey}
                     className="flex min-h-0 flex-col justify-between overflow-hidden rounded-lg border bg-background p-3 text-left shadow-sm transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover"
@@ -385,9 +477,18 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                     <div className="flex flex-1 flex-col gap-2">
                       <span className="flex items-start justify-between gap-2">
                         <span className="min-w-0 flex flex-col gap-0.5">
+                          <span
+                            className={cn(
+                              'mb-1 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ring-1 tabular-nums',
+                              getItemTypeClasses(product),
+                            )}
+                          >
+                            <ItemTypeIcon item={product} />
+                            {getItemTypeLabel(product)}
+                          </span>
                           <span className="text-sm font-medium text-balance">{product.name}</span>
                           <span className="text-xs text-muted-foreground text-pretty">
-                            {product.itemType === 'service' ? 'Service' : 'Product'} · {product.category}
+                            {product.category}
                           </span>
                           <span className="text-xs text-muted-foreground tabular-nums">{product.sku}</span>
                         </span>
@@ -487,7 +588,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             </p>
           ) : null}
 
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
+          <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-1 py-1">
             {cartItems.length === 0 ? (
               <div className="rounded-lg border border-dashed bg-background px-4 py-3 text-center shadow-border">
                 <p className="text-sm text-muted-foreground text-pretty">
@@ -500,15 +601,21 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                   key={item.cartKey}
                   className="flex items-start justify-between gap-3 rounded-lg bg-background p-2.5 shadow-border"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-balance">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.itemType === 'service' ? 'Service' : 'Product'}
+                    <p
+                      className={cn(
+                        'mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ring-1',
+                        getItemTypeClasses(item),
+                      )}
+                    >
+                      <ItemTypeIcon item={item} />
+                      {getItemTypeLabel(item)}
                     </p>
                     <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(item.price)} each</p>
                     <p className="text-sm font-medium tabular-nums">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     <Button
                       type="button"
                       variant="outline"

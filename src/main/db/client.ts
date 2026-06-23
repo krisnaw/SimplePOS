@@ -4,7 +4,7 @@ import path from 'path'
 import { drizzle, type SQLJsDatabase } from 'drizzle-orm/sql-js'
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
 import * as schema from './schema/index'
-import { seedProductCatalog } from './seeder'
+import { seedProductCatalog, seedServiceCatalog } from './seeder'
 
 export type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -21,37 +21,6 @@ type DatabaseClient = SQLJsDatabase<typeof schema>
 const defaultAdminEmail = 'admin@simplepos.com'
 const defaultAdminPassword = 'admin123'
 const defaultAdminSalt = 'simplepos-default-admin-salt'
-
-const defaultServices = [
-  {
-    code: 'SVC-BRAKE-INSPECT',
-    name: 'Brake Inspection',
-    description: 'Inspect brake pads, fluid, rotors, and brake system condition.',
-    category: 'Brake Service',
-    price: 75000,
-  },
-  {
-    code: 'SVC-BRAKE-PAD',
-    name: 'Front Brake Pad Replacement',
-    description: 'Labor charge for replacing front brake pads.',
-    category: 'Brake Service',
-    price: 150000,
-  },
-  {
-    code: 'SVC-OIL-CHANGE',
-    name: 'Oil Change Labor',
-    description: 'Labor charge for routine engine oil replacement.',
-    category: 'Maintenance',
-    price: 100000,
-  },
-  {
-    code: 'SVC-AC-CHECK',
-    name: 'AC System Check',
-    description: 'Inspect AC cooling performance, pressure, and cabin airflow.',
-    category: 'AC Service',
-    price: 125000,
-  },
-]
 
 let sqliteDatabase: SqlJsDatabase | null = null
 let databaseClient: DatabaseClient | null = null
@@ -164,24 +133,6 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       CONSTRAINT UQ_services_code UNIQUE (code)
     )
   `)
-
-  for (const service of defaultServices) {
-    database.run(
-      `
-        INSERT INTO services (code, name, description, category, price, is_active)
-        SELECT ?, ?, ?, ?, ?, 1
-        WHERE NOT EXISTS (SELECT 1 FROM services WHERE code = ?)
-      `,
-      [
-        service.code,
-        service.name,
-        service.description,
-        service.category,
-        service.price,
-        service.code,
-      ],
-    )
-  }
 
   database.run(`
     CREATE TABLE IF NOT EXISTS product_categories (
@@ -325,6 +276,7 @@ function runSchemaMigration(database: SqlJsDatabase): void {
   addColumnIfMissing(database, 'sales', 'work_order_id', 'work_order_id integer REFERENCES work_orders(id)')
   addColumnIfMissing(database, 'invoices', 'work_order_id', 'work_order_id integer REFERENCES work_orders(id)')
 
+  seedServiceCatalog(database)
   seedProductCatalog(database)
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, Boxes, ClipboardList, CreditCard, Download, Receipt } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
@@ -66,28 +66,24 @@ export function ReportsWorkspace() {
       description: t('reports.groups.sales.description'),
       value: formatCurrency(report.salesTotal),
       helper: t('reports.groups.sales.helper', { count: report.invoiceCount }),
-      icon: BarChart3,
     },
     {
       title: t('reports.groups.averageInvoice.title'),
       description: t('reports.groups.averageInvoice.description'),
       value: formatCurrency(report.averageInvoiceTotal),
       helper: t('reports.groups.averageInvoice.helper', { value: formatCurrency(report.taxTotal) }),
-      icon: Receipt,
     },
     {
       title: t('reports.groups.inventoryValue.title'),
       description: t('reports.groups.inventoryValue.description'),
       value: formatCurrency(report.inventoryValue),
       helper: t('reports.groups.inventoryValue.helper', { count: report.lowStockCount }),
-      icon: Boxes,
     },
     {
       title: t('reports.groups.discounts.title'),
       description: t('reports.groups.discounts.description'),
       value: formatCurrency(report.discountTotal),
       helper: t('reports.groups.discounts.helper'),
-      icon: CreditCard,
     },
     {
       title: t('reports.groups.workOrders.title'),
@@ -97,7 +93,6 @@ export function ReportsWorkspace() {
         count: report.completedWorkOrderCount,
         rate: report.workOrderCompletionRate,
       }),
-      icon: ClipboardList,
     },
   ]
 
@@ -110,7 +105,7 @@ export function ReportsWorkspace() {
             {t('reports.dateRange', { from: formatDate(report.dateFrom), to: formatDate(report.dateTo) })}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="report-period">{t('reports.period')}</Label>
             <BaseSelect
@@ -142,18 +137,13 @@ export function ReportsWorkspace() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {reportGroups.map((summary) => {
-          const Icon = summary.icon
-
           return (
             <Card key={summary.title}>
               <CardHeader>
-                <CardTitle>
-                  <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
-                  {summary.title}
-                </CardTitle>
+                <CardTitle>{summary.title}</CardTitle>
                 <CardDescription>{summary.description}</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col gap-1">
                 <p className="text-2xl font-semibold tabular-nums">{isLoading ? '...' : summary.value}</p>
                 <p className="text-sm text-muted-foreground text-pretty">{summary.helper}</p>
               </CardContent>
@@ -168,7 +158,7 @@ export function ReportsWorkspace() {
             <CardTitle>{t('reports.topSelling.title')}</CardTitle>
             <CardDescription>{t('reports.topSelling.description')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-3">
             {report.topSellingItems.length === 0 ? (
               <div className="flex min-h-52 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center">
                 <p className="text-sm text-muted-foreground text-pretty">{t('reports.topSelling.noSales')}</p>
@@ -208,7 +198,7 @@ export function ReportsWorkspace() {
               <CardTitle>{t('reports.paymentMethods.title')}</CardTitle>
               <CardDescription>{t('reports.paymentMethods.description')}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-3">
               {report.paymentMethods.length === 0 ? (
                 <p className="rounded-lg border border-dashed bg-background p-4 text-center text-sm text-muted-foreground">
                   {t('reports.paymentMethods.noPayments')}
@@ -236,7 +226,7 @@ export function ReportsWorkspace() {
               <CardTitle>{t('reports.lowStock.title')}</CardTitle>
               <CardDescription>{t('reports.lowStock.description')}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-3">
               {report.lowStockItems.length === 0 ? (
                 <p className="rounded-lg border border-dashed bg-background p-4 text-center text-sm text-muted-foreground">
                   {t('reports.lowStock.noLowStock')}

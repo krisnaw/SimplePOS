@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Barcode, Database, Download, Printer, RefreshCw, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { LanguageSelect } from '@/renderer/components/LanguageSelect'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -102,7 +101,7 @@ export function SettingsWorkspace() {
           <CardTitle>{t('settings.externalDevices')}</CardTitle>
           <CardDescription>{t('settings.devicesHint')}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
           {externalDevices.map((device) => {
             const Icon = device.icon
             const deviceName = t(device.nameKey)
@@ -163,17 +162,17 @@ export function SettingsWorkspace() {
           <CardTitle>{t('settings.deviceNotes')}</CardTitle>
           <CardDescription>{t('settings.notesPlaceholder')}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p>{t('settings.printerScannerHint')}</p>
-          <p>{t('settings.healthCheckHint')}</p>
-          <div className="flex flex-col gap-2 rounded-lg border bg-background p-3">
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-green-500 animate-pulse" aria-hidden="true" />
-              <span>{t('settings.greenPulse')}</span>
+        <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
+          <p className="text-pretty">{t('settings.printerScannerHint')}</p>
+          <p className="text-pretty">{t('settings.healthCheckHint')}</p>
+          <div className="flex flex-col gap-2 rounded-lg border bg-muted p-3">
+            <div className="flex items-start gap-2">
+              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-500 animate-pulse" aria-hidden="true" />
+              <span className="text-foreground">{t('settings.greenPulse')}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-muted-foreground" aria-hidden="true" />
-              <span>{t('settings.mutedDot')}</span>
+            <div className="flex items-start gap-2">
+              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-muted-foreground" aria-hidden="true" />
+              <span className="text-foreground">{t('settings.mutedDot')}</span>
             </div>
           </div>
         </CardContent>
@@ -184,7 +183,7 @@ export function SettingsWorkspace() {
           <CardTitle>{t('settings.softwareUpdates')}</CardTitle>
           <CardDescription>{t('settings.updatesHint')}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
           <div className="rounded-lg border bg-background p-3">
             <p className="text-sm font-medium">{updateStatus.message}</p>
             {typeof updateStatus.percent === 'number' ? (
@@ -212,15 +211,6 @@ export function SettingsWorkspace() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.language')}</CardTitle>
-          <CardDescription>{t('settings.languageHint')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LanguageSelect className="flex items-center gap-2" />
-        </CardContent>
-      </Card>
     </div>
   )
 }

@@ -194,7 +194,10 @@ export default function Dashboard() {
               key={activeSection}
               className={cn(
                 'flex flex-col gap-4',
-                (activeSection === 'sales' || activeSection === 'inventory' || activeSection === 'services') &&
+                (activeSection === 'sales' ||
+                  activeSection === 'inventory' ||
+                  activeSection === 'services' ||
+                  activeSection === 'invoices') &&
                   'min-h-0 flex-1 overflow-hidden',
                 activeSection !== 'dashboard' && 'content-enter',
               )}

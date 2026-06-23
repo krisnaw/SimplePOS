@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, Download, Loader2, Printer, Receipt, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
@@ -17,6 +17,26 @@ function statusClass(status: string | null): string {
   if (status === 'refunded') return 'bg-amber-500/15 text-amber-700'
   if (status === 'void') return 'bg-destructive/10 text-destructive'
   return 'bg-muted text-muted-foreground'
+}
+
+function InvoiceStatusBadge({
+  status,
+  size = 'sm',
+}: {
+  status: string | null
+  size?: 'xs' | 'sm'
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit items-center rounded-full px-2 py-0.5 font-medium uppercase',
+        size === 'xs' ? 'text-[10px]' : 'text-xs',
+        statusClass(status),
+      )}
+    >
+      {status ?? 'unrecorded'}
+    </span>
+  )
 }
 
 export function InvoiceWorkspace() {
@@ -115,7 +135,7 @@ export function InvoiceWorkspace() {
 
   return (
     <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-      <Card>
+      <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <CardTitle>Invoice History</CardTitle>
           <CardDescription>
@@ -136,7 +156,7 @@ export function InvoiceWorkspace() {
           </CardAction>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="grid grid-cols-4 gap-2">
             <div className="col-span-3">
               <label className="flex flex-col gap-1 text-xs text-muted-foreground">
@@ -180,18 +200,7 @@ export function InvoiceWorkspace() {
           </div>
 
 
-          <div className="space-y-2">
-            <div className="grid shrink-0 gap-2">
-
-
-              <div className="grid grid-cols-2 gap-2">
-
-
-
-
-              </div>
-            </div>
-
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
             <div className="grid shrink-0 grid-cols-2 gap-2">
               <div className="rounded-lg bg-muted px-3 py-2">
                 <p className="text-xs text-muted-foreground">Paid</p>
@@ -203,7 +212,7 @@ export function InvoiceWorkspace() {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div className="-mx-1 min-h-0 flex-1 overflow-auto px-1 py-1">
               {isLoadingList ? (
                 <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background p-5 text-center">
                   <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
@@ -267,9 +276,7 @@ export function InvoiceWorkspace() {
                             </span>
                           ) : null}
                         </span>
-                        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', statusClass(invoice.status))}>
-                          {invoice.status}
-                        </span>
+                        <InvoiceStatusBadge status={invoice.status} size="xs" />
                       </span>
                         <span className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                         <span className="flex min-w-0 items-center gap-1.5">
@@ -291,7 +298,7 @@ export function InvoiceWorkspace() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="min-h-0 overflow-hidden">
         {selectedInvoice ? (
           <>
             <CardHeader>
@@ -299,7 +306,7 @@ export function InvoiceWorkspace() {
               <CardDescription>
                 {selectedInvoice.customerName ?? 'Walk-in customer'} · {formatDateTime(selectedInvoice.issuedAt)}
               </CardDescription>
-              <CardAction>
+              <CardAction className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" className={pressableButtonClass}>
                   <Printer data-icon="inline-start" aria-hidden="true" />
                   Print
@@ -311,11 +318,10 @@ export function InvoiceWorkspace() {
               </CardAction>
             </CardHeader>
 
-            <CardContent>
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-                <div className="flex min-w-0 flex-col gap-4">
+            <CardContent className="min-h-0 flex-1 overflow-auto">
+              <div className="flex min-w-0 flex-col gap-4">
                   <div className="rounded-lg border bg-background p-4">
-                    <div className="grid gap-3 md:grid-cols-4">
+                    <div className="grid gap-3 md:grid-cols-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Customer</Label>
                         <p className="mt-1 text-sm font-medium text-pretty">
@@ -334,9 +340,9 @@ export function InvoiceWorkspace() {
                           {formatPaymentMethod(selectedInvoice.payment?.method ?? null)}
                         </p>
                       </div>
-                      <div>
+                      <div className="md:col-span-3">
                         <Label className="text-xs text-muted-foreground">Work Order</Label>
-                        <p className="mt-1 text-sm font-medium tabular-nums">
+                        <p className="mt-1 break-all text-sm font-medium tabular-nums text-pretty">
                           {selectedInvoice.workOrderNumber ?? 'Direct sale'}
                         </p>
                       </div>
@@ -369,59 +375,56 @@ export function InvoiceWorkspace() {
                       ))}
                     </div>
                   </div>
-                </div>
 
-                <div className="flex min-w-0 flex-col gap-3">
-                  <div className="rounded-lg border bg-background p-4">
-                    <p className="text-sm font-semibold text-balance">Receipt Preview</p>
-                    <div className="mt-4 flex flex-col gap-2 text-sm">
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span className="tabular-nums">{formatCurrency(selectedInvoice.subtotal)}</span>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-lg border bg-background p-4">
+                      <p className="text-sm font-semibold text-balance">Payment Details</p>
+                      <div className="mt-3 flex flex-col gap-2 text-sm">
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">Status</span>
+                          <InvoiceStatusBadge status={selectedInvoice.payment?.status ?? null} />
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">Method</span>
+                          <span>{formatPaymentMethod(selectedInvoice.payment?.method ?? null)}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">Amount</span>
+                          <span className="tabular-nums">
+                            {formatCurrency(selectedInvoice.payment?.amount ?? selectedInvoice.total)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">Discount</span>
-                        <span className="tabular-nums">{formatCurrency(selectedInvoice.discount)}</span>
-                      </div>
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">Tax</span>
-                        <span className="tabular-nums">{formatCurrency(selectedInvoice.tax)}</span>
-                      </div>
-                      <div className="mt-2 flex justify-between gap-3 border-t pt-3 text-base font-semibold">
-                        <span>Total</span>
-                        <span className="tabular-nums">{formatCurrency(selectedInvoice.total)}</span>
+                    </div>
+
+                    <div className="rounded-lg border bg-background p-4">
+                      <p className="text-sm font-semibold text-balance">Receipt Preview</p>
+                      <div className="mt-4 flex flex-col gap-2 text-sm">
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="tabular-nums">{formatCurrency(selectedInvoice.subtotal)}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">Discount</span>
+                          <span className="tabular-nums">{formatCurrency(selectedInvoice.discount)}</span>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">Tax</span>
+                          <span className="tabular-nums">{formatCurrency(selectedInvoice.tax)}</span>
+                        </div>
+                        <div className="mt-2 flex justify-between gap-3 border-t pt-3 text-base font-semibold">
+                          <span>Total</span>
+                          <span className="tabular-nums">{formatCurrency(selectedInvoice.total)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  <div className="rounded-lg border bg-background p-4">
-                    <p className="text-sm font-semibold text-balance">Payment Details</p>
-                    <div className="mt-3 flex flex-col gap-2 text-sm">
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">Status</span>
-                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', statusClass(selectedInvoice.payment?.status ?? null))}>
-                          {selectedInvoice.payment?.status ?? 'unrecorded'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">Method</span>
-                        <span>{formatPaymentMethod(selectedInvoice.payment?.method ?? null)}</span>
-                      </div>
-                      <div className="flex justify-between gap-3">
-                        <span className="text-muted-foreground">Amount</span>
-                        <span className="tabular-nums">
-                          {formatCurrency(selectedInvoice.payment?.amount ?? selectedInvoice.total)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </>
         ) : (
-          <CardContent>
-            <div className="max-w-sm">
+          <CardContent className="flex min-h-0 flex-1 items-center justify-center overflow-auto">
+            <div className="max-w-sm text-center">
               <p className="text-sm font-medium text-balance">
                 {isLoadingDetail ? 'Loading invoice' : 'Select an invoice'}
               </p>

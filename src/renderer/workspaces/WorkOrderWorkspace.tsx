@@ -50,7 +50,10 @@ const statusFlow: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'complete
 const editableStatuses: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed']
 
 function statusLabel(status: WorkOrderStatus): string {
-  return status.replace('_', ' ')
+  return status
+    .split('_')
+    .map((word) => capitalize(word))
+    .join(' ')
 }
 
 function priorityLabel(priority: WorkOrderPriority): string {
@@ -97,6 +100,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
   const [dateTo, setDateTo] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [isCreatingWorkOrder, setIsCreatingWorkOrder] = useState(false)
 
   const [customerId, setCustomerId] = useState('')
   const [vehicleId, setVehicleId] = useState('')
@@ -211,7 +215,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
     setServices(serviceList ?? [])
     setUsers(userList ?? [])
 
-    const nextSelectedId = selectedId ?? selectedWorkOrder?.id ?? nextWorkOrders[0]?.id
+    const nextSelectedId = selectedId ?? selectedWorkOrder?.id
     if (nextSelectedId) {
       const detail = await window.simplepos?.workOrders.get({ id: nextSelectedId })
       setSelectedWorkOrder(detail ?? null)
@@ -255,11 +259,13 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
     const detail = await window.simplepos?.workOrders.get({ id })
     setSelectedWorkOrder(detail ?? null)
     if (detail) syncForm(detail)
+    setIsCreatingWorkOrder(false)
   }
 
   async function handleNewWorkOrder() {
     setSelectedWorkOrder(null)
     resetForm()
+    setIsCreatingWorkOrder(true)
   }
 
   async function handleSaveWorkOrder() {
@@ -288,6 +294,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
     setMessage(result.message)
 
     if (result.ok && result.workOrder) {
+      setIsCreatingWorkOrder(false)
       await loadWorkspace(result.workOrder.id)
     }
   }
@@ -485,10 +492,12 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
         <Card>
           <CardHeader>
             <CardTitle>
-              {selectedWorkOrder ? selectedWorkOrder.orderNumber : 'New Work Order'}
+              {selectedWorkOrder ? selectedWorkOrder.orderNumber : isCreatingWorkOrder ? 'New Work Order' : 'Work Order Detail'}
             </CardTitle>
             <CardDescription>
-              Customer vehicle, complaint, assignment, and job status.
+              {selectedWorkOrder || isCreatingWorkOrder
+                ? 'Customer vehicle, complaint, assignment, and job status.'
+                : 'Select a work order or create a new repair job.'}
             </CardDescription>
             {selectedWorkOrder ? (
               <CardAction>
@@ -505,6 +514,24 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
           </CardHeader>
 
           <CardContent className="flex flex-col gap-3">
+            {!selectedWorkOrder && !isCreatingWorkOrder ? (
+              <div className="flex min-h-72 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
+                <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                  <ClipboardList className="size-5 text-muted-foreground" aria-hidden="true" />
+                </div>
+                <div className="max-w-sm">
+                  <p className="text-sm font-medium text-balance">No work order selected</p>
+                  <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                    Choose a work order from the list to view details, or create a new one.
+                  </p>
+                </div>
+                <Button type="button" className={pressableButtonClass} onClick={() => void handleNewWorkOrder()}>
+                  <Plus data-icon="inline-start" aria-hidden="true" />
+                  New Work Order
+                </Button>
+              </div>
+            ) : (
+              <>
             {message ? (
               <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground text-pretty" role="status">
                 {message}
@@ -589,7 +616,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                     value={odometer}
                     disabled={!canEditSelected}
                     onChange={(event) => setOdometer(event.target.value)}
-                    placeholder="42500"
                   />
                 </div>
               </div>
@@ -604,7 +630,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                 onChange={(event) => setComplaint(event.target.value)}
                 rows={3}
                 className="min-h-20 resize-y rounded-md border bg-background px-3 py-2 text-sm"
-                placeholder="Brake noise when stopping..."
               />
             </div>
 
@@ -616,7 +641,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                   value={notes}
                   disabled={!canEditSelected}
                   onChange={(event) => setNotes(event.target.value)}
-                  placeholder="Internal notes"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -632,40 +656,55 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                className={pressableButtonClass}
-                disabled={!canEditSelected || !customerId || !vehicleId || !complaint.trim()}
-                onClick={() => void handleSaveWorkOrder()}
-              >
-                <Check data-icon="inline-start" aria-hidden="true" />
-                {selectedWorkOrder ? 'Save Work Order' : 'Create Work Order'}
-              </Button>
-
+            <div className="grid gap-3 md:grid-cols-2">
               {selectedWorkOrder ? (
-                <>
-                  <BaseSelect
-                    value={selectedWorkOrder.status}
-                    ariaLabel="Change work order status"
-                    options={selectableStatuses(selectedWorkOrder).map((status) => ({
-                      value: status,
-                      label: statusLabel(status),
-                    }))}
-                    onValueChange={(nextStatus) => void handleStatusChange(nextStatus as WorkOrderStatus)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={pressableButtonClass}
-                    disabled={!canCheckoutSelected}
-                    onClick={() => void handleCheckout()}
-                  >
-                    <ShoppingCart data-icon="inline-start" aria-hidden="true" />
-                    Checkout
-                  </Button>
-                </>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Status</Label>
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <BaseSelect
+                      value={selectedWorkOrder.status}
+                      ariaLabel="Change work order status"
+                      options={selectableStatuses(selectedWorkOrder).map((status) => ({
+                        value: status,
+                        label: statusLabel(status),
+                      }))}
+                      onValueChange={(nextStatus) => void handleStatusChange(nextStatus as WorkOrderStatus)}
+                    />
+                    <Button
+                      type="button"
+                      className={cn('h-10', pressableButtonClass)}
+                      disabled={!canEditSelected || !customerId || !vehicleId || !complaint.trim()}
+                      onClick={() => void handleSaveWorkOrder()}
+                    >
+                      <Check data-icon="inline-start" aria-hidden="true" />
+                      Save Work Order
+                    </Button>
+                  </div>
+                </div>
               ) : null}
+
+              <div className="flex flex-col gap-1.5">
+                <Label>Work Order</Label>
+                <Button
+                  type="button"
+                  variant={selectedWorkOrder ? 'outline' : 'default'}
+                  className={cn('h-10', !selectedWorkOrder && 'w-full', pressableButtonClass)}
+                  disabled={selectedWorkOrder ? !canCheckoutSelected : !canEditSelected || !customerId || !vehicleId || !complaint.trim()}
+                  onClick={() => selectedWorkOrder ? void handleCheckout() : void handleSaveWorkOrder()}
+                >
+                  {selectedWorkOrder ? (
+                    <>
+                      <ShoppingCart data-icon="inline-start" aria-hidden="true" />
+                      Checkout
+                    </>
+                  ) : (
+                    <>
+                      <Check data-icon="inline-start" aria-hidden="true" />
+                      Create Work Order
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
             {selectedWorkOrder ? (
@@ -693,6 +732,8 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                 </div>
               </div>
             ) : null}
+              </>
+            )}
           </CardContent>
         </Card>
 

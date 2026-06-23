@@ -65,6 +65,7 @@ export function CustomerWorkspace() {
   const [vehicleMessage, setVehicleMessage] = useState('')
   const [isEditingCustomer, setIsEditingCustomer] = useState(false)
   const [isEditingVehicle, setIsEditingVehicle] = useState(false)
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false)
   const [view, setView] = useState<'list' | 'detail'>('list')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVehicleSubmitting, setIsVehicleSubmitting] = useState(false)
@@ -148,6 +149,7 @@ export function CustomerWorkspace() {
     setVehicleMessage('')
     setIsEditingCustomer(false)
     setIsEditingVehicle(false)
+    setIsCreatingCustomer(false)
     setConfirmingDelete(false)
     setConfirmingVehicleDelete(false)
     setView('detail')
@@ -162,12 +164,14 @@ export function CustomerWorkspace() {
     setVehicleMessage('')
     setIsEditingCustomer(false)
     setIsEditingVehicle(false)
+    setIsCreatingCustomer(true)
   }
 
   function goBackToList() {
     setView('list')
     setIsEditingCustomer(false)
     setIsEditingVehicle(false)
+    setIsCreatingCustomer(false)
     setConfirmingDelete(false)
     setConfirmingVehicleDelete(false)
     setForm(emptyForm)
@@ -298,6 +302,7 @@ export function CustomerWorkspace() {
     setVehicleForm(emptyVehicleForm)
     setMessage(result?.message ?? 'Customer created')
     setIsEditingCustomer(false)
+    setIsCreatingCustomer(false)
     setView('detail')
   }
 
@@ -970,7 +975,7 @@ export function CustomerWorkspace() {
                 </div>
                 <div>
                   <p className="font-medium">No customers yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Add your first customer using the form on the right.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Click + to add your first customer.</p>
                 </div>
               </div>
             ) : (
@@ -1018,117 +1023,119 @@ export function CustomerWorkspace() {
       </div>
 
       <div className="flex min-h-0 flex-col gap-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create Customer</CardTitle>
-            <CardDescription>Add a customer before linking vehicles.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
-              <p className="text-xs text-muted-foreground">
-                Fields marked <span className="text-destructive">*</span> are required.
-              </p>
+        {isCreatingCustomer ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Create Customer</CardTitle>
+              <CardDescription>Add a customer before linking vehicles.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+                <p className="text-xs text-muted-foreground">
+                  Fields marked <span className="text-destructive">*</span> are required.
+                </p>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="customer-name">
-                  Name <RequiredMark />
-                </Label>
-                <Input
-                  id="customer-name"
-                  value={form.name}
-                  onChange={(event) => updateForm('name', event.target.value)}
-                  placeholder="Budi Santoso"
-                  autoComplete="name"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="customer-phone">
-                  Phone <RequiredMark />
-                </Label>
-                <div className="relative">
-                  <Phone
-                    className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="customer-name">
+                    Name <RequiredMark />
+                  </Label>
                   <Input
-                    id="customer-phone"
-                    type="tel"
-                    value={form.phone}
-                    onChange={(event) => updateForm('phone', event.target.value)}
-                    placeholder="+62 812..."
-                    className="pl-8"
-                    autoComplete="tel"
+                    id="customer-name"
+                    value={form.name}
+                    onChange={(event) => updateForm('name', event.target.value)}
+                    placeholder="Budi Santoso"
+                    autoComplete="name"
                     required
                   />
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="customer-email">Email</Label>
-                <div className="relative">
-                  <Mail
-                    className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Input
-                    id="customer-email"
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => updateForm('email', event.target.value)}
-                    placeholder="customer@example.com"
-                    className="pl-8"
-                    autoComplete="email"
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="customer-phone">
+                    Phone <RequiredMark />
+                  </Label>
+                  <div className="relative">
+                    <Phone
+                      className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      id="customer-phone"
+                      type="tel"
+                      value={form.phone}
+                      onChange={(event) => updateForm('phone', event.target.value)}
+                      placeholder="+62 812..."
+                      className="pl-8"
+                      autoComplete="tel"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="customer-email">Email</Label>
+                  <div className="relative">
+                    <Mail
+                      className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      id="customer-email"
+                      type="email"
+                      value={form.email}
+                      onChange={(event) => updateForm('email', event.target.value)}
+                      placeholder="customer@example.com"
+                      className="pl-8"
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="customer-address">Address</Label>
+                  <div className="relative">
+                    <MapPin
+                      className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      id="customer-address"
+                      value={form.address}
+                      onChange={(event) => updateForm('address', event.target.value)}
+                      placeholder="Street, area, city"
+                      className="pl-8"
+                      autoComplete="street-address"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="customer-notes">Notes</Label>
+                  <textarea
+                    id="customer-notes"
+                    value={form.notes}
+                    onChange={(event) => updateForm('notes', event.target.value)}
+                    placeholder="Service preferences, billing notes..."
+                    className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   />
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="customer-address">Address</Label>
-                <div className="relative">
-                  <MapPin
-                    className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Input
-                    id="customer-address"
-                    value={form.address}
-                    onChange={(event) => updateForm('address', event.target.value)}
-                    placeholder="Street, area, city"
-                    className="pl-8"
-                    autoComplete="street-address"
-                  />
-                </div>
+                {message ? (
+                  <p className="text-sm text-muted-foreground" role="status">{message}</p>
+                ) : null}
+              </form>
+            </CardContent>
+            <CardFooter>
+              <div className="flex gap-2">
+                <Button type="submit" form="customer-form" className="flex-1" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Customer'}
+                </Button>
+                <Button type="button" variant="outline" onClick={startNewCustomer} disabled={isSubmitting}>
+                  Clear
+                </Button>
               </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="customer-notes">Notes</Label>
-                <textarea
-                  id="customer-notes"
-                  value={form.notes}
-                  onChange={(event) => updateForm('notes', event.target.value)}
-                  placeholder="Service preferences, billing notes..."
-                  className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                />
-              </div>
-
-              {message ? (
-                <p className="text-sm text-muted-foreground" role="status">{message}</p>
-              ) : null}
-            </form>
-          </CardContent>
-          <CardFooter>
-            <div className="flex gap-2">
-              <Button type="submit" form="customer-form" className="flex-1" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Customer'}
-              </Button>
-              <Button type="button" variant="outline" onClick={startNewCustomer} disabled={isSubmitting}>
-                Clear
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
+            </CardFooter>
+          </Card>
+        ) : null}
       </div>
     </div>
   )
