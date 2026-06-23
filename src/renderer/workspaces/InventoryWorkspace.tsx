@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, PackagePlus, Search, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Loader2, PackagePlus, Search, Trash2 } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
@@ -24,9 +24,7 @@ const emptyForm: ProductFormState = {
 
 const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
 const productTableGrid =
-  'grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)_104px_88px_84px_56px]'
-const iconHitAreaClass =
-  'relative after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2'
+  'grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)_104px_88px_84px]'
 
 function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock
@@ -172,6 +170,7 @@ export function InventoryWorkspace() {
   async function handleDeactivate(product: ProductSummary) {
     await window.simplepos?.products.update({ ...product, isActive: false })
     void window.simplepos?.products.list().then(setProducts)
+    if (editingProduct?.id === product.id) resetForm()
   }
 
   return (
@@ -214,7 +213,7 @@ export function InventoryWorkspace() {
             <CardTitle>Product List</CardTitle>
             <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -234,7 +233,6 @@ export function InventoryWorkspace() {
                   <span className="text-right">Price</span>
                   <span>Stock</span>
                   <span>Status</span>
-                  <span className="text-center">Remove</span>
               </div>
 
               <div className="divide-y">
@@ -290,22 +288,6 @@ export function InventoryWorkspace() {
                         )}
                       >
                         {lowStock ? 'Low stock' : 'In stock'}
-                      </span>
-                      <span className="flex justify-center">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className={cn('text-muted-foreground hover:text-destructive active:scale-[0.96]', iconHitAreaClass)}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            void handleDeactivate(product)
-                          }}
-                          aria-label={`Remove ${product.name}`}
-                          title={`Remove ${product.name}`}
-                        >
-                          <Trash2 aria-hidden="true" />
-                        </Button>
                       </span>
                     </div>
                   )
@@ -453,6 +435,19 @@ export function InventoryWorkspace() {
             </div>
           </form>
         </CardContent>
+        {editingProduct ? (
+          <CardFooter className="border-t">
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full"
+              onClick={() => void handleDeactivate(editingProduct)}
+            >
+              <Trash2 data-icon="inline-start" aria-hidden="true" />
+              Delete Product
+            </Button>
+          </CardFooter>
+        ) : null}
       </Card>
     </div>
   )

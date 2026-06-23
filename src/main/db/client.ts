@@ -24,6 +24,7 @@ const defaultAdminSalt = 'simplepos-default-admin-salt'
 
 let sqliteDatabase: SqlJsDatabase | null = null
 let databaseClient: DatabaseClient | null = null
+let databaseFileMtimeMs = 0
 let status: DatabaseStatus = {
   state: 'error',
   path: '',
@@ -294,8 +295,9 @@ export async function initializeDatabase(databaseDirectory: string): Promise<Dat
     sqliteDatabase.run('PRAGMA foreign_keys = ON')
     runSchemaMigration(sqliteDatabase)
 
-    databaseClient = drizzle(sqliteDatabase, { schema })
     fs.writeFileSync(dbPath, Buffer.from(sqliteDatabase.export()))
+    databaseFileMtimeMs = fs.statSync(dbPath).mtimeMs
+    databaseClient = drizzle(sqliteDatabase, { schema })
 
     status = {
       state: existsBeforeOpen ? 'connected_existing' : 'connected_created',
@@ -330,7 +332,17 @@ export function getDatabaseClient(): DatabaseClient | null {
 export async function flushDatabase(): Promise<void> {
   if (!sqliteDatabase || !status.path) return
 
+  if (fs.existsSync(status.path)) {
+    const currentMtimeMs = fs.statSync(status.path).mtimeMs
+
+    if (databaseFileMtimeMs > 0 && currentMtimeMs > databaseFileMtimeMs + 1) {
+      console.warn(`Skipped database flush because ${status.path} was modified by another process.`)
+      return
+    }
+  }
+
   fs.writeFileSync(status.path, Buffer.from(sqliteDatabase.export()))
+  databaseFileMtimeMs = fs.statSync(status.path).mtimeMs
 }
 
 export async function closeDatabase(): Promise<void> {
@@ -340,4 +352,5 @@ export async function closeDatabase(): Promise<void> {
   sqliteDatabase.close()
   sqliteDatabase = null
   databaseClient = null
+  databaseFileMtimeMs = 0
 }

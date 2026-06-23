@@ -197,7 +197,7 @@ export function ServicesWorkspace() {
             <CardTitle>Service List</CardTitle>
             <CardDescription>Labor and service charges available in Sales and Work Orders.</CardDescription>
           </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
             <div className="relative shrink-0">
               <Search
                 aria-hidden="true"
