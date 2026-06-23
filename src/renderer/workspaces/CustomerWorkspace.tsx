@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, Loader2, Mail, MapPin, Pencil, Phone, Plus, Search, UserRound } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
@@ -53,6 +54,7 @@ function RequiredMark() {
 }
 
 export function CustomerWorkspace() {
+  const { t } = useTranslation()
   const [customers, setCustomers] = useState<CustomerSummary[]>([])
   const [vehicles, setVehicles] = useState<VehicleSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -103,7 +105,7 @@ export function CustomerWorkspace() {
 
     void loadRecords().catch((error) => {
       if (!isMounted) return
-      setMessage(error instanceof Error ? error.message : 'Unable to load customers')
+      setMessage(error instanceof Error ? error.message : t('customers.messages.loadFailed'))
       setIsLoading(false)
     })
 
@@ -226,7 +228,7 @@ export function CustomerWorkspace() {
     const notes = form.notes.trim()
 
     if (!name || !phone) {
-      setMessage('Name and phone are required.')
+      setMessage(t('customers.messages.required'))
       return
     }
 
@@ -265,7 +267,7 @@ export function CustomerWorkspace() {
             : customer,
         ),
       )
-      setMessage(result?.message ?? 'Customer updated')
+      setMessage(result?.message ?? t('customers.messages.updated'))
       setIsEditingCustomer(false)
       return
     }
@@ -300,7 +302,7 @@ export function CustomerWorkspace() {
     setSelectedCustomerId(nextCustomer.id)
     setSelectedVehicleId(null)
     setVehicleForm(emptyVehicleForm)
-    setMessage(result?.message ?? 'Customer created')
+    setMessage(result?.message ?? t('customers.messages.created'))
     setIsEditingCustomer(false)
     setIsCreatingCustomer(false)
     setView('detail')
@@ -336,7 +338,7 @@ export function CustomerWorkspace() {
     event.preventDefault()
 
     if (!selectedCustomer) {
-      setVehicleMessage('Select a customer before adding a vehicle.')
+      setVehicleMessage(t('customers.messages.selectCustomerForVehicle'))
       return
     }
 
@@ -349,7 +351,7 @@ export function CustomerWorkspace() {
     const notes = vehicleForm.notes.trim()
 
     if (!plateNumber || !brand || !model) {
-      setVehicleMessage('Plate number, brand, and model are required.')
+      setVehicleMessage(t('customers.messages.vehicleRequired'))
       return
     }
 
@@ -393,7 +395,7 @@ export function CustomerWorkspace() {
             : vehicle,
         ),
       )
-      setVehicleMessage(result?.message ?? 'Vehicle updated')
+      setVehicleMessage(result?.message ?? t('customers.messages.vehicleUpdated'))
       setIsEditingVehicle(false)
       return
     }
@@ -432,7 +434,7 @@ export function CustomerWorkspace() {
 
     setVehicles((current) => [nextVehicle, ...current])
     setSelectedVehicleId(nextVehicle.id)
-    setVehicleMessage(result?.message ?? 'Vehicle created')
+    setVehicleMessage(result?.message ?? t('customers.messages.vehicleCreated'))
     setIsEditingVehicle(false)
   }
 
@@ -457,20 +459,20 @@ export function CustomerWorkspace() {
     setVehicleForm(emptyVehicleForm)
     setConfirmingVehicleDelete(false)
     setIsEditingVehicle(false)
-    setVehicleMessage(result?.message ?? 'Vehicle deleted')
+    setVehicleMessage(result?.message ?? t('customers.messages.vehicleDeleted'))
   }
 
   if (view === 'detail' && selectedCustomer) {
     return (
       <div className="flex min-h-0 flex-col gap-4">
-        <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-sm" aria-label={t('customers.breadcrumb')}>
           <button
             type="button"
             onClick={goBackToList}
             className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
-            Customers
+            {t('customers.sections.customers.title')}
           </button>
           <span className="text-muted-foreground" aria-hidden="true">/</span>
           <span className="font-medium" aria-current="page">{selectedCustomer.name}</span>
@@ -482,12 +484,12 @@ export function CustomerWorkspace() {
             <Card>
               <CardHeader>
                 <CardTitle>{selectedCustomer.name}</CardTitle>
-                <CardDescription>Updated {formatDate(selectedCustomer.updatedAt)}</CardDescription>
+                <CardDescription>{t('customers.updatedAt', { date: formatDate(selectedCustomer.updatedAt) })}</CardDescription>
                 {!isEditingCustomer ? (
                   <CardAction>
                     <Button size="sm" variant="outline" onClick={() => setIsEditingCustomer(true)}>
                       <Pencil data-icon="inline-start" aria-hidden="true" />
-                      Edit
+                      {t('common.update')}
                     </Button>
                   </CardAction>
                 ) : null}
@@ -496,7 +498,7 @@ export function CustomerWorkspace() {
                 <div className="flex flex-col gap-3 text-sm">
                   <div className="flex items-center gap-2">
                     <Phone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <span className="truncate">{selectedCustomer.phone ?? 'No phone'}</span>
+                    <span className="truncate">{selectedCustomer.phone ?? t('customers.noPhone')}</span>
                   </div>
                   {selectedCustomer.email ? (
                     <div className="flex items-center gap-2">
@@ -520,14 +522,14 @@ export function CustomerWorkspace() {
               <CardFooter>
                 {confirmingDelete ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Delete this customer?</span>
+                    <span className="text-sm text-muted-foreground">{t('customers.deleteCustomerConfirm')}</span>
                     <Button
                       type="button"
                       variant="destructive"
                       size="sm"
                       onClick={handleDeleteCustomer}
                     >
-                      Yes, delete
+                      {t('customers.yesDelete')}
                     </Button>
                     <Button
                       type="button"
@@ -535,7 +537,7 @@ export function CustomerWorkspace() {
                       size="sm"
                       onClick={() => setConfirmingDelete(false)}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 ) : (
@@ -545,7 +547,7 @@ export function CustomerWorkspace() {
                     size="sm"
                     onClick={handleDeleteCustomer}
                   >
-                    Delete Customer
+                    {t('customers.deleteCustomer')}
                   </Button>
                 )}
               </CardFooter>
@@ -554,18 +556,18 @@ export function CustomerWorkspace() {
             {/* Vehicles card */}
             <Card>
               <CardHeader>
-                <CardTitle>Vehicles</CardTitle>
+                <CardTitle>{t('customers.vehicles')}</CardTitle>
                 <CardDescription>
                   {selectedCustomerVehicles.length === 0
-                    ? 'No vehicles linked.'
-                    : `${selectedCustomerVehicles.length} vehicle${selectedCustomerVehicles.length !== 1 ? 's' : ''} linked.`}
+                    ? t('customers.noVehiclesLinkedShort')
+                    : t('customers.vehicleLinkedCount', { count: selectedCustomerVehicles.length })}
                 </CardDescription>
                 <CardAction>
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    aria-label="Add vehicle"
+                    aria-label={t('customers.addVehicle')}
                     onClick={startNewVehicle}
                   >
                     <Plus aria-hidden="true" />
@@ -579,12 +581,12 @@ export function CustomerWorkspace() {
                       <Phone className="size-4 text-muted-foreground" aria-hidden="true" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">No vehicles yet</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">Click + to link a vehicle to this customer.</p>
+                      <p className="text-sm font-medium">{t('customers.noVehiclesYet')}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{t('customers.addVehicleHint')}</p>
                     </div>
                     <Button type="button" size="sm" variant="outline" onClick={startNewVehicle}>
                       <Plus data-icon="inline-start" aria-hidden="true" />
-                      Add Vehicle
+                      {t('customers.addVehicle')}
                     </Button>
                   </div>
                 ) : (
@@ -629,20 +631,20 @@ export function CustomerWorkspace() {
             {isEditingCustomer ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Edit Customer</CardTitle>
-                  <CardDescription>Update contact details for future work orders.</CardDescription>
+                  <CardTitle>{t('customers.editCustomer')}</CardTitle>
+                  <CardDescription>{t('customers.editCustomerHint')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="customer-name">
-                        Name <RequiredMark />
+                        {t('customers.form.name')} <RequiredMark />
                       </Label>
                       <Input
                         id="customer-name"
                         value={form.name}
                         onChange={(event) => updateForm('name', event.target.value)}
-                        placeholder="Customer name"
+                        placeholder={t('customers.form.namePlaceholder')}
                         autoComplete="name"
                         required
                       />
@@ -650,7 +652,7 @@ export function CustomerWorkspace() {
 
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="customer-phone">
-                        Phone <RequiredMark />
+                        {t('customers.form.phone')} <RequiredMark />
                       </Label>
                       <div className="relative">
                         <Phone
@@ -662,7 +664,7 @@ export function CustomerWorkspace() {
                           type="tel"
                           value={form.phone}
                           onChange={(event) => updateForm('phone', event.target.value)}
-                          placeholder="+62 812..."
+                          placeholder={t('customers.form.phonePlaceholder')}
                           className="pl-8"
                           autoComplete="tel"
                           required
@@ -671,7 +673,7 @@ export function CustomerWorkspace() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="customer-email">Email</Label>
+                      <Label htmlFor="customer-email">{t('customers.form.email')}</Label>
                       <div className="relative">
                         <Mail
                           className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -682,7 +684,7 @@ export function CustomerWorkspace() {
                           type="email"
                           value={form.email}
                           onChange={(event) => updateForm('email', event.target.value)}
-                          placeholder="customer@example.com"
+                          placeholder={t('customers.form.emailPlaceholder')}
                           className="pl-8"
                           autoComplete="email"
                         />
@@ -690,7 +692,7 @@ export function CustomerWorkspace() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="customer-address">Address</Label>
+                      <Label htmlFor="customer-address">{t('customers.form.address')}</Label>
                       <div className="relative">
                         <MapPin
                           className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -700,7 +702,7 @@ export function CustomerWorkspace() {
                           id="customer-address"
                           value={form.address}
                           onChange={(event) => updateForm('address', event.target.value)}
-                          placeholder="Street, area, city"
+                          placeholder={t('customers.form.addressPlaceholder')}
                           className="pl-8"
                           autoComplete="street-address"
                         />
@@ -708,12 +710,12 @@ export function CustomerWorkspace() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="customer-notes">Notes</Label>
+                      <Label htmlFor="customer-notes">{t('customers.form.notes')}</Label>
                       <textarea
                         id="customer-notes"
                         value={form.notes}
                         onChange={(event) => updateForm('notes', event.target.value)}
-                        placeholder="Service preferences, billing notes..."
+                        placeholder={t('customers.form.notesPlaceholder')}
                         className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       />
                     </div>
@@ -726,10 +728,10 @@ export function CustomerWorkspace() {
                 <CardFooter>
                   <div className="flex gap-2">
                     <Button type="submit" form="customer-form" className="flex-1" disabled={isSubmitting}>
-                      {isSubmitting ? 'Saving...' : 'Update'}
+                      {isSubmitting ? t('common.saving') : t('common.update')}
                     </Button>
                     <Button type="button" variant="outline" onClick={cancelEdit} disabled={isSubmitting}>
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </CardFooter>
@@ -740,20 +742,20 @@ export function CustomerWorkspace() {
             {isEditingVehicle ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>{selectedVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</CardTitle>
-                  <CardDescription>Linked to {selectedCustomer.name}.</CardDescription>
+                  <CardTitle>{selectedVehicle ? t('customers.editVehicle') : t('customers.addVehicle')}</CardTitle>
+                  <CardDescription>{t('customers.linkedTo', { name: selectedCustomer.name })}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form id="vehicle-form" onSubmit={handleVehicleSubmit} className="flex flex-col gap-3" noValidate>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="vehicle-plate">
-                        Plate Number <RequiredMark />
+                        {t('customers.form.plateNumber')} <RequiredMark />
                       </Label>
                       <Input
                         id="vehicle-plate"
                         value={vehicleForm.plateNumber}
                         onChange={(event) => updateVehicleForm('plateNumber', event.target.value)}
-                        placeholder="DK 1234 AB"
+                        placeholder={t('customers.form.platePlaceholder')}
                         required
                       />
                     </div>
@@ -761,26 +763,26 @@ export function CustomerWorkspace() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="vehicle-brand">
-                          Brand <RequiredMark />
+                          {t('customers.form.brand')} <RequiredMark />
                         </Label>
                         <Input
                           id="vehicle-brand"
                           value={vehicleForm.brand}
                           onChange={(event) => updateVehicleForm('brand', event.target.value)}
-                          placeholder="Toyota"
+                          placeholder={t('customers.form.brandPlaceholder')}
                           required
                         />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="vehicle-model">
-                          Model <RequiredMark />
+                          {t('customers.form.model')} <RequiredMark />
                         </Label>
                         <Input
                           id="vehicle-model"
                           value={vehicleForm.model}
                           onChange={(event) => updateVehicleForm('model', event.target.value)}
-                          placeholder="Avanza"
+                          placeholder={t('customers.form.modelPlaceholder')}
                           required
                         />
                       </div>
@@ -788,44 +790,44 @@ export function CustomerWorkspace() {
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="flex flex-col gap-2">
-                        <Label htmlFor="vehicle-year">Year</Label>
+                        <Label htmlFor="vehicle-year">{t('customers.form.year')}</Label>
                         <Input
                           id="vehicle-year"
                           inputMode="numeric"
                           value={vehicleForm.year}
                           onChange={(event) => updateVehicleForm('year', event.target.value)}
-                          placeholder="2021"
+                          placeholder={t('customers.form.yearPlaceholder')}
                         />
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <Label htmlFor="vehicle-color">Color</Label>
+                        <Label htmlFor="vehicle-color">{t('customers.form.color')}</Label>
                         <Input
                           id="vehicle-color"
                           value={vehicleForm.color}
                           onChange={(event) => updateVehicleForm('color', event.target.value)}
-                          placeholder="Silver"
+                          placeholder={t('customers.form.colorPlaceholder')}
                         />
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="vehicle-vin">VIN</Label>
+                      <Label htmlFor="vehicle-vin">{t('customers.form.vin')}</Label>
                       <Input
                         id="vehicle-vin"
                         value={vehicleForm.vin}
                         onChange={(event) => updateVehicleForm('vin', event.target.value)}
-                        placeholder="Optional chassis/VIN"
+                        placeholder={t('customers.form.vinPlaceholder')}
                       />
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="vehicle-notes">Notes</Label>
+                      <Label htmlFor="vehicle-notes">{t('customers.form.notes')}</Label>
                       <textarea
                         id="vehicle-notes"
                         value={vehicleForm.notes}
                         onChange={(event) => updateVehicleForm('notes', event.target.value)}
-                        placeholder="Service intervals, known issues..."
+                        placeholder={t('customers.form.vehicleNotesPlaceholder')}
                         className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       />
                     </div>
@@ -836,7 +838,7 @@ export function CustomerWorkspace() {
 
                     <div className="flex gap-2">
                       <Button type="submit" form="vehicle-form" className="flex-1" disabled={isVehicleSubmitting}>
-                        {isVehicleSubmitting ? 'Saving...' : selectedVehicle ? 'Update' : 'Add Vehicle'}
+                        {isVehicleSubmitting ? t('common.saving') : selectedVehicle ? t('common.update') : t('customers.addVehicle')}
                       </Button>
                       <Button
                         type="button"
@@ -844,7 +846,7 @@ export function CustomerWorkspace() {
                         onClick={cancelVehicleEdit}
                         disabled={isVehicleSubmitting}
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                     </div>
 
@@ -852,14 +854,14 @@ export function CustomerWorkspace() {
                       <div className="border-t pt-3">
                         {confirmingVehicleDelete ? (
                           <div className="flex items-center gap-2">
-                            <span className="flex-1 text-xs text-muted-foreground">Remove this vehicle?</span>
+                            <span className="flex-1 text-xs text-muted-foreground">{t('customers.removeVehicleConfirm')}</span>
                             <Button
                               type="button"
                               variant="destructive"
                               size="sm"
                               onClick={handleDeleteVehicle}
                             >
-                              Yes, remove
+                              {t('customers.yesRemove')}
                             </Button>
                             <Button
                               type="button"
@@ -867,7 +869,7 @@ export function CustomerWorkspace() {
                               size="sm"
                               onClick={() => setConfirmingVehicleDelete(false)}
                             >
-                              No
+                              {t('customers.no')}
                             </Button>
                           </div>
                         ) : (
@@ -878,7 +880,7 @@ export function CustomerWorkspace() {
                             className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={handleDeleteVehicle}
                           >
-                            Remove vehicle
+                            {t('customers.removeVehicle')}
                           </Button>
                         )}
                       </div>
@@ -899,8 +901,8 @@ export function CustomerWorkspace() {
         <div className="grid gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle>Customers</CardTitle>
-              <CardDescription>Active records</CardDescription>
+              <CardTitle>{t('customers.sections.customers.title')}</CardTitle>
+              <CardDescription>{t('customers.activeRecords')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{activeCustomers}</p>
@@ -909,8 +911,8 @@ export function CustomerWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Contacts</CardTitle>
-              <CardDescription>Email available</CardDescription>
+              <CardTitle>{t('customers.contacts')}</CardTitle>
+              <CardDescription>{t('customers.emailAvailable')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{customersWithEmail}</p>
@@ -919,8 +921,8 @@ export function CustomerWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Vehicles</CardTitle>
-              <CardDescription>Registered assets</CardDescription>
+              <CardTitle>{t('customers.vehicles')}</CardTitle>
+              <CardDescription>{t('customers.registeredAssets')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{activeVehicles}</p>
@@ -930,18 +932,18 @@ export function CustomerWorkspace() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Customer List</CardTitle>
+            <CardTitle>{t('customers.customerList')}</CardTitle>
             <CardDescription>
               {searchQuery.trim()
-                ? `${filteredCustomers.length} of ${customers.length} customers`
-                : `${customers.length} customer${customers.length !== 1 ? 's' : ''}`}
+                ? t('customers.filteredCustomerCount', { filtered: filteredCustomers.length, total: customers.length })
+                : t('customers.customerCount', { count: customers.length })}
             </CardDescription>
             <CardAction>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                aria-label="Create customer"
+                aria-label={t('customers.createCustomer')}
                 onClick={startNewCustomer}
               >
                 <Plus aria-hidden="true" />
@@ -957,16 +959,16 @@ export function CustomerWorkspace() {
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search customers"
+                placeholder={t('customers.searchPlaceholder')}
                 className="pl-8"
-                aria-label="Search customers"
+                aria-label={t('customers.searchPlaceholder')}
               />
             </div>
 
             {isLoading ? (
               <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background py-20 text-center">
                 <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-                <p className="text-sm text-muted-foreground">Loading customers...</p>
+                <p className="text-sm text-muted-foreground">{t('customers.loading')}</p>
               </div>
             ) : customers.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-background py-12 text-center">
@@ -974,25 +976,25 @@ export function CustomerWorkspace() {
                   <UserRound className="size-5 text-muted-foreground" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="font-medium">No customers yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Click + to add your first customer.</p>
+                  <p className="font-medium">{t('customers.noCustomers')}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t('customers.addFirstCustomerHint')}</p>
                 </div>
               </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
                 <div className="flex min-h-0 min-w-190 flex-1 flex-col rounded-lg border bg-background">
                   <div className="grid shrink-0 grid-cols-[minmax(220px,1.2fr)_minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(120px,0.6fr)] items-center gap-3 border-b bg-muted/60 px-3 py-2 text-xs font-medium text-muted-foreground">
-                    <span>Customer</span>
-                    <span>Phone</span>
-                    <span>Address</span>
-                    <span className="text-right">Updated</span>
+                    <span>{t('customers.table.customer')}</span>
+                    <span>{t('customers.table.phone')}</span>
+                    <span>{t('customers.table.address')}</span>
+                    <span className="text-right">{t('customers.table.updated')}</span>
                   </div>
 
                   <div className="min-h-0 flex-1 divide-y overflow-y-auto">
                     {filteredCustomers.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 px-3 py-8 text-center">
-                        <p className="text-sm font-medium">No results for "{searchQuery}"</p>
-                        <p className="text-xs text-muted-foreground">Try a different name, phone, or address.</p>
+                        <p className="text-sm font-medium">{t('customers.noResultsFor', { query: searchQuery })}</p>
+                        <p className="text-xs text-muted-foreground">{t('customers.tryDifferentSearch')}</p>
                       </div>
                     ) : null}
 
@@ -1005,10 +1007,10 @@ export function CustomerWorkspace() {
                       >
                         <span className="min-w-0">
                           <span className="block truncate font-medium">{customer.name}</span>
-                          <span className="block truncate text-xs text-muted-foreground">{customer.email || 'No email'}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{customer.email || t('customers.noEmail')}</span>
                         </span>
                         <span className="truncate tabular-nums">{customer.phone}</span>
-                        <span className="truncate text-muted-foreground">{customer.address || 'No address'}</span>
+                        <span className="truncate text-muted-foreground">{customer.address || t('customers.noAddress')}</span>
                         <span className="truncate text-right text-xs text-muted-foreground tabular-nums">
                           {formatDate(customer.updatedAt)}
                         </span>
@@ -1026,24 +1028,24 @@ export function CustomerWorkspace() {
         {isCreatingCustomer ? (
           <Card>
             <CardHeader>
-              <CardTitle>Create Customer</CardTitle>
-              <CardDescription>Add a customer before linking vehicles.</CardDescription>
+              <CardTitle>{t('customers.createCustomer')}</CardTitle>
+              <CardDescription>{t('customers.addCustomerBeforeVehicles')}</CardDescription>
             </CardHeader>
             <CardContent>
               <form id="customer-form" onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
                 <p className="text-xs text-muted-foreground">
-                  Fields marked <span className="text-destructive">*</span> are required.
+                  {t('customers.requiredFieldsHint')}
                 </p>
 
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="customer-name">
-                    Name <RequiredMark />
+                    {t('customers.form.name')} <RequiredMark />
                   </Label>
                   <Input
                     id="customer-name"
                     value={form.name}
                     onChange={(event) => updateForm('name', event.target.value)}
-                    placeholder="Budi Santoso"
+                    placeholder={t('customers.form.namePlaceholder')}
                     autoComplete="name"
                     required
                   />
@@ -1051,7 +1053,7 @@ export function CustomerWorkspace() {
 
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="customer-phone">
-                    Phone <RequiredMark />
+                    {t('customers.form.phone')} <RequiredMark />
                   </Label>
                   <div className="relative">
                     <Phone
@@ -1063,7 +1065,7 @@ export function CustomerWorkspace() {
                       type="tel"
                       value={form.phone}
                       onChange={(event) => updateForm('phone', event.target.value)}
-                      placeholder="+62 812..."
+                      placeholder={t('customers.form.phonePlaceholder')}
                       className="pl-8"
                       autoComplete="tel"
                       required
@@ -1072,7 +1074,7 @@ export function CustomerWorkspace() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="customer-email">Email</Label>
+                  <Label htmlFor="customer-email">{t('customers.form.email')}</Label>
                   <div className="relative">
                     <Mail
                       className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -1083,7 +1085,7 @@ export function CustomerWorkspace() {
                       type="email"
                       value={form.email}
                       onChange={(event) => updateForm('email', event.target.value)}
-                      placeholder="customer@example.com"
+                      placeholder={t('customers.form.emailPlaceholder')}
                       className="pl-8"
                       autoComplete="email"
                     />
@@ -1091,7 +1093,7 @@ export function CustomerWorkspace() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="customer-address">Address</Label>
+                  <Label htmlFor="customer-address">{t('customers.form.address')}</Label>
                   <div className="relative">
                     <MapPin
                       className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -1101,7 +1103,7 @@ export function CustomerWorkspace() {
                       id="customer-address"
                       value={form.address}
                       onChange={(event) => updateForm('address', event.target.value)}
-                      placeholder="Street, area, city"
+                      placeholder={t('customers.form.addressPlaceholder')}
                       className="pl-8"
                       autoComplete="street-address"
                     />
@@ -1109,12 +1111,12 @@ export function CustomerWorkspace() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="customer-notes">Notes</Label>
+                  <Label htmlFor="customer-notes">{t('customers.form.notes')}</Label>
                   <textarea
                     id="customer-notes"
                     value={form.notes}
                     onChange={(event) => updateForm('notes', event.target.value)}
-                    placeholder="Service preferences, billing notes..."
+                    placeholder={t('customers.form.notesPlaceholder')}
                     className="min-h-20 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   />
                 </div>
@@ -1127,10 +1129,10 @@ export function CustomerWorkspace() {
             <CardFooter>
               <div className="flex gap-2">
                 <Button type="submit" form="customer-form" className="flex-1" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating...' : 'Create Customer'}
+                  {isSubmitting ? t('customers.creating') : t('customers.createCustomer')}
                 </Button>
                 <Button type="button" variant="outline" onClick={startNewCustomer} disabled={isSubmitting}>
-                  Clear
+                  {t('common.clear')}
                 </Button>
               </div>
             </CardFooter>

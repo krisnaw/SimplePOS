@@ -28,7 +28,8 @@
     "test": "Uji",
     "online": "Online",
     "offline": "Offline",
-    "notConfigured": "Belum dikonfigurasi"
+    "notConfigured": "Belum dikonfigurasi",
+    "unableToReachDb": "Tidak dapat terhubung ke database."
   },
   "system": {
     "label": "Sistem",
@@ -162,6 +163,51 @@
     "unableToReachDb": "Tidak dapat terhubung ke database.",
     "onlyInStock": "Hanya tersisa {{count}} stok untuk {{name}}"
   },
+  "invoices": {
+    "invoiceHistory": "Riwayat Faktur",
+    "invoiceCount_one": "{{count}} faktur",
+    "invoiceCount_other": "{{count}} faktur",
+    "refresh": "Muat ulang faktur",
+    "searchPlaceholder": "Cari faktur, perintah kerja, pelanggan, pembayaran",
+    "invoiceStatus": "Status faktur",
+    "paid": "Lunas",
+    "loading": "Memuat faktur",
+    "loadingWithDots": "Memuat faktur...",
+    "loadingInvoice": "Memuat faktur",
+    "unableToLoad": "Tidak dapat memuat faktur",
+    "retry": "Coba lagi",
+    "noInvoicesFound": "Faktur tidak ditemukan",
+    "noInvoicesHint": "Checkout yang selesai akan muncul di sini jika cocok dengan filter saat ini.",
+    "walkInCustomer": "Pelanggan langsung",
+    "workOrderNumber": "Perintah Kerja {{number}}",
+    "print": "Cetak",
+    "export": "Ekspor",
+    "contact": "Kontak",
+    "payment": "Pembayaran",
+    "workOrder": "Perintah Kerja",
+    "notRecorded": "Tidak tercatat",
+    "directSale": "Penjualan langsung",
+    "item": "Item",
+    "qty": "Qty",
+    "noSku": "Tanpa SKU",
+    "paymentDetails": "Detail Pembayaran",
+    "method": "Metode",
+    "amount": "Jumlah",
+    "receiptPreview": "Pratinjau Struk",
+    "tax": "Pajak",
+    "selectInvoice": "Pilih faktur",
+    "detailEmptyHint": "Penjualan selesai akan menampilkan item, total, dan detail pembayaran di sini.",
+    "statuses": {
+      "paid": "Lunas",
+      "void": "Dibatalkan",
+      "refunded": "Refund",
+      "unrecorded": "Tidak tercatat"
+    },
+    "messages": {
+      "bridgeUnavailable": "Data faktur tidak tersedia. Mulai ulang SimplePOS untuk memuat bridge aplikasi terbaru.",
+      "loadFailed": "Tidak dapat memuat data faktur."
+    }
+  },
   "inventory": {
     "sections": {
       "inventory": {
@@ -189,6 +235,7 @@
     },
     "noProducts": "Belum ada produk. Tambahkan menggunakan formulir.",
     "noMatchingProducts": "Tidak ada produk yang cocok dengan pencarian ini.",
+    "loading": "Memuat inventaris...",
     "inStock": "Tersedia",
     "lowStockStatus": "Menipis",
     "createProduct": "Tambah Produk",
@@ -203,12 +250,17 @@
     "unitType": "Tipe Unit",
     "openingStock": "Stok Awal",
     "minimumStock": "Stok Minimum",
+    "creating": "Membuat...",
+    "deleteProduct": "Hapus Produk",
     "noCategory": "— Tanpa kategori —",
     "units": {
       "piece": "pcs",
       "litre": "liter",
       "set": "set",
       "box": "dus"
+    },
+    "messages": {
+      "invalidProduct": "Masukkan SKU, nama produk, serta nilai stok dan harga yang valid."
     }
   },
   "services": {
@@ -218,6 +270,38 @@
         "title": "Layanan",
         "description": "Kelola jasa, inspeksi, dan biaya layanan yang digunakan di penjualan dan perintah kerja."
       }
+    },
+    "totalServices": "Total Layanan",
+    "activeServiceSkus": "SKU layanan aktif",
+    "categories": "Kategori",
+    "serviceGroups": "Grup layanan",
+    "averagePrice": "Harga Rata-rata",
+    "acrossActiveServices": "Di seluruh layanan aktif",
+    "serviceList": "Daftar Layanan",
+    "serviceListHint": "Biaya jasa dan layanan yang tersedia di Penjualan dan Perintah Kerja.",
+    "searchPlaceholder": "Cari layanan",
+    "table": {
+      "service": "Layanan",
+      "category": "Kategori",
+      "price": "Harga",
+      "remove": "Hapus"
+    },
+    "loading": "Memuat layanan...",
+    "noServices": "Belum ada layanan. Tambahkan menggunakan formulir.",
+    "noMatchingServices": "Tidak ada layanan yang cocok dengan pencarian ini.",
+    "noCategory": "—",
+    "removeService": "Hapus {{name}}",
+    "createService": "Tambah Layanan",
+    "editService": "Edit Layanan",
+    "createHint": "Tambahkan jasa, inspeksi, atau biaya layanan ke katalog.",
+    "editHint": "Perbarui detail dan harga {{name}}.",
+    "code": "Kode",
+    "serviceName": "Nama Layanan",
+    "priceIdr": "Harga (IDR)",
+    "description": "Deskripsi",
+    "creating": "Membuat...",
+    "messages": {
+      "invalidService": "Masukkan kode layanan, nama, dan harga yang valid."
     }
   },
   "customers": {
@@ -238,6 +322,24 @@
     "searchPlaceholder": "Cari pelanggan",
     "createCustomer": "Tambah Pelanggan",
     "editCustomer": "Edit Pelanggan",
+    "editCustomerHint": "Perbarui detail kontak untuk perintah kerja berikutnya.",
+    "addCustomerBeforeVehicles": "Tambahkan pelanggan sebelum menghubungkan kendaraan.",
+    "requiredFieldsHint": "Kolom bertanda * wajib diisi.",
+    "creating": "Membuat...",
+    "breadcrumb": "Breadcrumb",
+    "updatedAt": "Diperbarui {{date}}",
+    "noPhone": "Tidak ada telepon",
+    "loading": "Memuat pelanggan...",
+    "noCustomers": "Belum ada pelanggan",
+    "addFirstCustomerHint": "Klik + untuk menambahkan pelanggan pertama.",
+    "customerCount_one": "{{count}} pelanggan",
+    "customerCount_other": "{{count}} pelanggan",
+    "filteredCustomerCount": "{{filtered}} dari {{total}} pelanggan",
+    "noResultsFor": "Tidak ada hasil untuk \"{{query}}\"",
+    "tryDifferentSearch": "Coba nama, telepon, atau alamat lain.",
+    "deleteCustomer": "Hapus Pelanggan",
+    "deleteCustomerConfirm": "Hapus pelanggan ini?",
+    "yesDelete": "Ya, hapus",
     "table": {
       "customer": "Pelanggan",
       "phone": "Telepon",
@@ -250,8 +352,10 @@
     "vehicleList": "Daftar Kendaraan",
     "vehicleListHint": "Kendaraan yang terhubung dengan {{name}}.",
     "selectCustomerHint": "Pilih pelanggan untuk mengelola kendaraan.",
+    "addVehicle": "Tambah Kendaraan",
     "createVehicle": "Tambah Kendaraan",
     "editVehicle": "Edit Kendaraan",
+    "linkedTo": "Terhubung dengan {{name}}.",
     "vehicleTable": {
       "vehicle": "Kendaraan",
       "plate": "Plat",
@@ -260,6 +364,15 @@
     },
     "selectCustomerFirst": "Pilih pelanggan terlebih dahulu.",
     "noVehiclesLinked": "Tidak ada kendaraan yang terhubung dengan pelanggan ini.",
+    "noVehiclesLinkedShort": "Tidak ada kendaraan terhubung.",
+    "vehicleLinkedCount_one": "{{count}} kendaraan terhubung.",
+    "vehicleLinkedCount_other": "{{count}} kendaraan terhubung.",
+    "noVehiclesYet": "Belum ada kendaraan",
+    "addVehicleHint": "Klik + untuk menghubungkan kendaraan ke pelanggan ini.",
+    "removeVehicleConfirm": "Hapus kendaraan ini?",
+    "yesRemove": "Ya, hapus",
+    "no": "Tidak",
+    "removeVehicle": "Hapus kendaraan",
     "yearUnknown": "Tahun tidak diketahui",
     "noColor": "Tanpa warna",
     "form": {
@@ -288,6 +401,7 @@
       "vehicleNotesPlaceholder": "Interval servis, masalah yang diketahui..."
     },
     "messages": {
+      "loadFailed": "Tidak dapat memuat pelanggan",
       "required": "Nama dan telepon wajib diisi.",
       "updated": "Pelanggan diperbarui",
       "created": "Pelanggan ditambahkan",
@@ -412,5 +526,101 @@
     "check": "Periksa",
     "checking": "Memeriksa",
     "install": "Pasang"
+  },
+  "workOrders": {
+    "sections": {
+      "workOrders": {
+        "eyebrow": "Antrean perbaikan",
+        "title": "Perintah Kerja",
+        "description": "Buat, perbarui, dan buat faktur pekerjaan perbaikan sebelum checkout."
+      }
+    },
+    "title": "Perintah Kerja",
+    "listDescription": "Pekerjaan perbaikan sebelum checkout",
+    "refresh": "Muat ulang perintah kerja",
+    "searchPlaceholder": "Cari perintah kerja...",
+    "fromDate": "Filter perintah kerja dari tanggal",
+    "toDate": "Filter perintah kerja sampai tanggal",
+    "loading": "Memuat perintah kerja...",
+    "noWorkOrders": "Perintah kerja tidak ditemukan.",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} item",
+    "newWorkOrder": "Perintah Kerja Baru",
+    "detailTitle": "Detail Perintah Kerja",
+    "detailDescription": "Kendaraan pelanggan, keluhan, penugasan, dan status pekerjaan.",
+    "detailEmptyDescription": "Pilih perintah kerja atau buat pekerjaan perbaikan baru.",
+    "noSelectionTitle": "Belum ada perintah kerja dipilih",
+    "noSelectionHint": "Pilih perintah kerja dari daftar untuk melihat detail, atau buat yang baru.",
+    "statuses": {
+      "draft": "Draf",
+      "open": "Terbuka",
+      "in_progress": "Dalam Proses",
+      "completed": "Selesai",
+      "invoiced": "Difakturkan",
+      "cancelled": "Dibatalkan"
+    },
+    "priorities": {
+      "low": "Rendah",
+      "normal": "Normal",
+      "high": "Tinggi",
+      "urgent": "Mendesak"
+    },
+    "form": {
+      "customer": "Pelanggan",
+      "selectCustomer": "Pilih pelanggan",
+      "vehicle": "Kendaraan",
+      "selectVehicle": "Pilih kendaraan",
+      "assignedStaff": "Staf Ditugaskan",
+      "unassigned": "Belum ditugaskan",
+      "priority": "Prioritas",
+      "odometer": "Odometer",
+      "complaint": "Keluhan",
+      "discount": "Diskon"
+    },
+    "changeStatus": "Ubah status perintah kerja",
+    "saveWorkOrder": "Simpan Perintah Kerja",
+    "actionGroup": "Perintah Kerja",
+    "checkout": "Checkout",
+    "createWorkOrder": "Buat Perintah Kerja",
+    "statusTimeline": "Linimasa Status",
+    "timeline": {
+      "created": "Dibuat",
+      "updated": "Diperbarui",
+      "completed": "Selesai",
+      "invoiced": "Difakturkan"
+    },
+    "itemsAndTotals": "Item dan Total",
+    "itemsDescription": "Layanan dan produk yang terhubung ke pekerjaan perbaikan.",
+    "createOrSelectBeforeItems": "Buat atau pilih perintah kerja sebelum menambahkan item.",
+    "itemType": "Tipe item",
+    "catalogItem": "Item katalog",
+    "selectItem": "Pilih item",
+    "servicesCategory": "Layanan",
+    "stockCount": "{{count}} stok",
+    "quantity": "Jumlah",
+    "addItemsHint": "Tambahkan layanan atau produk sebelum menyelesaikan pekerjaan.",
+    "noCode": "Tanpa kode",
+    "priceEach": "{{price}} per item",
+    "qty": "Jml {{count}}",
+    "decreaseItem": "Kurangi {{name}}",
+    "increaseItem": "Tambah {{name}}",
+    "removeItem": "Hapus {{name}}",
+    "invoiceCreated": "Faktur {{invoice}} dibuat {{date}}.",
+    "readyForCheckout": "Perintah kerja ini siap untuk checkout.",
+    "completeBeforeCheckout": "Selesaikan pekerjaan sebelum checkout.",
+    "units": {
+      "piece": "pcs",
+      "litre": "liter",
+      "set": "set",
+      "box": "dus"
+    },
+    "messages": {
+      "unableToReachDb": "Tidak dapat terhubung ke database.",
+      "unableToUpdateStatus": "Tidak dapat memperbarui status.",
+      "unableToAddItem": "Tidak dapat menambahkan item.",
+      "unableToUpdateItem": "Tidak dapat memperbarui item.",
+      "unableToRemoveItem": "Tidak dapat menghapus item.",
+      "unableToCheckout": "Tidak dapat checkout perintah kerja."
+    }
   }
 }

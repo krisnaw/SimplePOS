@@ -28,7 +28,8 @@
     "test": "Test",
     "online": "Online",
     "offline": "Offline",
-    "notConfigured": "Not configured"
+    "notConfigured": "Not configured",
+    "unableToReachDb": "Unable to reach the database."
   },
   "system": {
     "label": "System",
@@ -162,6 +163,51 @@
     "unableToReachDb": "Unable to reach the database.",
     "onlyInStock": "Only {{count}} in stock for {{name}}"
   },
+  "invoices": {
+    "invoiceHistory": "Invoice History",
+    "invoiceCount_one": "{{count}} invoice",
+    "invoiceCount_other": "{{count}} invoices",
+    "refresh": "Refresh invoices",
+    "searchPlaceholder": "Search invoice, work order, customer, payment",
+    "invoiceStatus": "Invoice status",
+    "paid": "Paid",
+    "loading": "Loading invoices",
+    "loadingWithDots": "Loading invoices...",
+    "loadingInvoice": "Loading invoice",
+    "unableToLoad": "Unable to load invoices",
+    "retry": "Retry",
+    "noInvoicesFound": "No invoices found",
+    "noInvoicesHint": "Completed checkouts will appear here once they match the current filters.",
+    "walkInCustomer": "Walk-in customer",
+    "workOrderNumber": "Work Order {{number}}",
+    "print": "Print",
+    "export": "Export",
+    "contact": "Contact",
+    "payment": "Payment",
+    "workOrder": "Work Order",
+    "notRecorded": "Not recorded",
+    "directSale": "Direct sale",
+    "item": "Item",
+    "qty": "Qty",
+    "noSku": "No SKU",
+    "paymentDetails": "Payment Details",
+    "method": "Method",
+    "amount": "Amount",
+    "receiptPreview": "Receipt Preview",
+    "tax": "Tax",
+    "selectInvoice": "Select an invoice",
+    "detailEmptyHint": "Completed sales will show line items, totals, and payment details here.",
+    "statuses": {
+      "paid": "Paid",
+      "void": "Void",
+      "refunded": "Refunded",
+      "unrecorded": "Unrecorded"
+    },
+    "messages": {
+      "bridgeUnavailable": "Invoice records are unavailable. Restart SimplePOS to load the latest app bridge.",
+      "loadFailed": "Unable to load invoice records."
+    }
+  },
   "inventory": {
     "sections": {
       "inventory": {
@@ -189,6 +235,7 @@
     },
     "noProducts": "No products yet. Add one using the form.",
     "noMatchingProducts": "No products match this search.",
+    "loading": "Loading inventory...",
     "inStock": "In stock",
     "lowStockStatus": "Low stock",
     "createProduct": "Create Product",
@@ -203,12 +250,17 @@
     "unitType": "Unit Type",
     "openingStock": "Opening Stock",
     "minimumStock": "Minimum Stock",
+    "creating": "Creating...",
+    "deleteProduct": "Delete Product",
     "noCategory": "— No category —",
     "units": {
       "piece": "piece",
       "litre": "litre",
       "set": "set",
       "box": "box"
+    },
+    "messages": {
+      "invalidProduct": "Enter SKU, product name, and valid stock and price values."
     }
   },
   "services": {
@@ -218,6 +270,38 @@
         "title": "Services",
         "description": "Manage labor, inspections, and service charges used in sales and work orders."
       }
+    },
+    "totalServices": "Total Services",
+    "activeServiceSkus": "Active service SKUs",
+    "categories": "Categories",
+    "serviceGroups": "Service groups",
+    "averagePrice": "Average Price",
+    "acrossActiveServices": "Across active services",
+    "serviceList": "Service List",
+    "serviceListHint": "Labor and service charges available in Sales and Work Orders.",
+    "searchPlaceholder": "Search services",
+    "table": {
+      "service": "Service",
+      "category": "Category",
+      "price": "Price",
+      "remove": "Remove"
+    },
+    "loading": "Loading services...",
+    "noServices": "No services yet. Add one using the form.",
+    "noMatchingServices": "No services match this search.",
+    "noCategory": "—",
+    "removeService": "Remove {{name}}",
+    "createService": "Create Service",
+    "editService": "Edit Service",
+    "createHint": "Add labor, inspection, or service charges to the catalog.",
+    "editHint": "Update {{name}} details and price.",
+    "code": "Code",
+    "serviceName": "Service Name",
+    "priceIdr": "Price (IDR)",
+    "description": "Description",
+    "creating": "Creating...",
+    "messages": {
+      "invalidService": "Enter service code, name, and a valid price."
     }
   },
   "customers": {
@@ -238,6 +322,24 @@
     "searchPlaceholder": "Search customers",
     "createCustomer": "Create Customer",
     "editCustomer": "Edit Customer",
+    "editCustomerHint": "Update contact details for future work orders.",
+    "addCustomerBeforeVehicles": "Add a customer before linking vehicles.",
+    "requiredFieldsHint": "Fields marked * are required.",
+    "creating": "Creating...",
+    "breadcrumb": "Breadcrumb",
+    "updatedAt": "Updated {{date}}",
+    "noPhone": "No phone",
+    "loading": "Loading customers...",
+    "noCustomers": "No customers yet",
+    "addFirstCustomerHint": "Click + to add your first customer.",
+    "customerCount_one": "{{count}} customer",
+    "customerCount_other": "{{count}} customers",
+    "filteredCustomerCount": "{{filtered}} of {{total}} customers",
+    "noResultsFor": "No results for \"{{query}}\"",
+    "tryDifferentSearch": "Try a different name, phone, or address.",
+    "deleteCustomer": "Delete Customer",
+    "deleteCustomerConfirm": "Delete this customer?",
+    "yesDelete": "Yes, delete",
     "table": {
       "customer": "Customer",
       "phone": "Phone",
@@ -250,8 +352,10 @@
     "vehicleList": "Vehicle List",
     "vehicleListHint": "Vehicles linked to {{name}}.",
     "selectCustomerHint": "Select a customer to manage vehicles.",
+    "addVehicle": "Add Vehicle",
     "createVehicle": "Create Vehicle",
     "editVehicle": "Edit Vehicle",
+    "linkedTo": "Linked to {{name}}.",
     "vehicleTable": {
       "vehicle": "Vehicle",
       "plate": "Plate",
@@ -260,6 +364,15 @@
     },
     "selectCustomerFirst": "Select a customer first.",
     "noVehiclesLinked": "No vehicles linked to this customer.",
+    "noVehiclesLinkedShort": "No vehicles linked.",
+    "vehicleLinkedCount_one": "{{count}} vehicle linked.",
+    "vehicleLinkedCount_other": "{{count}} vehicles linked.",
+    "noVehiclesYet": "No vehicles yet",
+    "addVehicleHint": "Click + to link a vehicle to this customer.",
+    "removeVehicleConfirm": "Remove this vehicle?",
+    "yesRemove": "Yes, remove",
+    "no": "No",
+    "removeVehicle": "Remove vehicle",
     "yearUnknown": "Year unknown",
     "noColor": "No color",
     "form": {
@@ -288,6 +401,7 @@
       "vehicleNotesPlaceholder": "Service intervals, known issues..."
     },
     "messages": {
+      "loadFailed": "Unable to load customers",
       "required": "Name and phone are required.",
       "updated": "Customer updated",
       "created": "Customer created",
@@ -412,5 +526,101 @@
     "check": "Check",
     "checking": "Checking",
     "install": "Install"
+  },
+  "workOrders": {
+    "sections": {
+      "workOrders": {
+        "eyebrow": "Repair queue",
+        "title": "Work Orders",
+        "description": "Create, update, and invoice repair jobs before checkout."
+      }
+    },
+    "title": "Work Orders",
+    "listDescription": "Repair jobs before checkout",
+    "refresh": "Refresh work orders",
+    "searchPlaceholder": "Search work orders...",
+    "fromDate": "Filter work orders from date",
+    "toDate": "Filter work orders to date",
+    "loading": "Loading work orders...",
+    "noWorkOrders": "No work orders found.",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items",
+    "newWorkOrder": "New Work Order",
+    "detailTitle": "Work Order Detail",
+    "detailDescription": "Customer vehicle, complaint, assignment, and job status.",
+    "detailEmptyDescription": "Select a work order or create a new repair job.",
+    "noSelectionTitle": "No work order selected",
+    "noSelectionHint": "Choose a work order from the list to view details, or create a new one.",
+    "statuses": {
+      "draft": "Draft",
+      "open": "Open",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "invoiced": "Invoiced",
+      "cancelled": "Cancelled"
+    },
+    "priorities": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "form": {
+      "customer": "Customer",
+      "selectCustomer": "Select customer",
+      "vehicle": "Vehicle",
+      "selectVehicle": "Select vehicle",
+      "assignedStaff": "Assigned Staff",
+      "unassigned": "Unassigned",
+      "priority": "Priority",
+      "odometer": "Odometer",
+      "complaint": "Complaint",
+      "discount": "Discount"
+    },
+    "changeStatus": "Change work order status",
+    "saveWorkOrder": "Save Work Order",
+    "actionGroup": "Work Order",
+    "checkout": "Checkout",
+    "createWorkOrder": "Create Work Order",
+    "statusTimeline": "Status Timeline",
+    "timeline": {
+      "created": "Created",
+      "updated": "Updated",
+      "completed": "Completed",
+      "invoiced": "Invoiced"
+    },
+    "itemsAndTotals": "Items And Totals",
+    "itemsDescription": "Services and products attached to the repair job.",
+    "createOrSelectBeforeItems": "Create or select a work order before adding line items.",
+    "itemType": "Item type",
+    "catalogItem": "Catalog item",
+    "selectItem": "Select item",
+    "servicesCategory": "Services",
+    "stockCount": "{{count}} stock",
+    "quantity": "Quantity",
+    "addItemsHint": "Add services or products before completing the job.",
+    "noCode": "No code",
+    "priceEach": "{{price}} each",
+    "qty": "Qty {{count}}",
+    "decreaseItem": "Decrease {{name}}",
+    "increaseItem": "Increase {{name}}",
+    "removeItem": "Remove {{name}}",
+    "invoiceCreated": "Invoice {{invoice}} created {{date}}.",
+    "readyForCheckout": "This work order is ready for checkout.",
+    "completeBeforeCheckout": "Complete the job before checkout.",
+    "units": {
+      "piece": "piece",
+      "litre": "litre",
+      "set": "set",
+      "box": "box"
+    },
+    "messages": {
+      "unableToReachDb": "Unable to reach the database.",
+      "unableToUpdateStatus": "Unable to update status.",
+      "unableToAddItem": "Unable to add item.",
+      "unableToUpdateItem": "Unable to update item.",
+      "unableToRemoveItem": "Unable to remove item.",
+      "unableToCheckout": "Unable to checkout work order."
+    }
   }
 }

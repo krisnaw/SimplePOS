@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Search, Settings2, Trash2, Wrench } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -39,6 +40,7 @@ function toServiceForm(service: ServiceSummary): ServiceFormState {
 }
 
 export function ServicesWorkspace() {
+  const { t } = useTranslation()
   const [services, setServices] = useState<ServiceSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [form, setForm] = useState<ServiceFormState>(emptyForm)
@@ -113,7 +115,7 @@ export function ServicesWorkspace() {
     const price = Number(form.price)
 
     if (!form.code.trim() || !form.name.trim() || price < 0) {
-      setMessage('Enter service code, name, and a valid price.')
+      setMessage(t('services.messages.invalidService'))
       return
     }
 
@@ -138,7 +140,7 @@ export function ServicesWorkspace() {
     setIsSubmitting(false)
 
     if (!result) {
-      setMessage('Unable to reach the database.')
+      setMessage(t('common.unableToReachDb'))
       return
     }
 
@@ -163,8 +165,8 @@ export function ServicesWorkspace() {
         <div className="grid shrink-0 gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle>Total Services</CardTitle>
-              <CardDescription>Active service SKUs</CardDescription>
+              <CardTitle>{t('services.totalServices')}</CardTitle>
+              <CardDescription>{t('services.activeServiceSkus')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{services.length}</p>
@@ -173,8 +175,8 @@ export function ServicesWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Categories</CardTitle>
-              <CardDescription>Service groups</CardDescription>
+              <CardTitle>{t('services.categories')}</CardTitle>
+              <CardDescription>{t('services.serviceGroups')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{categoryCount}</p>
@@ -183,8 +185,8 @@ export function ServicesWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Average Price</CardTitle>
-              <CardDescription>Across active services</CardDescription>
+              <CardTitle>{t('services.averagePrice')}</CardTitle>
+              <CardDescription>{t('services.acrossActiveServices')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{formatCurrency(averagePrice)}</p>
@@ -194,8 +196,8 @@ export function ServicesWorkspace() {
 
         <Card className="min-h-0 flex-1 overflow-hidden">
           <CardHeader>
-            <CardTitle>Service List</CardTitle>
-            <CardDescription>Labor and service charges available in Sales and Work Orders.</CardDescription>
+            <CardTitle>{t('services.serviceList')}</CardTitle>
+            <CardDescription>{t('services.serviceListHint')}</CardDescription>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
             <div className="relative shrink-0">
@@ -206,7 +208,7 @@ export function ServicesWorkspace() {
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search services"
+                placeholder={t('services.searchPlaceholder')}
                 className="pl-9"
               />
             </div>
@@ -219,21 +221,21 @@ export function ServicesWorkspace() {
                   serviceTableGrid,
                 )}
               >
-                <span>Service</span>
-                <span>Category</span>
-                <span className="text-right">Price</span>
-                <span className="text-center">Remove</span>
+                <span>{t('services.table.service')}</span>
+                <span>{t('services.table.category')}</span>
+                <span className="text-right">{t('services.table.price')}</span>
+                <span className="text-center">{t('services.table.remove')}</span>
               </div>
 
               <div className="divide-y">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                     <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-                    <p className="text-sm text-muted-foreground">Loading services...</p>
+                    <p className="text-sm text-muted-foreground">{t('services.loading')}</p>
                   </div>
                 ) : filteredServices.length === 0 ? (
                   <div className="px-3 py-6 text-sm text-muted-foreground">
-                    {services.length === 0 ? 'No services yet. Add one using the form.' : 'No services match this search.'}
+                    {services.length === 0 ? t('services.noServices') : t('services.noMatchingServices')}
                   </div>
                 ) : null}
 
@@ -260,7 +262,7 @@ export function ServicesWorkspace() {
                         <span className="block truncate font-medium">{service.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{service.code}</span>
                       </span>
-                      <span className="min-w-0 truncate">{service.category ?? '-'}</span>
+                      <span className="min-w-0 truncate">{service.category ?? t('services.noCategory')}</span>
                       <span className="truncate text-right tabular-nums">{formatCurrency(service.price)}</span>
                       <span className="flex justify-center">
                         <Button
@@ -272,8 +274,8 @@ export function ServicesWorkspace() {
                             event.stopPropagation()
                             void handleDeactivate(service)
                           }}
-                          aria-label={`Remove ${service.name}`}
-                          title={`Remove ${service.name}`}
+                          aria-label={t('services.removeService', { name: service.name })}
+                          title={t('services.removeService', { name: service.name })}
                         >
                           <Trash2 aria-hidden="true" />
                         </Button>
@@ -288,17 +290,17 @@ export function ServicesWorkspace() {
 
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
-          <CardTitle>{editingService ? 'Edit Service' : 'Create Service'}</CardTitle>
+          <CardTitle>{editingService ? t('services.editService') : t('services.createService')}</CardTitle>
           <CardDescription>
             {editingService
-              ? `Update ${editingService.name} details and price.`
-              : 'Add labor, inspection, or service charges to the catalog.'}
+              ? t('services.editHint', { name: editingService.name })
+              : t('services.createHint')}
           </CardDescription>
         </CardHeader>
         <CardContent className="min-h-0 flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="service-code">Code</Label>
+              <Label htmlFor="service-code">{t('services.code')}</Label>
               <Input
                 id="service-code"
                 value={form.code}
@@ -309,7 +311,7 @@ export function ServicesWorkspace() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="service-name">Service Name</Label>
+              <Label htmlFor="service-name">{t('services.serviceName')}</Label>
               <Input
                 id="service-name"
                 value={form.name}
@@ -320,7 +322,7 @@ export function ServicesWorkspace() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="service-category">Category</Label>
+              <Label htmlFor="service-category">{t('services.table.category')}</Label>
               <Input
                 id="service-category"
                 value={form.category}
@@ -330,7 +332,7 @@ export function ServicesWorkspace() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="service-price">Price (IDR)</Label>
+              <Label htmlFor="service-price">{t('services.priceIdr')}</Label>
               <Input
                 id="service-price"
                 type="number"
@@ -343,7 +345,7 @@ export function ServicesWorkspace() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="service-description">Description</Label>
+              <Label htmlFor="service-description">{t('services.description')}</Label>
               <Input
                 id="service-description"
                 value={form.description}
@@ -361,10 +363,16 @@ export function ServicesWorkspace() {
             <div className="flex gap-2">
               <Button type="submit" className="flex-1" disabled={isSubmitting}>
                 {editingService ? <Settings2 data-icon="inline-start" aria-hidden="true" /> : <Wrench data-icon="inline-start" aria-hidden="true" />}
-                {isSubmitting ? (editingService ? 'Saving...' : 'Creating...') : editingService ? 'Save Changes' : 'Create'}
+                {isSubmitting
+                  ? editingService
+                    ? t('common.saving')
+                    : t('services.creating')
+                  : editingService
+                    ? t('common.saveChanges')
+                    : t('common.create')}
               </Button>
               <Button type="button" variant="outline" onClick={resetForm}>
-                {editingService ? 'Cancel' : 'Clear'}
+                {editingService ? t('common.cancel') : t('common.clear')}
               </Button>
             </div>
           </form>

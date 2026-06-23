@@ -11,13 +11,14 @@ import {
   ShoppingCart,
   Trash2,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
-import { formatCurrency, formatDateTime as formatDate, capitalize } from '@/renderer/lib/formatters'
+import { formatCurrency, formatDateTime as formatDate } from '@/renderer/lib/formatters'
 import type { AuthenticatedUser, UserSummary } from '@/shared/types/user'
 import type { CustomerSummary } from '@/shared/types/customer'
 import type { VehicleSummary } from '@/shared/types/vehicle'
@@ -36,29 +37,10 @@ type SimplePosApi = NonNullable<Window['simplepos']>
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
 
-const statusOptions: Array<{ value: WorkOrderStatus | 'all'; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'invoiced', label: 'Invoiced' },
-  { value: 'cancelled', label: 'Cancelled' },
-]
+const statusOptions: Array<WorkOrderStatus | 'all'> = ['all', 'draft', 'open', 'in_progress', 'completed', 'invoiced', 'cancelled']
 
 const statusFlow: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed', 'cancelled']
 const editableStatuses: WorkOrderStatus[] = ['draft', 'open', 'in_progress', 'completed']
-
-function statusLabel(status: WorkOrderStatus): string {
-  return status
-    .split('_')
-    .map((word) => capitalize(word))
-    .join(' ')
-}
-
-function priorityLabel(priority: WorkOrderPriority): string {
-  return capitalize(priority)
-}
 
 function statusClass(status: WorkOrderStatus): string {
   if (status === 'completed') return 'bg-primary/10 text-primary'
@@ -87,6 +69,7 @@ function getVehicleLabel(vehicle: VehicleSummary): string {
 }
 
 export function WorkOrderWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
+  const { t } = useTranslation()
   const [workOrders, setWorkOrders] = useState<WorkOrderSummary[]>([])
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrderDetail | null>(null)
   const [customers, setCustomers] = useState<CustomerSummary[]>([])
@@ -121,7 +104,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       itemType: 'service',
       name: service.name,
       code: service.code,
-      category: service.category ?? 'Services',
+      category: service.category ?? t('workOrders.servicesCategory'),
       price: service.price,
       stockQty: null,
     }))
@@ -131,7 +114,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       itemType: 'product',
       name: product.name,
       code: product.sku,
-      category: product.unitType,
+      category: t(`workOrders.units.${product.unitType}`),
       price: product.unitPrice,
       stockQty: product.stockQty,
     }))
@@ -287,7 +270,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       : await window.simplepos?.workOrders.create(payload)
 
     if (!result) {
-      setMessage('Unable to reach the database.')
+      setMessage(t('workOrders.messages.unableToReachDb'))
       return
     }
 
@@ -307,7 +290,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       status,
     })
 
-    setMessage(result?.message ?? 'Unable to update status.')
+    setMessage(result?.message ?? t('workOrders.messages.unableToUpdateStatus'))
     if (result?.ok && result.workOrder) await loadWorkspace(result.workOrder.id)
   }
 
@@ -321,21 +304,21 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       quantity: Number(itemQuantity),
     })
 
-    setMessage(result?.message ?? 'Unable to add item.')
+    setMessage(result?.message ?? t('workOrders.messages.unableToAddItem'))
     if (result?.ok && result.workOrder) await loadWorkspace(result.workOrder.id)
   }
 
   async function handleUpdateItem(id: number, quantity: number) {
     const result = await window.simplepos?.workOrders.updateItem({ id, quantity })
 
-    setMessage(result?.message ?? 'Unable to update item.')
+    setMessage(result?.message ?? t('workOrders.messages.unableToUpdateItem'))
     if (result?.ok && result.workOrder) await loadWorkspace(result.workOrder.id)
   }
 
   async function handleDeleteItem(id: number) {
     const result = await window.simplepos?.workOrders.deleteItem({ id })
 
-    setMessage(result?.message ?? 'Unable to remove item.')
+    setMessage(result?.message ?? t('workOrders.messages.unableToRemoveItem'))
     if (result?.ok && result.workOrder) await loadWorkspace(result.workOrder.id)
   }
 
@@ -352,7 +335,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       notes: selectedWorkOrder.notes,
     })
 
-    setMessage(result?.message ?? 'Unable to checkout work order.')
+    setMessage(result?.message ?? t('workOrders.messages.unableToCheckout'))
     if (result?.ok && result.workOrder) await loadWorkspace(result.workOrder.id)
   }
 
@@ -360,9 +343,9 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
     <div className="grid min-h-0 min-w-0 gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
       <Card>
         <CardHeader>
-          <CardTitle>Work Orders</CardTitle>
+          <CardTitle>{t('workOrders.title')}</CardTitle>
           <CardDescription>
-            Repair jobs before checkout
+            {t('workOrders.listDescription')}
           </CardDescription>
           <CardAction>
             <Button
@@ -371,7 +354,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
               variant="outline"
               className={pressableButtonClass}
               onClick={() => void loadWorkspace()}
-              aria-label="Refresh work orders"
+              aria-label={t('workOrders.refresh')}
             >
               <RefreshCw aria-hidden="true" />
             </Button>
@@ -388,7 +371,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search work orders..."
+                placeholder={t('workOrders.searchPlaceholder')}
                 className="pl-9"
               />
             </div>
@@ -396,18 +379,18 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             <div className="flex flex-wrap gap-1.5">
               {statusOptions.map((option) => (
                 <button
-                  key={option.value}
+                  key={option}
                   type="button"
-                  aria-pressed={statusFilter === option.value}
-                  onClick={() => setStatusFilter(option.value)}
+                  aria-pressed={statusFilter === option}
+                  onClick={() => setStatusFilter(option)}
                   className={cn(
                     'rounded-full px-2.5 py-1 text-[11px] font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96]',
-                    statusFilter === option.value
+                    statusFilter === option
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
                   )}
                 >
-                  {option.label}
+                  {option === 'all' ? t('common.all') : t(`workOrders.statuses.${option}`)}
                 </button>
               ))}
             </div>
@@ -417,13 +400,13 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                 type="date"
                 value={dateFrom}
                 onChange={(event) => setDateFrom(event.target.value)}
-                aria-label="Filter work orders from date"
+                aria-label={t('workOrders.fromDate')}
               />
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(event) => setDateTo(event.target.value)}
-                aria-label="Filter work orders to date"
+                aria-label={t('workOrders.toDate')}
               />
             </div>
           </div>
@@ -432,10 +415,10 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
               {isLoading ? (
                 <>
                   <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-                  <p className="text-sm text-muted-foreground">Loading work orders...</p>
+                  <p className="text-sm text-muted-foreground">{t('workOrders.loading')}</p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground text-pretty">No work orders found.</p>
+                <p className="text-sm text-muted-foreground text-pretty">{t('workOrders.noWorkOrders')}</p>
               )}
             </div>
           ) : (
@@ -461,7 +444,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                         </span>
                       </span>
                       <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', statusClass(workOrder.status))}>
-                        {statusLabel(workOrder.status)}
+                        {t(`workOrders.statuses.${workOrder.status}`)}
                       </span>
                     </span>
                     <span className="mt-2 line-clamp-2 text-xs text-muted-foreground text-pretty">
@@ -469,7 +452,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                     </span>
                     <span className="mt-2 flex items-center justify-between gap-2 text-xs">
                       <span className="text-muted-foreground tabular-nums">
-                        {workOrder.itemCount} item{workOrder.itemCount === 1 ? '' : 's'}
+                        {t('workOrders.itemCount', { count: workOrder.itemCount })}
                       </span>
                       <span className="font-medium tabular-nums">{formatCurrency(workOrder.total)}</span>
                     </span>
@@ -483,7 +466,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
         <div className="border-t p-3">
           <Button type="button" className={cn('w-full', pressableButtonClass)} onClick={() => void handleNewWorkOrder()}>
             <Plus data-icon="inline-start" aria-hidden="true" />
-            New Work Order
+            {t('workOrders.newWorkOrder')}
           </Button>
         </div>
       </Card>
@@ -492,21 +475,21 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
         <Card>
           <CardHeader>
             <CardTitle>
-              {selectedWorkOrder ? selectedWorkOrder.orderNumber : isCreatingWorkOrder ? 'New Work Order' : 'Work Order Detail'}
+              {selectedWorkOrder ? selectedWorkOrder.orderNumber : isCreatingWorkOrder ? t('workOrders.newWorkOrder') : t('workOrders.detailTitle')}
             </CardTitle>
             <CardDescription>
               {selectedWorkOrder || isCreatingWorkOrder
-                ? 'Customer vehicle, complaint, assignment, and job status.'
-                : 'Select a work order or create a new repair job.'}
+                ? t('workOrders.detailDescription')
+                : t('workOrders.detailEmptyDescription')}
             </CardDescription>
             {selectedWorkOrder ? (
               <CardAction>
                 <div className="flex flex-wrap gap-1.5">
                   <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', statusClass(selectedWorkOrder.status))}>
-                    {statusLabel(selectedWorkOrder.status)}
+                    {t(`workOrders.statuses.${selectedWorkOrder.status}`)}
                   </span>
                   <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', priorityClass(selectedWorkOrder.priority))}>
-                    {priorityLabel(selectedWorkOrder.priority)}
+                    {t(`workOrders.priorities.${selectedWorkOrder.priority}`)}
                   </span>
                 </div>
               </CardAction>
@@ -520,14 +503,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                   <ClipboardList className="size-5 text-muted-foreground" aria-hidden="true" />
                 </div>
                 <div className="max-w-sm">
-                  <p className="text-sm font-medium text-balance">No work order selected</p>
+                  <p className="text-sm font-medium text-balance">{t('workOrders.noSelectionTitle')}</p>
                   <p className="mt-1 text-sm text-muted-foreground text-pretty">
-                    Choose a work order from the list to view details, or create a new one.
+                    {t('workOrders.noSelectionHint')}
                   </p>
                 </div>
                 <Button type="button" className={pressableButtonClass} onClick={() => void handleNewWorkOrder()}>
                   <Plus data-icon="inline-start" aria-hidden="true" />
-                  New Work Order
+                  {t('workOrders.newWorkOrder')}
                 </Button>
               </div>
             ) : (
@@ -540,14 +523,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="work-order-customer">Customer</Label>
+                <Label htmlFor="work-order-customer">{t('workOrders.form.customer')}</Label>
                 <BaseSelect
                   value={customerId}
                   disabled={!canEditSelected}
-                  ariaLabel="Customer"
-                  placeholder="Select customer"
+                  ariaLabel={t('workOrders.form.customer')}
+                  placeholder={t('workOrders.form.selectCustomer')}
                   options={[
-                    { value: '', label: 'Select customer' },
+                    { value: '', label: t('workOrders.form.selectCustomer') },
                     ...customers.map((customer) => ({ value: String(customer.id), label: customer.name })),
                   ]}
                   onValueChange={(nextCustomerId) => {
@@ -559,14 +542,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="work-order-vehicle">Vehicle</Label>
+                <Label htmlFor="work-order-vehicle">{t('workOrders.form.vehicle')}</Label>
                 <BaseSelect
                   value={vehicleId}
                   disabled={!canEditSelected}
-                  ariaLabel="Vehicle"
-                  placeholder="Select vehicle"
+                  ariaLabel={t('workOrders.form.vehicle')}
+                  placeholder={t('workOrders.form.selectVehicle')}
                   options={[
-                    { value: '', label: 'Select vehicle' },
+                    { value: '', label: t('workOrders.form.selectVehicle') },
                     ...filteredVehicles.map((vehicle) => ({
                       value: String(vehicle.id),
                       label: getVehicleLabel(vehicle),
@@ -577,14 +560,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="work-order-assignee">Assigned Staff</Label>
+                <Label htmlFor="work-order-assignee">{t('workOrders.form.assignedStaff')}</Label>
                 <BaseSelect
                   value={assignedUserId}
                   disabled={!canEditSelected}
-                  ariaLabel="Assigned staff"
-                  placeholder="Unassigned"
+                  ariaLabel={t('workOrders.form.assignedStaff')}
+                  placeholder={t('workOrders.form.unassigned')}
                   options={[
-                    { value: '', label: 'Unassigned' },
+                    { value: '', label: t('workOrders.form.unassigned') },
                     ...users.map((user) => ({ value: String(user.id), label: user.name })),
                   ]}
                   onValueChange={setAssignedUserId}
@@ -593,22 +576,22 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="work-order-priority">Priority</Label>
+                  <Label htmlFor="work-order-priority">{t('workOrders.form.priority')}</Label>
                   <BaseSelect
                     value={priority}
                     disabled={!canEditSelected}
-                    ariaLabel="Priority"
+                    ariaLabel={t('workOrders.form.priority')}
                     options={[
-                      { value: 'low', label: 'Low' },
-                      { value: 'normal', label: 'Normal' },
-                      { value: 'high', label: 'High' },
-                      { value: 'urgent', label: 'Urgent' },
+                      { value: 'low', label: t('workOrders.priorities.low') },
+                      { value: 'normal', label: t('workOrders.priorities.normal') },
+                      { value: 'high', label: t('workOrders.priorities.high') },
+                      { value: 'urgent', label: t('workOrders.priorities.urgent') },
                     ]}
                     onValueChange={(nextPriority) => setPriority(nextPriority as WorkOrderPriority)}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="work-order-odometer">Odometer</Label>
+                  <Label htmlFor="work-order-odometer">{t('workOrders.form.odometer')}</Label>
                   <Input
                     id="work-order-odometer"
                     type="number"
@@ -622,7 +605,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="work-order-complaint">Complaint</Label>
+              <Label htmlFor="work-order-complaint">{t('workOrders.form.complaint')}</Label>
               <textarea
                 id="work-order-complaint"
                 value={complaint}
@@ -635,7 +618,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
             <div className="grid gap-3 md:grid-cols-[1fr_160px]">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="work-order-notes">Notes</Label>
+                <Label htmlFor="work-order-notes">{t('common.notes')}</Label>
                 <Input
                   id="work-order-notes"
                   value={notes}
@@ -644,7 +627,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="work-order-discount">Discount</Label>
+                <Label htmlFor="work-order-discount">{t('workOrders.form.discount')}</Label>
                 <Input
                   id="work-order-discount"
                   type="number"
@@ -659,14 +642,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             <div className="grid gap-3 md:grid-cols-2">
               {selectedWorkOrder ? (
                 <div className="flex flex-col gap-1.5">
-                  <Label>Status</Label>
+                  <Label>{t('common.status')}</Label>
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                     <BaseSelect
                       value={selectedWorkOrder.status}
-                      ariaLabel="Change work order status"
+                      ariaLabel={t('workOrders.changeStatus')}
                       options={selectableStatuses(selectedWorkOrder).map((status) => ({
                         value: status,
-                        label: statusLabel(status),
+                        label: t(`workOrders.statuses.${status}`),
                       }))}
                       onValueChange={(nextStatus) => void handleStatusChange(nextStatus as WorkOrderStatus)}
                     />
@@ -677,14 +660,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                       onClick={() => void handleSaveWorkOrder()}
                     >
                       <Check data-icon="inline-start" aria-hidden="true" />
-                      Save Work Order
+                      {t('workOrders.saveWorkOrder')}
                     </Button>
                   </div>
                 </div>
               ) : null}
 
               <div className="flex flex-col gap-1.5">
-                <Label>Work Order</Label>
+                <Label>{t('workOrders.actionGroup')}</Label>
                 <Button
                   type="button"
                   variant={selectedWorkOrder ? 'outline' : 'default'}
@@ -695,12 +678,12 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                   {selectedWorkOrder ? (
                     <>
                       <ShoppingCart data-icon="inline-start" aria-hidden="true" />
-                      Checkout
+                      {t('workOrders.checkout')}
                     </>
                   ) : (
                     <>
                       <Check data-icon="inline-start" aria-hidden="true" />
-                      Create Work Order
+                      {t('workOrders.createWorkOrder')}
                     </>
                   )}
                 </Button>
@@ -710,23 +693,23 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
             {selectedWorkOrder ? (
               <div className="rounded-lg bg-muted px-3 py-2">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Status Timeline
+                  {t('workOrders.statusTimeline')}
                 </p>
                 <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                   <span className="flex justify-between gap-3">
-                    <span>Created</span>
+                    <span>{t('workOrders.timeline.created')}</span>
                     <span className="text-right tabular-nums">{formatDate(selectedWorkOrder.createdAt)}</span>
                   </span>
                   <span className="flex justify-between gap-3">
-                    <span>Updated</span>
+                    <span>{t('workOrders.timeline.updated')}</span>
                     <span className="text-right tabular-nums">{formatDate(selectedWorkOrder.updatedAt)}</span>
                   </span>
                   <span className="flex justify-between gap-3">
-                    <span>Completed</span>
+                    <span>{t('workOrders.timeline.completed')}</span>
                     <span className="text-right tabular-nums">{formatDate(selectedWorkOrder.completedAt)}</span>
                   </span>
                   <span className="flex justify-between gap-3">
-                    <span>Invoiced</span>
+                    <span>{t('workOrders.timeline.invoiced')}</span>
                     <span className="text-right tabular-nums">{formatDate(selectedWorkOrder.invoicedAt)}</span>
                   </span>
                 </div>
@@ -739,9 +722,9 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
         <Card>
           <CardHeader>
-            <CardTitle>Items And Totals</CardTitle>
+            <CardTitle>{t('workOrders.itemsAndTotals')}</CardTitle>
             <CardDescription>
-              Services and products attached to the repair job.
+              {t('workOrders.itemsDescription')}
             </CardDescription>
             <CardAction>
               <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -754,7 +737,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                 <div className="flex max-w-xs flex-col items-center gap-2">
                   <ClipboardList className="size-5 text-muted-foreground" aria-hidden="true" />
                   <p className="text-sm text-muted-foreground text-pretty">
-                    Create or select a work order before adding line items.
+                    {t('workOrders.createOrSelectBeforeItems')}
                   </p>
                 </div>
               </div>
@@ -764,22 +747,22 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                   <BaseSelect
                     value={catalogType}
                     disabled={!canEditSelected}
-                    ariaLabel="Item type"
+                    ariaLabel={t('workOrders.itemType')}
                     options={[
-                      { value: 'service', label: 'Service' },
-                      { value: 'product', label: 'Product' },
+                      { value: 'service', label: t('sales.service') },
+                      { value: 'product', label: t('sales.product') },
                     ]}
                     onValueChange={(nextType) => setCatalogType(nextType as 'service' | 'product')}
                   />
                   <BaseSelect
                     value={catalogId}
                     disabled={!canEditSelected}
-                    ariaLabel="Catalog item"
-                    placeholder="Select item"
+                    ariaLabel={t('workOrders.catalogItem')}
+                    placeholder={t('workOrders.selectItem')}
                     options={catalogItems.map((item) => ({
                       value: String(item.id),
                       label: `${item.name} · ${formatCurrency(item.price)}${
-                        item.stockQty === null ? '' : ` · ${item.stockQty} stock`
+                        item.stockQty === null ? '' : ` · ${t('workOrders.stockCount', { count: item.stockQty })}`
                       }`,
                     }))}
                     onValueChange={setCatalogId}
@@ -790,7 +773,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                     value={itemQuantity}
                     disabled={!canEditSelected}
                     onChange={(event) => setItemQuantity(event.target.value)}
-                    aria-label="Quantity"
+                    aria-label={t('workOrders.quantity')}
                   />
                   <Button
                     type="button"
@@ -799,7 +782,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                     onClick={() => void handleAddItem()}
                   >
                     <Plus data-icon="inline-start" aria-hidden="true" />
-                    Add
+                    {t('sales.add')}
                   </Button>
                 </div>
 
@@ -807,7 +790,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                   {selectedWorkOrder.items.length === 0 ? (
                     <div className="rounded-lg border border-dashed bg-background px-4 py-3 text-center shadow-border">
                       <p className="text-sm text-muted-foreground text-pretty">
-                        Add services or products before completing the job.
+                        {t('workOrders.addItemsHint')}
                       </p>
                     </div>
                   ) : (
@@ -817,15 +800,15 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                           <div className="min-w-0">
                             <p className="truncate text-sm font-medium text-balance">{item.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {item.itemType === 'service' ? 'Service' : 'Product'} · {item.sku ?? 'No code'}
+                              {item.itemType === 'service' ? t('sales.service') : t('sales.product')} · {item.sku ?? t('workOrders.noCode')}
                             </p>
                             <p className="text-xs text-muted-foreground tabular-nums">
-                              {formatCurrency(item.unitPrice)} each
+                              {t('workOrders.priceEach', { price: formatCurrency(item.unitPrice) })}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-semibold tabular-nums">{formatCurrency(item.lineTotal)}</p>
-                            <p className="text-xs text-muted-foreground tabular-nums">Qty {item.quantity}</p>
+                            <p className="text-xs text-muted-foreground tabular-nums">{t('workOrders.qty', { count: item.quantity })}</p>
                           </div>
                         </div>
                         {canEditSelected ? (
@@ -837,7 +820,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                               className={pressableButtonClass}
                               onClick={() => void handleUpdateItem(item.id, item.quantity - 1)}
                               disabled={item.quantity <= 1}
-                              aria-label={`Decrease ${item.name}`}
+                              aria-label={t('workOrders.decreaseItem', { name: item.name })}
                             >
                               <Minus aria-hidden="true" />
                             </Button>
@@ -848,7 +831,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                               size="icon-sm"
                               className={pressableButtonClass}
                               onClick={() => void handleUpdateItem(item.id, item.quantity + 1)}
-                              aria-label={`Increase ${item.name}`}
+                              aria-label={t('workOrders.increaseItem', { name: item.name })}
                             >
                               <Plus aria-hidden="true" />
                             </Button>
@@ -858,7 +841,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                               size="icon-sm"
                               className={pressableButtonClass}
                               onClick={() => void handleDeleteItem(item.id)}
-                              aria-label={`Remove ${item.name}`}
+                              aria-label={t('workOrders.removeItem', { name: item.name })}
                             >
                               <Trash2 aria-hidden="true" />
                             </Button>
@@ -871,27 +854,27 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
 
                 <div className="flex shrink-0 flex-col gap-1.5 border-t pt-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-muted-foreground">{t('sales.subtotal')}</span>
                     <span className="tabular-nums">{formatCurrency(selectedWorkOrder.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Discount</span>
+                    <span className="text-muted-foreground">{t('workOrders.form.discount')}</span>
                     <span className="tabular-nums">{formatCurrency(selectedWorkOrder.discount)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax 11%</span>
+                    <span className="text-muted-foreground">{t('sales.tax')}</span>
                     <span className="tabular-nums">{formatCurrency(selectedWorkOrder.tax)}</span>
                   </div>
                   <div className="flex justify-between text-base font-semibold">
-                    <span>Total</span>
+                    <span>{t('sales.total')}</span>
                     <span className="tabular-nums">{formatCurrency(selectedWorkOrder.total)}</span>
                   </div>
                   <div className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground text-pretty">
                     {selectedWorkOrder.invoiceNumber
-                      ? `Invoice ${selectedWorkOrder.invoiceNumber} created ${formatDate(selectedWorkOrder.invoicedAt)}.`
+                      ? t('workOrders.invoiceCreated', { invoice: selectedWorkOrder.invoiceNumber, date: formatDate(selectedWorkOrder.invoicedAt) })
                       : selectedWorkOrder.status === 'completed'
-                        ? 'This work order is ready for checkout.'
-                        : 'Complete the job before checkout.'}
+                        ? t('workOrders.readyForCheckout')
+                        : t('workOrders.completeBeforeCheckout')}
                   </div>
                 </div>
               </>

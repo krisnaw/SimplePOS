@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronLeft, ChevronRight, LayoutGrid, List, Loader2, Minus, Package, Plus, Search, ShoppingCart, Wrench, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
@@ -41,10 +42,6 @@ function getCartKey(item: SampleProduct): string {
   return `${item.itemType}:${item.id}`
 }
 
-function getItemTypeLabel(item: SampleProduct): string {
-  return item.itemType === 'service' ? 'Service' : 'Product'
-}
-
 function getItemTypeClasses(item: SampleProduct): string {
   return item.itemType === 'service'
     ? 'bg-amber-500/10 text-amber-700 ring-amber-500/20'
@@ -58,6 +55,7 @@ function ItemTypeIcon({ item }: { item: SampleProduct }) {
 }
 
 export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
+  const { t } = useTranslation()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [catalogItems, setCatalogItems] = useState<SampleProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -135,10 +133,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         id: product.id,
         itemType: 'product',
         name: product.name,
-        category: categoryNames.get(product.categoryId ?? 0) ?? 'Products',
+        category: categoryNames.get(product.categoryId ?? 0) ?? t('sales.productsCategory'),
         sku: product.sku,
-        description: product.description ?? 'Inventory product',
-        compatibility: product.barcode ? `Barcode ${product.barcode}` : `${product.stockQty} ${product.unitType} in stock`,
+        description: product.description ?? t('sales.inventoryProduct'),
+        compatibility: product.barcode
+          ? t('sales.barcode', { barcode: product.barcode })
+          : t('sales.stockWithUnit', { count: product.stockQty, unit: product.unitType }),
         price: product.unitPrice,
         stock: product.stockQty,
         minStock: product.minStock,
@@ -147,10 +147,10 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         id: service.id,
         itemType: 'service',
         name: service.name,
-        category: service.category ?? 'Services',
+        category: service.category ?? t('sales.servicesCategory'),
         sku: service.code,
-        description: service.description ?? 'Service labor item',
-        compatibility: 'Labor/service charge',
+        description: service.description ?? t('sales.serviceLaborItem'),
+        compatibility: t('sales.laborServiceCharge'),
         price: service.price,
         stock: UNLIMITED_STOCK,
         minStock: 0,
@@ -197,10 +197,10 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     const available = getAvailableQuantity(product)
 
     if (available < quantity) {
-      setActionMessage(
-        isUnlimitedStock(product.stock)
-          ? 'Unable to add item'
-          : `Only ${product.stock} in stock for ${product.name}`,
+          setActionMessage(
+            isUnlimitedStock(product.stock)
+          ? t('sales.unableToAddItem')
+          : t('sales.onlyInStock', { count: product.stock, name: product.name }),
       )
       return false
     }
@@ -231,7 +231,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     }
 
     if (!isUnlimitedStock(product.stock) && quantity > product.stock) {
-      setActionMessage(`Only ${product.stock} in stock for ${product.name}`)
+      setActionMessage(t('sales.onlyInStock', { count: product.stock, name: product.name }))
       return
     }
 
@@ -263,7 +263,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     setIsCheckingOut(false)
 
     if (!result) {
-      setActionMessage('Unable to reach the database.')
+      setActionMessage(t('sales.unableToReachDb'))
       return
     }
 
@@ -297,7 +297,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
   function handleClearCart() {
     setCartItems([])
-    setActionMessage('Cart cleared')
+    setActionMessage(t('sales.cartCleared'))
   }
 
   return (
@@ -315,14 +315,14 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                   type="text"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search products, services, SKU, category..."
-                  aria-label="Search products and services"
+                  placeholder={t('sales.searchPlaceholder')}
+                  aria-label={t('sales.searchAria')}
                   className="h-10 pl-10 pr-10"
                 />
                 {searchQuery ? (
                   <button
                     type="button"
-                    aria-label="Clear search"
+                    aria-label={t('sales.clearSearch')}
                     onClick={() => setSearchQuery('')}
                     className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
                   >
@@ -331,12 +331,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 ) : null}
               </div>
 
-              <div className="flex h-10 shrink-0 items-center gap-1 rounded-lg bg-muted p-1" role="group" aria-label="Catalog view">
+              <div className="flex h-10 shrink-0 items-center gap-1 rounded-lg bg-muted p-1" role="group" aria-label={t('sales.catalogView')}>
                 <button
                   type="button"
-                  aria-label="Grid view"
+                  aria-label={t('sales.gridView')}
                   aria-pressed={viewMode === 'grid'}
-                  title="Grid view"
+                  title={t('sales.gridView')}
                   onClick={() => setViewMode('grid')}
                   className={cn(
                     'flex size-8 items-center justify-center rounded-md transition-[background-color,color,transform,box-shadow] duration-150 ease-out active:scale-[0.96]',
@@ -349,9 +349,9 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 </button>
                 <button
                   type="button"
-                  aria-label="List view"
+                  aria-label={t('sales.listView')}
                   aria-pressed={viewMode === 'list'}
-                  title="List view"
+                  title={t('sales.listView')}
                   onClick={() => setViewMode('list')}
                   className={cn(
                     'flex size-8 items-center justify-center rounded-md transition-[background-color,color,transform,box-shadow] duration-150 ease-out active:scale-[0.96]',
@@ -382,15 +382,15 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
                     )}
                   >
-                    {category}
+                    {category === 'All' ? t('common.all') : category}
                   </button>
                 )
               })}
             </div>
 
             <p className="text-xs text-muted-foreground text-pretty tabular-nums">
-              {visibleProducts.length} item{visibleProducts.length === 1 ? '' : 's'}
-              {searchQuery ? ` matching "${searchQuery.trim()}"` : null}
+              {t('sales.itemsFound', { count: visibleProducts.length })}
+              {searchQuery ? t('sales.matching', { query: searchQuery.trim() }) : null}
             </p>
           </div>
 
@@ -398,15 +398,15 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             <div className="flex h-full min-h-64 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-                <p className="text-sm text-muted-foreground">Loading catalog...</p>
+                <p className="text-sm text-muted-foreground">{t('sales.loadingCatalog')}</p>
               </div>
             </div>
           ) : visibleProducts.length === 0 ? (
             <div className="flex h-full min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center shadow-border">
               <div className="flex max-w-xs flex-col gap-1">
-                <p className="text-sm font-medium text-balance">No items found</p>
+                <p className="text-sm font-medium text-balance">{t('sales.noItemsFound')}</p>
                 <p className="text-sm text-muted-foreground text-pretty">
-                  Try another search term or category filter.
+                  {t('sales.noItemsFoundHint')}
                 </p>
               </div>
             </div>
@@ -438,7 +438,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         )}
                       >
                         <ItemTypeIcon item={product} />
-                        {getItemTypeLabel(product)}
+                        {product.itemType === 'service' ? t('sales.service') : t('sales.product')}
                       </span>
                       <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
                         <span className="min-w-0 truncate text-sm font-medium text-balance">{product.name}</span>
@@ -454,7 +454,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       <div className="hidden min-w-24 flex-col items-end gap-0.5 sm:flex">
                         <span className="text-sm font-semibold tabular-nums">{formatCurrency(product.price)}</span>
                         <span className="text-sm font-medium text-muted-foreground tabular-nums">
-                          {product.itemType === 'service' ? 'Service item' : `${product.stock} in stock`}
+                          {product.itemType === 'service' ? t('sales.serviceItem') : t('sales.inStock', { count: product.stock })}
                         </span>
                       </div>
                       <Button
@@ -465,7 +465,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         onClick={() => addToCart(product)}
                       >
                         <Plus data-icon="inline-start" aria-hidden="true" />
-                        Add
+                        {t('sales.add')}
                       </Button>
                     </div>
                   </div>
@@ -484,7 +484,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                             )}
                           >
                             <ItemTypeIcon item={product} />
-                            {getItemTypeLabel(product)}
+                            {product.itemType === 'service' ? t('sales.service') : t('sales.product')}
                           </span>
                           <span className="text-sm font-medium text-balance">{product.name}</span>
                           <span className="text-xs text-muted-foreground text-pretty">
@@ -495,12 +495,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         <span className="flex shrink-0 flex-col items-end gap-1">
                           {inCartQty > 0 ? (
                             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary tabular-nums">
-                              {inCartQty} in cart
+                              {t('sales.inCart', { count: inCartQty })}
                             </span>
                           ) : null}
                           {isLowStock(product) ? (
                             <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive tabular-nums">
-                              Low stock
+                              {t('sales.lowStock')}
                             </span>
                           ) : null}
                         </span>
@@ -512,7 +512,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       <span className="flex flex-col gap-0.5">
                         <span className="text-base font-semibold tabular-nums">{formatCurrency(product.price)}</span>
                         <span className="text-xs text-muted-foreground tabular-nums">
-                          {product.itemType === 'service' ? 'Service item' : `${product.stock} in stock`}
+                          {product.itemType === 'service' ? t('sales.serviceItem') : t('sales.inStock', { count: product.stock })}
                         </span>
                       </span>
                       <Button
@@ -523,7 +523,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         onClick={() => addToCart(product)}
                       >
                         <Plus data-icon="inline-start" aria-hidden="true" />
-                        Add
+                        {t('sales.add')}
                       </Button>
                     </span>
                   </div>
@@ -536,17 +536,17 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
-          <CardTitle>Current Sale</CardTitle>
+          <CardTitle>{t('sales.currentSale')}</CardTitle>
           <CardDescription>
             {cartItemCount > 0
-              ? `${cartItemCount} item${cartItemCount === 1 ? '' : 's'}`
-              : 'No items yet'}
+              ? t('sales.itemsFound', { count: cartItemCount })
+              : t('sales.noItemsInCart')}
           </CardDescription>
           <CardAction>
             {cartItemCount > 0 ? (
               <span className="relative flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ShoppingCart className="size-4" aria-hidden="true" />
-                <span className="sr-only">{cartItemCount} items in cart</span>
+                <span className="sr-only">{t('sales.itemsInCart', { count: cartItemCount })}</span>
                 <span className="absolute -top-1 -right-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground tabular-nums">
                   {cartItemCount}
                 </span>
@@ -557,15 +557,15 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
         <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="flex shrink-0 flex-col gap-1.5">
-            <Label htmlFor="sale-customer">Customer</Label>
+            <Label htmlFor="sale-customer">{t('customers.table.customer')}</Label>
             <BaseSelect
               id="sale-customer"
               value={selectedCustomerId}
-              ariaLabel="Sale customer"
-              placeholder="Walk-in customer"
+              ariaLabel={t('sales.saleCustomer')}
+              placeholder={t('invoices.walkInCustomer')}
               disabled={checkoutComplete || isCheckingOut}
               options={[
-                { value: '', label: 'Walk-in customer' },
+                { value: '', label: t('invoices.walkInCustomer') },
                 ...customers.map((customer) => ({
                   value: String(customer.id),
                   label: `${customer.name}${customer.phone ? ` · ${customer.phone}` : ''}`,
@@ -592,7 +592,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             {cartItems.length === 0 ? (
               <div className="rounded-lg border border-dashed bg-background px-4 py-3 text-center shadow-border">
                 <p className="text-sm text-muted-foreground text-pretty">
-                  Add products or services from the catalog to start a sale.
+                  {t('sales.cartEmptyHint')}
                 </p>
               </div>
             ) : (
@@ -610,9 +610,9 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       )}
                     >
                       <ItemTypeIcon item={item} />
-                      {getItemTypeLabel(item)}
+                      {item.itemType === 'service' ? t('sales.service') : t('sales.product')}
                     </p>
-                    <p className="text-xs text-muted-foreground tabular-nums">{formatCurrency(item.price)} each</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">{t('sales.priceEach', { price: formatCurrency(item.price) })}</p>
                     <p className="text-sm font-medium tabular-nums">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
@@ -622,7 +622,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       size="icon-sm"
                       className={cn(pressableButtonClass, qtyButtonClass)}
                       onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
-                      aria-label={`Decrease quantity of ${item.name}`}
+                      aria-label={t('sales.decreaseQuantity', { name: item.name })}
                     >
                       <Minus aria-hidden="true" />
                     </Button>
@@ -634,7 +634,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       className={cn(pressableButtonClass, qtyButtonClass)}
                       onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
                       disabled={!isUnlimitedStock(item.stock) && item.quantity >= item.stock}
-                      aria-label={`Increase quantity of ${item.name}`}
+                      aria-label={t('sales.increaseQuantity', { name: item.name })}
                     >
                       <Plus aria-hidden="true" />
                     </Button>
@@ -646,15 +646,15 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
           <div className="flex shrink-0 flex-col gap-1.5 border-t pt-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-muted-foreground">{t('sales.subtotal')}</span>
               <span className="tabular-nums">{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Tax 11%</span>
+              <span className="text-muted-foreground">{t('sales.tax')}</span>
               <span className="tabular-nums">{formatCurrency(tax)}</span>
             </div>
             <div className="flex justify-between text-base font-semibold">
-              <span>Total</span>
+              <span>{t('sales.total')}</span>
               <span className="tabular-nums">{formatCurrency(total)}</span>
             </div>
           </div>
@@ -668,17 +668,17 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               {isCheckingOut ? (
                 <>
                   <ShoppingCart data-icon="inline-start" aria-hidden="true" />
-                  Saving
+                  {t('sales.saving')}
                 </>
               ) : checkoutComplete ? (
                 <>
                   <Check data-icon="inline-start" aria-hidden="true" />
-                  Completed
+                  {t('sales.completed')}
                 </>
               ) : (
                 <>
                   <ShoppingCart data-icon="inline-start" aria-hidden="true" />
-                  Checkout
+                  {t('sales.checkout')}
                 </>
               )}
             </Button>
@@ -689,7 +689,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               onClick={handleClearCart}
               disabled={cartItems.length === 0 || checkoutComplete || isCheckingOut}
             >
-              Clear
+              {t('sales.clearCart')}
             </Button>
           </div>
         </CardContent>

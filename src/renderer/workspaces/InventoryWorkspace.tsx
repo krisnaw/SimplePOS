@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, PackagePlus, Search, Trash2 } from 'lucide-react'
+import { Loader2, PackagePlus, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
@@ -45,6 +46,7 @@ function toProductForm(product: ProductSummary): ProductFormState {
 }
 
 export function InventoryWorkspace() {
+  const { t } = useTranslation()
   const [products, setProducts] = useState<ProductSummary[]>([])
   const [categories, setCategories] = useState<ProductCategorySummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -124,7 +126,7 @@ export function InventoryWorkspace() {
     const minStock = Number(form.minStock)
 
     if (!form.sku.trim() || !form.name.trim() || unitPrice < 0 || stockQty < 0 || minStock < 0) {
-      setMessage('Enter product details and valid stock numbers.')
+      setMessage(t('inventory.messages.invalidProduct'))
       return
     }
 
@@ -153,7 +155,7 @@ export function InventoryWorkspace() {
     setIsSubmitting(false)
 
     if (!result) {
-      setMessage('Unable to reach the database.')
+      setMessage(t('common.unableToReachDb'))
       return
     }
 
@@ -179,8 +181,8 @@ export function InventoryWorkspace() {
         <div className="grid shrink-0 gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle>Total Items</CardTitle>
-              <CardDescription>Active product SKUs</CardDescription>
+              <CardTitle>{t('inventory.totalItems')}</CardTitle>
+              <CardDescription>{t('inventory.activeSkus')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{products.length}</p>
@@ -189,8 +191,8 @@ export function InventoryWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Stock Units</CardTitle>
-              <CardDescription>Available quantity</CardDescription>
+              <CardTitle>{t('inventory.stockUnits')}</CardTitle>
+              <CardDescription>{t('inventory.availableQty')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{totalUnits}</p>
@@ -199,8 +201,8 @@ export function InventoryWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Low Stock</CardTitle>
-              <CardDescription>At or below minimum</CardDescription>
+              <CardTitle>{t('inventory.lowStock')}</CardTitle>
+              <CardDescription>{t('inventory.atMinimum')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold tabular-nums">{lowStockCount}</p>
@@ -210,14 +212,14 @@ export function InventoryWorkspace() {
 
         <Card className="min-h-0 flex-1 overflow-hidden">
           <CardHeader>
-            <CardTitle>Product List</CardTitle>
-            <CardDescription>{formatCurrency(inventoryValue)} in current stock value.</CardDescription>
+            <CardTitle>{t('inventory.productList')}</CardTitle>
+            <CardDescription>{t('inventory.stockValueHint', { value: formatCurrency(inventoryValue) })}</CardDescription>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search inventory"
+              placeholder={t('inventory.searchPlaceholder')}
               className="shrink-0"
             />
             <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-background">
@@ -228,27 +230,26 @@ export function InventoryWorkspace() {
                   productTableGrid,
                 )}
               >
-                  <span>Product</span>
-                  <span>Category</span>
-                  <span className="text-right">Price</span>
-                  <span>Stock</span>
-                  <span>Status</span>
+                <span>{t('inventory.table.product')}</span>
+                <span>{t('inventory.table.category')}</span>
+                <span className="text-right">{t('inventory.table.price')}</span>
+                <span>{t('inventory.table.stock')}</span>
+                <span>{t('inventory.table.status')}</span>
               </div>
 
               <div className="divide-y">
-               {isLoading ? (
-                 <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-                   <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-                   <p className="text-sm text-muted-foreground">Loading inventory...</p>
-                 </div>
-               ) : filteredProducts.length === 0 ? (
-                 <div className="px-3 py-6 text-sm text-muted-foreground">
-                   {products.length === 0 ? 'No products yet. Add one using the form.' : 'No products match this search.'}
-                 </div>
-               ) : null}
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                    <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                    <p className="text-sm text-muted-foreground">{t('inventory.loading')}</p>
+                  </div>
+                ) : filteredProducts.length === 0 ? (
+                  <div className="px-3 py-6 text-sm text-muted-foreground">
+                    {products.length === 0 ? t('inventory.noProducts') : t('inventory.noMatchingProducts')}
+                  </div>
+                ) : null}
 
-               {!isLoading && filteredProducts.map((product) => {
-
+                {!isLoading && filteredProducts.map((product) => {
                   const categoryName = categories.find((c) => c.id === product.categoryId)?.name ?? '—'
                   const lowStock = isLowStock(product)
 
@@ -287,7 +288,7 @@ export function InventoryWorkspace() {
                             : 'bg-emerald-500/15 text-emerald-700',
                         )}
                       >
-                        {lowStock ? 'Low stock' : 'In stock'}
+                        {lowStock ? t('inventory.lowStockStatus') : t('inventory.inStock')}
                       </span>
                     </div>
                   )
@@ -301,18 +302,18 @@ export function InventoryWorkspace() {
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <CardTitle>
-            {editingProduct ? 'Edit Product' : 'Create Product'}
+            {editingProduct ? t('inventory.editProduct') : t('inventory.createProduct')}
           </CardTitle>
           <CardDescription>
             {editingProduct
-              ? `Update ${editingProduct.name} details, price, and stock.`
-              : 'Add a part or consumable to the inventory list.'}
+              ? t('inventory.editHint', { name: editingProduct.name })
+              : t('inventory.createHint')}
           </CardDescription>
         </CardHeader>
         <CardContent className="min-h-0 flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="inventory-sku">SKU</Label>
+              <Label htmlFor="inventory-sku">{t('inventory.sku')}</Label>
               <Input
                 id="inventory-sku"
                 value={form.sku}
@@ -323,7 +324,7 @@ export function InventoryWorkspace() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="inventory-name">Product Name</Label>
+              <Label htmlFor="inventory-name">{t('inventory.productName')}</Label>
               <Input
                 id="inventory-name"
                 value={form.name}
@@ -334,7 +335,7 @@ export function InventoryWorkspace() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="inventory-barcode">Barcode <span className="text-muted-foreground">(optional)</span></Label>
+              <Label htmlFor="inventory-barcode">{t('inventory.barcode')} <span className="text-muted-foreground">{t('inventory.optional')}</span></Label>
               <Input
                 id="inventory-barcode"
                 value={form.barcode}
@@ -344,14 +345,14 @@ export function InventoryWorkspace() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="inventory-category">Category</Label>
+              <Label htmlFor="inventory-category">{t('inventory.table.category')}</Label>
               <BaseSelect
                 id="inventory-category"
                 value={form.categoryId}
-                ariaLabel="Product category"
-                placeholder="No category"
+                ariaLabel={t('inventory.table.category')}
+                placeholder={t('inventory.noCategory')}
                 options={[
-                  { value: '', label: 'No category' },
+                  { value: '', label: t('inventory.noCategory') },
                   ...categories.map((category) => ({
                     value: String(category.id),
                     label: category.name,
@@ -363,7 +364,7 @@ export function InventoryWorkspace() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-price">Unit Price (IDR)</Label>
+                <Label htmlFor="inventory-price">{t('inventory.unitPrice')}</Label>
                 <Input
                   id="inventory-price"
                   type="number"
@@ -376,14 +377,14 @@ export function InventoryWorkspace() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-unit">Unit Type</Label>
+                <Label htmlFor="inventory-unit">{t('inventory.unitType')}</Label>
                 <BaseSelect
                   id="inventory-unit"
                   value={form.unitType}
-                  ariaLabel="Product unit type"
+                  ariaLabel={t('inventory.unitType')}
                   options={unitTypes.map((unitType) => ({
                     value: unitType,
-                    label: unitType,
+                    label: t(`inventory.units.${unitType}`),
                   }))}
                   onValueChange={(value) => updateForm('unitType', value as ProductFormState['unitType'])}
                 />
@@ -392,7 +393,7 @@ export function InventoryWorkspace() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-stock">Opening Stock</Label>
+                <Label htmlFor="inventory-stock">{t('inventory.openingStock')}</Label>
                 <Input
                   id="inventory-stock"
                   type="number"
@@ -405,7 +406,7 @@ export function InventoryWorkspace() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-min-stock">Minimum Stock</Label>
+                <Label htmlFor="inventory-min-stock">{t('inventory.minimumStock')}</Label>
                 <Input
                   id="inventory-min-stock"
                   type="number"
@@ -427,10 +428,10 @@ export function InventoryWorkspace() {
             <div className="flex gap-2">
               <Button type="submit" className="flex-1" disabled={isSubmitting}>
                 <PackagePlus data-icon="inline-start" aria-hidden="true" />
-                {isSubmitting ? (editingProduct ? 'Saving...' : 'Creating...') : editingProduct ? 'Save Changes' : 'Create'}
+                {isSubmitting ? (editingProduct ? t('common.saving') : t('inventory.creating')) : editingProduct ? t('common.saveChanges') : t('common.create')}
               </Button>
               <Button type="button" variant="outline" onClick={resetForm}>
-                {editingProduct ? 'Cancel' : 'Clear'}
+                {editingProduct ? t('common.cancel') : t('common.clear')}
               </Button>
             </div>
           </form>
@@ -444,7 +445,7 @@ export function InventoryWorkspace() {
               onClick={() => void handleDeactivate(editingProduct)}
             >
               <Trash2 data-icon="inline-start" aria-hidden="true" />
-              Delete Product
+              {t('inventory.deleteProduct')}
             </Button>
           </CardFooter>
         ) : null}
