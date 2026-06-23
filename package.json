@@ -14,7 +14,9 @@
     "db:seed": "npm run build:electron && ELECTRON_RUN_AS_NODE=1 electron ./dist-electron/db/seeder/seed-products.js",
     "start": "npm run build && electron .",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
-    "publish:mac": "npm run build && electron-builder --mac --arm64 --publish always"
+    "dist:win": "npm run build && electron-builder --win --x64",
+    "publish:mac": "npm run build && electron-builder --mac --arm64 --publish always",
+    "publish:win": "npm run build && electron-builder --win --x64 --publish always"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
@@ -62,6 +64,12 @@
       "category": "public.app-category.business",
       "target": [
         "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
         "zip"
       ]
     },
