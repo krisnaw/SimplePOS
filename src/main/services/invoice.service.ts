@@ -22,8 +22,6 @@ export type InvoiceSummary = {
   paymentStatus: PaymentStatus | null
   itemCount: number
   subtotal: number
-  discount: number
-  tax: number
   total: number
   issuedAt: string
 }
@@ -83,12 +81,11 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
       workOrderNumber: workOrders.orderNumber,
       invoiceNumber: invoices.invoiceNumber,
       status: invoices.status,
+      customerNameSnapshot: sales.customerNameSnapshot,
       customerName: customers.name,
       paymentMethod: payments.method,
       paymentStatus: payments.status,
       subtotal: invoices.subtotal,
-      discount: invoices.discount,
-      tax: invoices.tax,
       total: invoices.total,
       issuedAt: invoices.issuedAt,
     })
@@ -125,13 +122,11 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
       workOrderNumber: invoice.workOrderNumber,
       invoiceNumber: invoice.invoiceNumber,
       status: invoice.status,
-      customerName: invoice.customerName,
+      customerName: invoice.customerNameSnapshot ?? invoice.customerName,
       paymentMethod: invoice.paymentMethod,
       paymentStatus: invoice.paymentStatus,
       itemCount: itemCountBySaleId.get(invoice.saleId) ?? 0,
       subtotal: invoice.subtotal,
-      discount: invoice.discount,
-      tax: invoice.tax,
       total: invoice.total,
       issuedAt: invoice.issuedAt,
     }))
@@ -165,6 +160,8 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
       workOrderNumber: workOrders.orderNumber,
       invoiceNumber: invoices.invoiceNumber,
       status: invoices.status,
+      customerNameSnapshot: sales.customerNameSnapshot,
+      customerPhoneSnapshot: sales.customerPhoneSnapshot,
       customerName: customers.name,
       customerPhone: customers.phone,
       customerEmail: customers.email,
@@ -175,8 +172,6 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
       paymentAmount: payments.amount,
       paymentPaidAt: payments.paidAt,
       subtotal: invoices.subtotal,
-      discount: invoices.discount,
-      tax: invoices.tax,
       total: invoices.total,
       issuedAt: invoices.issuedAt,
       notes: sales.notes,
@@ -213,16 +208,14 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
     workOrderNumber: invoice.workOrderNumber,
     invoiceNumber: invoice.invoiceNumber,
     status: invoice.status,
-    customerName: invoice.customerName,
-    customerPhone: invoice.customerPhone,
+    customerName: invoice.customerNameSnapshot ?? invoice.customerName,
+    customerPhone: invoice.customerPhoneSnapshot ?? invoice.customerPhone,
     customerEmail: invoice.customerEmail,
     customerAddress: invoice.customerAddress,
     paymentMethod: invoice.paymentMethod,
     paymentStatus: invoice.paymentStatus,
     itemCount: items.length,
     subtotal: invoice.subtotal,
-    discount: invoice.discount,
-    tax: invoice.tax,
     total: invoice.total,
     issuedAt: invoice.issuedAt,
     notes: invoice.notes,

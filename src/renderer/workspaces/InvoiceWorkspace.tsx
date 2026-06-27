@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Loader2, Printer, RefreshCw, Search } from 'lucide-react'
+import { CalendarDays, Eye, Loader2, Printer, RefreshCw, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogClose,
+  AlertDialogPortal,
+  AlertDialogPopup,
+} from '@/renderer/components/ui/alert-dialog'
 import { cn } from '@/renderer/lib/utils'
 import { formatCurrency, formatDateTime, formatPaymentMethod } from '@/renderer/lib/formatters'
 import type { InvoiceSummary, InvoiceDetail, InvoiceStatusFilter } from './InvoiceWorkspace.types'
@@ -113,8 +120,6 @@ function generateReceiptHTML(invoice: NonNullable<InvoiceDetail>): string {
 
   <div class="totals">
     <div class="totals-row"><span style="color:#666">Subtotal</span><span>${fmt(invoice.subtotal)}</span></div>
-    ${invoice.discount > 0 ? `<div class="totals-row"><span style="color:#666">Discount</span><span>-${fmt(invoice.discount)}</span></div>` : ''}
-    <div class="totals-row"><span style="color:#666">Tax (11%)</span><span>${fmt(invoice.tax)}</span></div>
     <div class="totals-row total"><span>Total</span><span>${fmt(invoice.total)}</span></div>
   </div>
 
@@ -168,6 +173,8 @@ export function InvoiceWorkspace() {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [refreshCount, setRefreshCount] = useState(0)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -238,6 +245,23 @@ export function InvoiceWorkspace() {
       isMounted = false
     }
   }, [selectedInvoiceId])
+
+  function handlePreview() {
+    if (!selectedInvoice) return
+    const html = generateReceiptHTML(selectedInvoice)
+    const blob = new Blob([html], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    setPreviewUrl(url)
+    setIsPreviewOpen(true)
+  }
+
+  function handlePreviewClose() {
+    setIsPreviewOpen(false)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
+  }
 
   function handlePrint() {
     if (!selectedInvoice) return
@@ -452,11 +476,43 @@ export function InvoiceWorkspace() {
                 {selectedInvoice.customerName ?? t('invoices.walkInCustomer')} · {formatDateTime(selectedInvoice.issuedAt)}
               </CardDescription>
               <CardAction className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" className={pressableButtonClass} onClick={handlePreview}>
+                  <Eye data-icon="inline-start" aria-hidden="true" />
+                  {t('invoices.preview')}
+                </Button>
                 <Button type="button" variant="outline" size="sm" className={pressableButtonClass} onClick={handlePrint}>
                   <Printer data-icon="inline-start" aria-hidden="true" />
                   {t('invoices.print')}
                 </Button>
               </CardAction>
+
+              <AlertDialog open={isPreviewOpen} onOpenChange={(open) => { if (!open) handlePreviewClose() }}>
+                <AlertDialogPortal>
+                  <AlertDialogBackdrop />
+                  <AlertDialogPopup className="flex max-h-[90vh] w-[90vw] max-w-3xl flex-col gap-0 p-0">
+                    <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+                      <p className="text-sm font-semibold">{selectedInvoice.invoiceNumber}</p>
+                      <AlertDialogClose
+                        render={
+                          <Button type="button" variant="ghost" size="icon-sm" className={pressableButtonClass} aria-label="Close preview">
+                            <X aria-hidden="true" />
+                          </Button>
+                        }
+                      />
+                    </div>
+                    <div className="min-h-0 flex-1">
+                      {previewUrl ? (
+                        <iframe
+                          src={previewUrl}
+                          title={`Invoice ${selectedInvoice.invoiceNumber}`}
+                          className="h-full w-full rounded-b-xl border-0"
+                          style={{ minHeight: '70vh' }}
+                        />
+                      ) : null}
+                    </div>
+                  </AlertDialogPopup>
+                </AlertDialogPortal>
+              </AlertDialog>
             </CardHeader>
 
             <CardContent className="min-h-0 flex-1 overflow-auto">
@@ -547,14 +603,6 @@ export function InvoiceWorkspace() {
                         <div className="flex justify-between gap-3">
                           <span className="text-muted-foreground">{t('sales.subtotal')}</span>
                           <span className="tabular-nums">{formatCurrency(selectedInvoice.subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between gap-3">
-                          <span className="text-muted-foreground">{t('workOrders.form.discount')}</span>
-                          <span className="tabular-nums">{formatCurrency(selectedInvoice.discount)}</span>
-                        </div>
-                        <div className="flex justify-between gap-3">
-                          <span className="text-muted-foreground">{t('invoices.tax')}</span>
-                          <span className="tabular-nums">{formatCurrency(selectedInvoice.tax)}</span>
                         </div>
                         <div className="mt-2 flex justify-between gap-3 border-t pt-3 text-base font-semibold">
                           <span>{t('sales.total')}</span>

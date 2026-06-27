@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
-import { invoices, payments, products, saleItems, sales, services } from '../db/schema/index'
+import { invoices, payments, products, saleItems, sales, services, vehicles } from '../db/schema/index'
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 
@@ -12,12 +12,11 @@ export type CheckoutItemInput = {
 
 export type CheckoutInput = {
   workOrderId?: unknown
+  vehicleId?: unknown
   customerId?: unknown
   createdById?: unknown
   paymentMethod?: unknown
   amountPaid?: unknown
-  discount?: unknown
-  tax?: unknown
   notes?: unknown
   items?: unknown
 }
@@ -36,12 +35,11 @@ export type CheckoutLineItemSummary = {
 
 export type CheckoutSummary = {
   saleId: number
+  vehicleId: number | null
   invoiceId: number
   invoiceNumber: string
   paymentId: number
   subtotal: number
-  discount: number
-  tax: number
   total: number
   amountPaid: number
   paymentMethod: PaymentMethod
@@ -68,12 +66,13 @@ export type PreparedCheckoutLineItem = {
 
 type PersistCheckoutInput = {
   sourceWorkOrderId?: number | null
+  vehicleId?: number | null
   customerId: number | null
+  customerNameSnapshot?: string | null
+  customerPhoneSnapshot?: string | null
   createdById: number | null
   paymentMethod: PaymentMethod
   amountPaid: number
-  discount: number
-  tax: number
   notes: string | null
   items: PreparedCheckoutLineItem[]
 }
@@ -168,10 +167,11 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
   if (!repository) return { ok: false, message: 'Database unavailable' }
 
   const sourceWorkOrderId = positiveInteger(input.workOrderId)
+  const vehicleId = positiveInteger(input.vehicleId)
   const paymentMethod = isPaymentMethod(input.paymentMethod) ? input.paymentMethod : 'cash'
-  const discount = nonNegativeInteger(input.discount) ?? 0
-  const providedTax = nonNegativeInteger(input.tax)
-  const customerId = positiveInteger(input.customerId)
+  let customerId = positiveInteger(input.customerId)
+  let customerNameSnapshot: string | null = null
+  let customerPhoneSnapshot: string | null = null
   const createdById = positiveInteger(input.createdById)
   const amountPaidInput = nonNegativeInteger(input.amountPaid)
   const notes = typeof input.notes === 'string' && input.notes.trim() ? input.notes.trim() : null
@@ -181,14 +181,17 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
     return { ok: false, message: preparedItems }
   }
 
-  const subtotal = preparedItems.reduce((total, item) => total + item.lineTotal, 0)
-
-  if (discount > subtotal) {
-    return { ok: false, message: 'Discount cannot exceed subtotal' }
+  if (!sourceWorkOrderId) {
+    if (!vehicleId) return { ok: false, message: 'Select a vehicle before checkout' }
+    const [vehicle] = await repository.select().from(vehicles).where(eq(vehicles.id, vehicleId)).limit(1)
+    if (!vehicle || !vehicle.isActive) return { ok: false, message: 'Vehicle is no longer available' }
+    customerId = vehicle.customerId
+    customerNameSnapshot = vehicle.customerName
+    customerPhoneSnapshot = vehicle.customerPhone
   }
 
-  const tax = providedTax ?? Math.round((subtotal - discount) * 0.11)
-  const total = subtotal - discount + tax
+  const subtotal = preparedItems.reduce((total, item) => total + item.lineTotal, 0)
+  const total = subtotal
   const amountPaid = amountPaidInput ?? total
 
   if (amountPaid < total) {
@@ -197,12 +200,13 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
 
   return persistCheckout({
     sourceWorkOrderId,
+    vehicleId,
     customerId,
+    customerNameSnapshot,
+    customerPhoneSnapshot,
     createdById,
     paymentMethod,
     amountPaid,
-    discount,
-    tax,
     notes,
     items: preparedItems,
   })
@@ -214,12 +218,7 @@ export async function createCheckoutFromPreparedItems(input: PersistCheckoutInpu
   }
 
   const subtotal = input.items.reduce((total, item) => total + item.lineTotal, 0)
-
-  if (input.discount > subtotal) {
-    return { ok: false, message: 'Discount cannot exceed subtotal' }
-  }
-
-  const total = subtotal - input.discount + input.tax
+  const total = subtotal
 
   if (input.amountPaid < total) {
     return { ok: false, message: 'Amount paid cannot be less than total' }
@@ -234,7 +233,7 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
   if (!repository) return { ok: false, message: 'Database unavailable' }
 
   const subtotal = input.items.reduce((total, item) => total + item.lineTotal, 0)
-  const total = subtotal - input.discount + input.tax
+  const total = subtotal
 
   const now = new Date().toISOString()
   const invoiceNumber = createInvoiceNumber()
@@ -242,12 +241,15 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
   const checkout = repository.transaction((tx) => {
     const savedSale = tx.insert(sales).values({
       workOrderId: input.sourceWorkOrderId,
+      vehicleId: input.vehicleId,
       customerId: input.customerId,
+      customerNameSnapshot: input.customerNameSnapshot,
+      customerPhoneSnapshot: input.customerPhoneSnapshot,
       createdById: input.createdById,
       status: 'completed',
       subtotal,
-      discount: input.discount,
-      tax: input.tax,
+      discount: 0,
+      tax: 0,
       total,
       notes: input.notes,
       createdAt: now,
@@ -294,8 +296,8 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
       invoiceNumber,
       status: 'paid',
       subtotal,
-      discount: input.discount,
-      tax: input.tax,
+      discount: 0,
+      tax: 0,
       total,
       issuedAt: now,
       createdAt: now,
@@ -315,12 +317,11 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
 
     return {
       saleId: savedSale.id,
+      vehicleId: savedSale.vehicleId,
       invoiceId: savedInvoice.id,
       invoiceNumber: savedInvoice.invoiceNumber,
       paymentId: savedPayment.id,
       subtotal,
-      discount: input.discount,
-      tax: input.tax,
       total,
       amountPaid: input.amountPaid,
       paymentMethod: input.paymentMethod,

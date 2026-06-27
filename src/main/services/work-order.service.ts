@@ -60,8 +60,6 @@ export type WorkOrderSummary = {
   odometer: number | null
   itemCount: number
   subtotal: number
-  discount: number
-  tax: number
   total: number
   invoiceId: number | null
   invoiceNumber: string | null
@@ -167,33 +165,26 @@ function toItemSummary(item: WorkOrderItem): WorkOrderItemSummary {
   }
 }
 
-function calculateTotals(items: Array<{ lineTotal: number }>, discount = 0): { subtotal: number; tax: number; total: number } {
+function calculateTotals(items: Array<{ lineTotal: number }>): { subtotal: number; total: number } {
   const subtotal = items.reduce((total, item) => total + item.lineTotal, 0)
-  const safeDiscount = Math.min(discount, subtotal)
-  const tax = Math.round((subtotal - safeDiscount) * 0.11)
 
   return {
     subtotal,
-    tax,
-    total: subtotal - safeDiscount + tax,
+    total: subtotal,
   }
 }
 
-async function updateWorkOrderTotals(workOrderId: number, discount?: number): Promise<void> {
+async function updateWorkOrderTotals(workOrderId: number): Promise<void> {
   const repository = getWorkOrderRepository()
   if (!repository) return
 
-  const [workOrder] = await repository.select().from(workOrders).where(eq(workOrders.id, workOrderId)).limit(1)
-  if (!workOrder) return
-
   const items = await repository.select().from(workOrderItems).where(eq(workOrderItems.workOrderId, workOrderId))
-  const appliedDiscount = typeof discount === 'number' ? discount : workOrder.discount
-  const totals = calculateTotals(items, appliedDiscount)
+  const totals = calculateTotals(items)
 
   await repository.update(workOrders).set({
     subtotal: totals.subtotal,
-    discount: Math.min(appliedDiscount, totals.subtotal),
-    tax: totals.tax,
+    discount: 0,
+    tax: 0,
     total: totals.total,
     updatedAt: new Date().toISOString(),
   }).where(eq(workOrders.id, workOrderId))
@@ -259,7 +250,7 @@ async function toWorkOrderDetail(workOrder: WorkOrder): Promise<WorkOrderDetail 
     customerAddress: row.customerAddress,
     vehicleId: workOrder.vehicleId,
     vehicleName: `${row.vehicleBrand} ${row.vehicleModel}`,
-    vehicleBrand: row.vehicleBrand,
+    vehicleBrand: row.vehicleBrand ?? '',
     vehicleModel: row.vehicleModel,
     vehicleYear: row.vehicleYear,
     vehicleColor: row.vehicleColor,
@@ -273,8 +264,6 @@ async function toWorkOrderDetail(workOrder: WorkOrder): Promise<WorkOrderDetail 
     odometer: workOrder.odometer,
     itemCount: items.length,
     subtotal: workOrder.subtotal,
-    discount: workOrder.discount,
-    tax: workOrder.tax,
     total: workOrder.total,
     invoiceId: invoice?.id ?? null,
     invoiceNumber: invoice?.invoiceNumber ?? null,
@@ -309,8 +298,6 @@ export async function listWorkOrders(input: WorkOrderListInput = {}): Promise<Wo
       notes: workOrders.notes,
       odometer: workOrders.odometer,
       subtotal: workOrders.subtotal,
-      discount: workOrders.discount,
-      tax: workOrders.tax,
       total: workOrders.total,
       createdAt: workOrders.createdAt,
       updatedAt: workOrders.updatedAt,
@@ -367,8 +354,6 @@ export async function listWorkOrders(input: WorkOrderListInput = {}): Promise<Wo
         odometer: row.odometer,
         itemCount: itemCountByWorkOrderId.get(row.id) ?? 0,
         subtotal: row.subtotal,
-        discount: row.discount,
-        tax: row.tax,
         total: row.total,
         invoiceId: invoice?.id ?? null,
         invoiceNumber: invoice?.invoiceNumber ?? null,
@@ -500,11 +485,12 @@ export async function updateWorkOrder(input: Record<string, unknown>): Promise<W
     complaint,
     notes: optionalString(input.notes),
     odometer,
-    discount: nonNegativeInteger(input.discount) ?? existing.discount,
+    discount: 0,
+    tax: 0,
     updatedAt: new Date().toISOString(),
   }).where(eq(workOrders.id, id)).returning()
 
-  await updateWorkOrderTotals(id, updated.discount)
+  await updateWorkOrderTotals(id)
   await flushDatabase()
 
   const workOrder = await getWorkOrderDetail({ id })
@@ -701,6 +687,8 @@ export async function checkoutWorkOrder(input: Record<string, unknown>): Promise
   const [workOrder] = await repository.select().from(workOrders).where(eq(workOrders.id, id)).limit(1)
   if (!workOrder) return { ok: false, message: 'Work order not found' }
   if (workOrder.status !== 'completed') return { ok: false, message: 'Only completed work orders can be checked out' }
+  const workOrderDetail = await getWorkOrderDetail({ id })
+  if (!workOrderDetail) return { ok: false, message: 'Work order details are unavailable' }
 
   const existingInvoice = await getInvoiceByWorkOrderId(id)
   if (existingInvoice) return { ok: false, message: 'Work order has already been invoiced' }
@@ -743,20 +731,19 @@ export async function checkoutWorkOrder(input: Record<string, unknown>): Promise
   }
 
   const paymentMethod = isPaymentMethod(input.paymentMethod) ? input.paymentMethod : 'cash'
-  const discount = nonNegativeInteger(input.discount) ?? workOrder.discount
   const subtotal = preparedItems.reduce((total, item) => total + item.lineTotal, 0)
-  const tax = nonNegativeInteger(input.tax) ?? Math.round((subtotal - discount) * 0.11)
-  const amountPaid = nonNegativeInteger(input.amountPaid) ?? subtotal - discount + tax
+  const amountPaid = nonNegativeInteger(input.amountPaid) ?? subtotal
   const notes = optionalString(input.notes) ?? workOrder.notes
 
   const checkout = await createCheckoutFromPreparedItems({
     sourceWorkOrderId: id,
+    vehicleId: workOrder.vehicleId,
     customerId: workOrder.customerId,
+    customerNameSnapshot: workOrderDetail.customerName,
+    customerPhoneSnapshot: workOrderDetail.customerPhone,
     createdById: positiveInteger(input.createdById),
     paymentMethod,
     amountPaid,
-    discount,
-    tax,
     notes,
     items: preparedItems,
   })
@@ -766,9 +753,9 @@ export async function checkoutWorkOrder(input: Record<string, unknown>): Promise
   const now = new Date().toISOString()
   await repository.update(workOrders).set({
     status: 'invoiced',
-    discount,
-    tax,
-    total: subtotal - discount + tax,
+    discount: 0,
+    tax: 0,
+    total: subtotal,
     updatedAt: now,
     invoicedAt: now,
   }).where(eq(workOrders.id, id))

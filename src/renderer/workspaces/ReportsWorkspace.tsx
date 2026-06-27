@@ -16,8 +16,6 @@ const emptyReport: ReportSummary = {
   salesTotal: 0,
   invoiceCount: 0,
   averageInvoiceTotal: 0,
-  discountTotal: 0,
-  taxTotal: 0,
   inventoryValue: 0,
   lowStockCount: 0,
   workOrderCount: 0,
@@ -72,19 +70,13 @@ export function ReportsWorkspace() {
       title: t('reports.groups.averageInvoice.title'),
       description: t('reports.groups.averageInvoice.description'),
       value: formatCurrency(report.averageInvoiceTotal),
-      helper: t('reports.groups.averageInvoice.helper', { value: formatCurrency(report.taxTotal) }),
+      helper: t('reports.groups.averageInvoice.helper'),
     },
     {
       title: t('reports.groups.inventoryValue.title'),
       description: t('reports.groups.inventoryValue.description'),
       value: formatCurrency(report.inventoryValue),
       helper: t('reports.groups.inventoryValue.helper', { count: report.lowStockCount }),
-    },
-    {
-      title: t('reports.groups.discounts.title'),
-      description: t('reports.groups.discounts.description'),
-      value: formatCurrency(report.discountTotal),
-      helper: t('reports.groups.discounts.helper'),
     },
     {
       title: t('reports.groups.workOrders.title'),
@@ -132,7 +124,7 @@ export function ReportsWorkspace() {
         </CardHeader>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {reportGroups.map((summary) => {
           return (
             <Card key={summary.title}>

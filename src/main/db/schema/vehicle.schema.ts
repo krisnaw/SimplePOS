@@ -4,9 +4,11 @@ import { customers } from './customer.schema'
 
 export const vehicles = sqliteTable('vehicles', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  customerId: integer('customer_id').notNull().references(() => customers.id),
+  customerId: integer('customer_id').references(() => customers.id),
+  customerName: text('customer_name'),
+  customerPhone: text('customer_phone'),
   plateNumber: text('plate_number').notNull().unique(),
-  brand: text('brand').notNull(),
+  brand: text('brand'),
   model: text('model').notNull(),
   year: integer('year'),
   vin: text('vin').unique(),

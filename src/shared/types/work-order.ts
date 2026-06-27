@@ -33,8 +33,6 @@ export type WorkOrderSummary = {
   odometer: number | null
   itemCount: number
   subtotal: number
-  discount: number
-  tax: number
   total: number
   invoiceId: number | null
   invoiceNumber: string | null

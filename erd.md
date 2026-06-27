@@ -66,8 +66,6 @@
 │ id (PK)                                 │
 │ work_order_id (FK)                      │
 │ subtotal                                │
-│ discount                                │
-│ tax                                     │
 │ grand_total                             │
 │ payment_method (cash / transfer / card) │
 │ paid_at                                 │

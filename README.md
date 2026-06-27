@@ -12,7 +12,7 @@ SimplePOS streamlines the operations of an automotive service business. From man
 - **Customer & Vehicle Database**: Maintain detailed records of customers and their vehicles (Make, Model, Plate Number).
 - **Inventory Tracking**: Manage parts and products with real-time stock levels and low-stock alerts.
 - **Service Catalog**: Define standard services and labor rates.
-- **Invoicing & Payments**: Generate professional invoices with automated tax and discount calculations.
+- **Invoicing & Payments**: Generate professional invoices and record payments from POS and work-order checkout.
 - **User Roles**: Secure access control for admins, mechanics, and cashiers.
 - **Dashboard Overview**: Get a bird's-eye view of your business performance.
 

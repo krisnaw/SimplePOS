@@ -51,6 +51,10 @@
       "label": "Inventory",
       "description": "Parts and stock"
     },
+    "vehicles": {
+      "label": "Vehicles",
+      "description": "Vehicle records"
+    },
     "services": {
       "label": "Services",
       "description": "Labor and service catalog"
@@ -154,7 +158,6 @@
     "noItemsInCart": "No items yet",
     "cartEmptyHint": "Add products or services from the catalog to start a sale.",
     "subtotal": "Subtotal",
-    "tax": "Tax 11%",
     "total": "Total",
     "checkout": "Checkout",
     "completed": "Completed",
@@ -185,6 +188,7 @@
     "walkInCustomer": "Walk-in customer",
     "workOrderNumber": "Work Order {{number}}",
     "print": "Print",
+    "preview": "Preview",
     "export": "Export",
     "contact": "Contact",
     "payment": "Payment",
@@ -198,7 +202,6 @@
     "method": "Method",
     "amount": "Amount",
     "receiptPreview": "Receipt Preview",
-    "tax": "Tax",
     "selectInvoice": "Select an invoice",
     "detailEmptyHint": "Completed sales will show line items, totals, and payment details here.",
     "statuses": {
@@ -447,7 +450,7 @@
       "averageInvoice": {
         "title": "Average Invoice",
         "description": "Mean completed invoice value.",
-        "helper": "{{value}} tax collected"
+        "helper": "Selected period"
       },
       "inventoryValue": {
         "title": "Inventory Value",
@@ -455,11 +458,6 @@
         "helper": "{{count}} low-stock item",
         "helper_one": "{{count}} low-stock item",
         "helper_other": "{{count}} low-stock items"
-      },
-      "discounts": {
-        "title": "Discounts",
-        "description": "Discounts applied to paid invoices.",
-        "helper": "Selected period"
       },
       "workOrders": {
         "title": "Work Orders",
@@ -496,7 +494,7 @@
       "settings": {
         "eyebrow": "Configuration",
         "title": "Settings",
-        "description": "Manage store profile, tax settings, users, and receipt defaults."
+        "description": "Manage store profile, users, and receipt defaults."
       }
     },
     "externalDevices": "External Devices",
@@ -578,8 +576,7 @@
       "unassigned": "Unassigned",
       "priority": "Priority",
       "odometer": "Odometer",
-      "complaint": "Complaint",
-      "discount": "Discount"
+      "complaint": "Complaint"
     },
     "changeStatus": "Change work order status",
     "saveWorkOrder": "Save Work Order",

@@ -1,89 +1,53 @@
 import {
-  BookOpen,
-  Boxes,
   ClipboardList,
+  Car,
   LayoutDashboard,
-  Receipt,
-  ScrollText,
-  Settings,
-  ShieldCheck,
+  Package,
   ShoppingCart,
-  Users,
-  Wrench,
 } from 'lucide-react'
 import type { AppSection, SectionDetail } from '@/shared/types/app'
 
 export const navigationItems: Array<{
   id: AppSection
+  translationKey: string
   label: string
   description: string
   icon: typeof LayoutDashboard
 }> = [
   {
     id: 'dashboard',
+    translationKey: 'dashboard',
     label: 'Dashboard',
     description: 'Overview',
     icon: LayoutDashboard,
   },
   {
     id: 'sales',
+    translationKey: 'sales',
     label: 'Sales',
     description: 'Checkout and payments',
     icon: ShoppingCart,
   },
   {
     id: 'inventory',
+    translationKey: 'inventory',
     label: 'Inventory',
-    description: 'Parts and stock',
-    icon: Boxes,
+    description: 'Products, parts, and stock',
+    icon: Package,
   },
   {
-    id: 'services',
-    label: 'Services',
-    description: 'Labor and service catalog',
-    icon: Wrench,
+    id: 'vehicles',
+    translationKey: 'vehicles',
+    label: 'Vehicles',
+    description: 'Vehicle records',
+    icon: Car,
   },
   {
     id: 'work-orders',
+    translationKey: 'workOrders',
     label: 'Work Orders',
     description: 'Repairs in progress',
     icon: ClipboardList,
-  },
-  {
-    id: 'customers',
-    label: 'Customers',
-    description: 'Vehicle owners',
-    icon: Users,
-  },
-  {
-    id: 'invoices',
-    label: 'Invoices',
-    description: 'Billing history',
-    icon: Receipt,
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    description: 'Sales and operations',
-    icon: ScrollText,
-  },
-  {
-    id: 'users',
-    label: 'Users',
-    description: 'Admin and cashier access',
-    icon: ShieldCheck,
-  },
-  {
-    id: 'user-guide',
-    label: 'User Guide',
-    description: 'How to use SimplePOS',
-    icon: BookOpen,
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    description: 'Shop preferences',
-    icon: Settings,
   },
 ]
 
@@ -102,6 +66,11 @@ export const sectionDetails: Record<AppSection, SectionDetail> = {
     eyebrow: 'Stock control',
     title: 'Inventory',
     description: 'Track spare parts, supplies, stock levels, and reorder needs.',
+  },
+  vehicles: {
+    eyebrow: 'Vehicle records',
+    title: 'Vehicles',
+    description: 'Manage vehicle details and customer contact information.',
   },
   services: {
     eyebrow: 'Service catalog',
@@ -141,6 +110,6 @@ export const sectionDetails: Record<AppSection, SectionDetail> = {
   settings: {
     eyebrow: 'Configuration',
     title: 'Settings',
-    description: 'Manage store profile, tax settings, users, and receipt defaults.',
+    description: 'Manage store profile, users, and receipt defaults.',
   },
 }

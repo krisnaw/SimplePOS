@@ -104,9 +104,11 @@ type CustomerSummary = {
 
 type VehicleSummary = {
   id: number
-  customerId: number
+  customerId: number | null
+  customerName: string | null
+  customerPhone: string | null
   plateNumber: string
-  brand: string
+  brand: string | null
   model: string
   year: number | null
   vin: string | null
@@ -115,6 +117,20 @@ type VehicleSummary = {
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+
+type VehicleSearchInput = {
+  query: string
+  limit?: number
+}
+
+type QuickCreateVehicleInput = {
+  plateNumber: string
+  model: string
+  brand?: string | null
+  customerName?: string | null
+  customerPhone?: string | null
+  notes?: string | null
 }
 
 type CustomerMutationResult = {
@@ -138,12 +154,11 @@ type CheckoutItemInput = {
 }
 
 type CheckoutInput = {
+  vehicleId?: number | null
   customerId?: number | null
   createdById?: number | null
   paymentMethod?: PaymentMethod
   amountPaid?: number
-  discount?: number
-  tax?: number
   notes?: string | null
   items: CheckoutItemInput[]
 }
@@ -162,12 +177,11 @@ type CheckoutLineItemSummary = {
 
 type CheckoutSummary = {
   saleId: number
+  vehicleId: number | null
   invoiceId: number
   invoiceNumber: string
   paymentId: number
   subtotal: number
-  discount: number
-  tax: number
   total: number
   amountPaid: number
   paymentMethod: PaymentMethod
@@ -202,8 +216,6 @@ type InvoiceSummary = {
   paymentStatus: PaymentStatus | null
   itemCount: number
   subtotal: number
-  discount: number
-  tax: number
   total: number
   issuedAt: string
 }
@@ -271,8 +283,6 @@ type WorkOrderSummary = {
   odometer: number | null
   itemCount: number
   subtotal: number
-  discount: number
-  tax: number
   total: number
   invoiceId: number | null
   invoiceNumber: string | null
@@ -360,8 +370,6 @@ type ReportSummary = {
   salesTotal: number
   invoiceCount: number
   averageInvoiceTotal: number
-  discountTotal: number
-  taxTotal: number
   inventoryValue: number
   lowStockCount: number
   workOrderCount: number
@@ -439,8 +447,6 @@ declare global {
           createdById?: number | null
           paymentMethod?: PaymentMethod
           amountPaid?: number
-          discount?: number
-          tax?: number
           notes?: string | null
         }) => Promise<WorkOrderCheckoutResult>
       }
@@ -452,6 +458,8 @@ declare global {
       }
       vehicles: {
         list: () => Promise<VehicleSummary[]>
+        search: (input: VehicleSearchInput) => Promise<VehicleSummary[]>
+        quickCreate: (input: QuickCreateVehicleInput) => Promise<VehicleMutationResult>
         create: (input: Record<string, unknown>) => Promise<VehicleMutationResult>
         update: (input: Record<string, unknown>) => Promise<VehicleMutationResult>
         delete: (input: { id: number }) => Promise<VehicleMutationResult>

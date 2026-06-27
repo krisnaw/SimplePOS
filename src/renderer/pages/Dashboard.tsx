@@ -10,15 +10,16 @@ import type { AuthenticatedUser } from '@/shared/types/user'
 import { CustomerWorkspace } from '@/renderer/workspaces/CustomerWorkspace'
 import { DashboardOverview } from '@/renderer/workspaces/DashboardOverview'
 import { InvoiceWorkspace } from '@/renderer/workspaces/InvoiceWorkspace'
-import { InventoryWorkspace } from '@/renderer/workspaces/InventoryWorkspace'
+import { PurchasingInventoryWorkspace } from '@/renderer/workspaces/PurchasingInventoryWorkspace'
 import { ReportsWorkspace } from '@/renderer/workspaces/ReportsWorkspace'
-import { SalesWorkspace } from '@/renderer/workspaces/SalesWorkspace'
+import { EmptySalesWorkspace } from '@/renderer/workspaces/EmptySalesWorkspace'
 import { SectionWorkspace } from '@/renderer/workspaces/SectionWorkspace'
 import { ServicesWorkspace } from '@/renderer/workspaces/ServicesWorkspace'
 import { SettingsWorkspace } from '@/renderer/workspaces/SettingsWorkspace'
 import { UserGuideWorkspace } from '@/renderer/workspaces/UserGuideWorkspace'
 import { UserManagement } from '@/renderer/workspaces/UserManagement'
 import { WorkOrderWorkspace } from '@/renderer/workspaces/WorkOrderWorkspace'
+import { VehicleWorkspace } from '@/renderer/workspaces/VehicleWorkspace'
 import { cn } from '@/renderer/lib/utils'
 import type { DashboardLocationState } from './Dashboard.types'
 
@@ -50,6 +51,7 @@ const sectionTranslationKeys: Record<AppSection, string> = {
   dashboard: 'dashboard',
   sales: 'sales',
   inventory: 'inventory',
+  vehicles: 'vehicles',
   services: 'services',
   'work-orders': 'workOrders',
   customers: 'customers',
@@ -125,7 +127,7 @@ export default function Dashboard() {
                     type="button"
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => setActiveSection(item.id)}
-                    title={t(`navigation.${sectionTranslationKeys[item.id]}.description`)}
+                    title={t(`navigation.${item.translationKey}.description`, { defaultValue: item.description })}
                     className={cn(
                       'flex min-h-10 min-w-36 items-center gap-2.5 rounded-md px-2.5 text-left text-sm transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.96] lg:min-w-0',
                       isActive
@@ -135,7 +137,7 @@ export default function Dashboard() {
                   >
                     <Icon aria-hidden="true" className="size-4 shrink-0" data-icon="inline-start" />
                     <span className="min-w-0 flex-1 truncate font-medium">
-                      {t(`navigation.${sectionTranslationKeys[item.id]}.label`)}
+                      {t(`navigation.${item.translationKey}.label`, { defaultValue: item.label })}
                     </span>
                     {index < 9 ? (
                       <span
@@ -237,8 +239,9 @@ export default function Dashboard() {
               )}
             >
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
-              {activeSection === 'sales' ? <SalesWorkspace currentUser={user} /> : null}
-              {activeSection === 'inventory' ? <InventoryWorkspace /> : null}
+              {activeSection === 'sales' ? <EmptySalesWorkspace currentUser={user} /> : null}
+              {activeSection === 'inventory' ? <PurchasingInventoryWorkspace /> : null}
+              {activeSection === 'vehicles' ? <VehicleWorkspace /> : null}
               {activeSection === 'services' ? <ServicesWorkspace /> : null}
               {activeSection === 'work-orders' ? <WorkOrderWorkspace currentUser={user} /> : null}
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
@@ -250,6 +253,7 @@ export default function Dashboard() {
               {activeSection !== 'dashboard' &&
               activeSection !== 'sales' &&
               activeSection !== 'inventory' &&
+              activeSection !== 'vehicles' &&
               activeSection !== 'services' &&
               activeSection !== 'work-orders' &&
               activeSection !== 'customers' &&

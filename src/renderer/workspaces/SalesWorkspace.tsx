@@ -109,8 +109,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   }, [cartItems])
 
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-  const tax = Math.round(subtotal * 0.11)
-  const total = subtotal + tax
+  const total = subtotal
   const cartItemCount = cartItems.reduce((count, item) => count + item.quantity, 0)
   const pageCount = Math.max(1, Math.ceil(visibleProducts.length / itemsPerPage))
   const pageStart = (currentPage - 1) * itemsPerPage
@@ -261,8 +260,6 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       createdById: currentUser.id,
       paymentMethod: 'cash',
       amountPaid: total,
-      discount: 0,
-      tax,
       items: cartItems.map((item) => ({
         itemType: item.itemType,
         id: item.id,
@@ -658,10 +655,6 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('sales.subtotal')}</span>
               <span className="tabular-nums">{formatCurrency(subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('sales.tax')}</span>
-              <span className="tabular-nums">{formatCurrency(tax)}</span>
             </div>
             <div className="flex justify-between text-base font-semibold">
               <span>{t('sales.total')}</span>

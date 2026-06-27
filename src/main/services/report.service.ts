@@ -52,8 +52,6 @@ export type ReportSummary = {
   salesTotal: number
   invoiceCount: number
   averageInvoiceTotal: number
-  discountTotal: number
-  taxTotal: number
   inventoryValue: number
   lowStockCount: number
   workOrderCount: number
@@ -182,8 +180,6 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     salesTotal: 0,
     invoiceCount: 0,
     averageInvoiceTotal: 0,
-    discountTotal: 0,
-    taxTotal: 0,
     inventoryValue: 0,
     lowStockCount: 0,
     workOrderCount: 0,
@@ -212,8 +208,6 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
   const periodPayments = paymentRows.filter((payment) => invoiceIds.has(payment.invoiceId))
   const periodItems = itemRows.filter((item) => saleIds.has(item.saleId))
   const salesTotal = periodInvoices.reduce((total, invoice) => total + invoice.total, 0)
-  const discountTotal = periodInvoices.reduce((total, invoice) => total + invoice.discount, 0)
-  const taxTotal = periodInvoices.reduce((total, invoice) => total + invoice.tax, 0)
   const inventoryValue = productRows.reduce((total, product) => total + product.stockQty * product.unitPrice, 0)
   const periodWorkOrders = workOrderRows.filter((workOrder) => isWithinRange(workOrder.createdAt, dateFrom, dateTo))
   const completedWorkOrderCount = periodWorkOrders.filter((workOrder) =>
@@ -257,8 +251,6 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     salesTotal,
     invoiceCount: periodInvoices.length,
     averageInvoiceTotal: periodInvoices.length > 0 ? Math.round(salesTotal / periodInvoices.length) : 0,
-    discountTotal,
-    taxTotal,
     inventoryValue,
     lowStockCount: lowStockItems.length,
     workOrderCount: periodWorkOrders.length,

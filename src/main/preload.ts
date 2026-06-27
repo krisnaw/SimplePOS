@@ -70,6 +70,8 @@ contextBridge.exposeInMainWorld('simplepos', {
   },
   vehicles: {
     list: () => ipcRenderer.invoke('vehicles:list'),
+    search: (input: Record<string, unknown>) => ipcRenderer.invoke('vehicles:search', input),
+    quickCreate: (input: Record<string, unknown>) => ipcRenderer.invoke('vehicles:quickCreate', input),
     create: (input: Record<string, unknown>) => ipcRenderer.invoke('vehicles:create', input),
     update: (input: Record<string, unknown>) => ipcRenderer.invoke('vehicles:update', input),
     delete: (input: { id: number }) => ipcRenderer.invoke('vehicles:delete', input),

@@ -18,9 +18,11 @@ export type CustomerSummary = {
 
 export type VehicleSummary = {
   id: number
-  customerId: number
+  customerId: number | null
+  customerName: string | null
+  customerPhone: string | null
   plateNumber: string
-  brand: string
+  brand: string | null
   model: string
   year: number | null
   vin: string | null
@@ -61,6 +63,8 @@ function toVehicleSummary(vehicle: Vehicle): VehicleSummary {
   return {
     id: vehicle.id,
     customerId: vehicle.customerId,
+    customerName: vehicle.customerName,
+    customerPhone: vehicle.customerPhone,
     plateNumber: vehicle.plateNumber,
     brand: vehicle.brand,
     model: vehicle.model,
@@ -205,25 +209,29 @@ export async function createVehicle(input: Record<string, unknown>): Promise<Veh
   if (!repository) return { ok: false, message: 'Database unavailable' }
 
   if (
-    typeof input.customerId !== 'number' ||
     typeof input.plateNumber !== 'string' ||
-    typeof input.brand !== 'string' ||
     typeof input.model !== 'string'
   ) {
-    return { ok: false, message: 'Plate number, brand, and model are required' }
+    return { ok: false, message: 'Plate number and model are required' }
   }
 
-  const plateNumber = input.plateNumber.trim().toUpperCase()
-  const brand = input.brand.trim()
+  const plateNumber = input.plateNumber.replace(/\s+/g, '').toUpperCase()
+  const brand = optionalString(input.brand)
   const model = input.model.trim()
 
-  if (!plateNumber || !brand || !model) {
-    return { ok: false, message: 'Plate number, brand, and model are required' }
+  if (!plateNumber || !model) {
+    return { ok: false, message: 'Plate number and model are required' }
   }
 
   const now = new Date().toISOString()
+  const customerId = typeof input.customerId === 'number' ? input.customerId : null
+  const [linkedCustomer] = customerId
+    ? await repository.select().from(customers).where(eq(customers.id, customerId)).limit(1)
+    : []
   const [saved] = await repository.insert(vehicles).values({
-    customerId: input.customerId,
+    customerId,
+    customerName: optionalString(input.customerName) ?? linkedCustomer?.name ?? null,
+    customerPhone: optionalString(input.customerPhone) ?? linkedCustomer?.phone ?? null,
     plateNumber,
     brand,
     model,
@@ -248,28 +256,32 @@ export async function updateVehicle(input: Record<string, unknown>): Promise<Veh
 
   if (
     typeof input.id !== 'number' ||
-    typeof input.customerId !== 'number' ||
     typeof input.plateNumber !== 'string' ||
-    typeof input.brand !== 'string' ||
     typeof input.model !== 'string'
   ) {
     return { ok: false, message: 'Invalid vehicle request' }
   }
 
-  const plateNumber = input.plateNumber.trim().toUpperCase()
-  const brand = input.brand.trim()
+  const plateNumber = input.plateNumber.replace(/\s+/g, '').toUpperCase()
+  const brand = optionalString(input.brand)
   const model = input.model.trim()
 
-  if (!plateNumber || !brand || !model) {
-    return { ok: false, message: 'Plate number, brand, and model are required' }
+  if (!plateNumber || !model) {
+    return { ok: false, message: 'Plate number and model are required' }
   }
 
   const [existing] = await repository.select().from(vehicles).where(eq(vehicles.id, input.id)).limit(1)
 
   if (!existing) return { ok: false, message: 'Vehicle not found' }
 
+  const customerId = typeof input.customerId === 'number' ? input.customerId : null
+  const [linkedCustomer] = customerId
+    ? await repository.select().from(customers).where(eq(customers.id, customerId)).limit(1)
+    : []
   const [updated] = await repository.update(vehicles).set({
-    customerId: input.customerId,
+    customerId,
+    customerName: optionalString(input.customerName) ?? linkedCustomer?.name ?? existing.customerName,
+    customerPhone: optionalString(input.customerPhone) ?? linkedCustomer?.phone ?? existing.customerPhone,
     plateNumber,
     brand,
     model,
@@ -283,6 +295,57 @@ export async function updateVehicle(input: Record<string, unknown>): Promise<Veh
   await flushDatabase()
 
   return { ok: true, message: 'Vehicle updated', vehicle: toVehicleSummary(updated) }
+}
+
+export async function searchVehicles(input: Record<string, unknown>): Promise<VehicleSummary[]> {
+  const query = typeof input.query === 'string' ? input.query.trim().toUpperCase() : ''
+  const limit = typeof input.limit === 'number' && Number.isInteger(input.limit)
+    ? Math.min(Math.max(input.limit, 1), 50)
+    : 20
+  const plateQuery = query.replace(/\s+/g, '')
+  const terms = query.split(/\s+/).filter(Boolean)
+  const vehiclesList = await listVehicles()
+
+  return vehiclesList.filter((vehicle) => {
+    if (!query) return true
+    const searchText = [
+      vehicle.plateNumber,
+      vehicle.brand ?? '',
+      vehicle.model,
+      vehicle.customerName ?? '',
+      vehicle.customerPhone ?? '',
+      vehicle.notes ?? '',
+    ].join(' ').toUpperCase()
+
+    return vehicle.plateNumber.includes(plateQuery) || terms.every((term) => searchText.includes(term))
+  }).slice(0, limit)
+}
+
+export async function quickCreateVehicle(input: Record<string, unknown>): Promise<VehicleMutationResult> {
+  if (typeof input.plateNumber !== 'string' || typeof input.model !== 'string') {
+    return { ok: false, message: 'Plate number and model are required' }
+  }
+
+  const plateNumber = input.plateNumber.replace(/\s+/g, '').toUpperCase()
+  const existing = (await listVehicles()).find((vehicle) => vehicle.plateNumber === plateNumber)
+  if (existing) return { ok: false, message: 'This plate number already exists', vehicle: existing }
+
+  try {
+    return await createVehicle({
+      plateNumber,
+      model: input.model,
+      brand: input.brand,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      notes: input.notes,
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.toLowerCase().includes('unique')) {
+      return { ok: false, message: 'This plate number already exists' }
+    }
+    throw error
+  }
 }
 
 export async function deleteVehicle(input: Record<string, unknown>): Promise<VehicleMutationResult> {

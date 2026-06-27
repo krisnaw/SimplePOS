@@ -24,7 +24,7 @@
 | New Work Order | Admin, Cashier | Select customer + vehicle, add services and parts, set notes |
 | Work Order Detail | Admin, Cashier | View/edit a work order, change status, print invoice |
 | Work Order List | Admin, Cashier | List of all work orders, filterable by status and date |
-| Invoice / Checkout | Admin, Cashier | Review totals, apply discount, choose payment method, confirm payment |
+| Invoice / Checkout | Admin, Cashier | Review totals, choose payment method, confirm payment |
 | Receipt Preview | Admin, Cashier | Printable receipt after checkout |
 
 Work order statuses: `pending → in_progress → completed → invoiced`
@@ -76,5 +76,5 @@ Work order statuses: `pending → in_progress → completed → invoiced`
 | Screen | Role | Description |
 |---|---|---|
 | User Management | Admin | List users, add/edit/deactivate cashier accounts |
-| Shop Settings | Admin | Shop name, address, tax rate, receipt header/footer |
+| Shop Settings | Admin | Shop name, address, receipt header/footer |
 | Category Management | Admin | Add/edit/delete service and part categories |

@@ -46,6 +46,103 @@ function addColumnIfMissing(database: SqlJsDatabase, tableName: string, columnNa
   }
 }
 
+function normalizeExistingVehiclePlates(database: SqlJsDatabase): void {
+  const rows = database.exec('SELECT id, plate_number FROM vehicles')[0]?.values ?? []
+  const normalized = rows.map(([id, plateNumber]) => ({
+    id: Number(id),
+    plateNumber: String(plateNumber).replace(/\s+/g, '').toUpperCase(),
+  }))
+  const seen = new Map<string, number>()
+
+  for (const row of normalized) {
+    const existingId = seen.get(row.plateNumber)
+    if (existingId !== undefined) {
+      throw new Error(
+        `Vehicle plate migration conflict: records ${existingId} and ${row.id} normalize to ${row.plateNumber}`,
+      )
+    }
+    seen.set(row.plateNumber, row.id)
+  }
+
+  for (const row of normalized) {
+    database.run('UPDATE vehicles SET plate_number = ? WHERE id = ?', [row.plateNumber, row.id])
+  }
+}
+
+function migrateVehiclesForIntake(database: SqlJsDatabase): void {
+  const columns = database.exec('PRAGMA table_info(vehicles)')[0]?.values ?? []
+  if (columns.length === 0) return
+
+  const customerIdColumn = columns.find((column) => column[1] === 'customer_id')
+  const brandColumn = columns.find((column) => column[1] === 'brand')
+  const hasCustomerName = columns.some((column) => column[1] === 'customer_name')
+  const hasCustomerPhone = columns.some((column) => column[1] === 'customer_phone')
+  const needsRebuild =
+    customerIdColumn?.[3] === 1 ||
+    brandColumn?.[3] === 1 ||
+    !hasCustomerName ||
+    !hasCustomerPhone
+
+  normalizeExistingVehiclePlates(database)
+  if (!needsRebuild) return
+
+  database.run('PRAGMA foreign_keys = OFF')
+  try {
+    database.run('BEGIN')
+    database.run(`
+      CREATE TABLE vehicles_intake_migration (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        customer_id integer REFERENCES customers(id),
+        customer_name text,
+        customer_phone text,
+        plate_number text NOT NULL,
+        brand text,
+        model text NOT NULL,
+        year integer,
+        vin text,
+        color text,
+        notes text,
+        is_active integer NOT NULL DEFAULT (1),
+        created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+        updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+        CONSTRAINT UQ_vehicles_plate_number UNIQUE (plate_number),
+        CONSTRAINT UQ_vehicles_vin UNIQUE (vin)
+      )
+    `)
+    database.run(`
+      INSERT INTO vehicles_intake_migration (
+        id, customer_id, customer_name, customer_phone, plate_number, brand, model,
+        year, vin, color, notes, is_active, created_at, updated_at
+      )
+      SELECT
+        v.id,
+        v.customer_id,
+        c.name,
+        c.phone,
+        v.plate_number,
+        NULLIF(v.brand, ''),
+        v.model,
+        v.year,
+        v.vin,
+        v.color,
+        v.notes,
+        v.is_active,
+        v.created_at,
+        v.updated_at
+      FROM vehicles v
+      LEFT JOIN customers c ON c.id = v.customer_id
+    `)
+    database.run('DROP TABLE vehicles')
+    database.run('ALTER TABLE vehicles_intake_migration RENAME TO vehicles')
+    database.run('COMMIT')
+  } catch (error) {
+    database.run('ROLLBACK')
+    throw error
+  } finally {
+    database.run('PRAGMA foreign_keys = ON')
+  }
+}
+
 function runSchemaMigration(database: SqlJsDatabase): void {
   database.run(`
     CREATE TABLE IF NOT EXISTS app_database_status (
@@ -104,9 +201,11 @@ function runSchemaMigration(database: SqlJsDatabase): void {
   database.run(`
     CREATE TABLE IF NOT EXISTS vehicles (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-      customer_id integer NOT NULL REFERENCES customers(id),
+      customer_id integer REFERENCES customers(id),
+      customer_name text,
+      customer_phone text,
       plate_number text NOT NULL,
-      brand text NOT NULL,
+      brand text,
       model text NOT NULL,
       year integer,
       vin text,
@@ -119,6 +218,8 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       CONSTRAINT UQ_vehicles_vin UNIQUE (vin)
     )
   `)
+
+  migrateVehiclesForIntake(database)
 
   database.run(`
     CREATE TABLE IF NOT EXISTS services (
@@ -213,7 +314,10 @@ function runSchemaMigration(database: SqlJsDatabase): void {
     CREATE TABLE IF NOT EXISTS sales (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       work_order_id integer REFERENCES work_orders(id),
+      vehicle_id integer REFERENCES vehicles(id),
       customer_id integer REFERENCES customers(id),
+      customer_name_snapshot text,
+      customer_phone_snapshot text,
       created_by_id integer REFERENCES users(id),
       status text NOT NULL DEFAULT ('completed'),
       subtotal integer NOT NULL DEFAULT (0),
@@ -275,6 +379,9 @@ function runSchemaMigration(database: SqlJsDatabase): void {
   `)
 
   addColumnIfMissing(database, 'sales', 'work_order_id', 'work_order_id integer REFERENCES work_orders(id)')
+  addColumnIfMissing(database, 'sales', 'vehicle_id', 'vehicle_id integer REFERENCES vehicles(id)')
+  addColumnIfMissing(database, 'sales', 'customer_name_snapshot', 'customer_name_snapshot text')
+  addColumnIfMissing(database, 'sales', 'customer_phone_snapshot', 'customer_phone_snapshot text')
   addColumnIfMissing(database, 'invoices', 'work_order_id', 'work_order_id integer REFERENCES work_orders(id)')
 
   seedServiceCatalog(database)

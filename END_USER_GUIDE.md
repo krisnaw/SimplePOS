@@ -143,7 +143,6 @@ Checkout:
 | Field | Value |
 |---|---:|
 | Subtotal | 760,000 |
-| Discount | 0 |
 | Total | 760,000 |
 | Payment Method | Cash |
 | Amount Paid | 760,000 |
@@ -168,7 +167,7 @@ Update the status as the work moves through your shop. Once the work is done, se
 ### Checkout & Invoicing
 1.  Open a **Completed** work order.
 2.  Click **Checkout**.
-3.  Review the totals, apply any discounts or tax adjustments.
+3.  Review the totals.
 4.  Select a **Payment Method** (Cash, Transfer, or Card).
 5.  Click **Confirm Payment**.
 6.  The work order status will change to **Invoiced**, and you can now print or save the **Receipt**.
@@ -190,7 +189,6 @@ Sale summary:
 | Field | Value |
 |---|---:|
 | Subtotal | 760,000 |
-| Discount | 0 |
 | Total | 760,000 |
 | Payment Method | Cash |
 | Amount Paid | 760,000 |

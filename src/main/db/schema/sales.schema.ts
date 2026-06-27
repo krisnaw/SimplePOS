@@ -4,6 +4,7 @@ import { customers } from './customer.schema'
 import { products } from './product.schema'
 import { services } from './service.schema'
 import { users } from './user.schema'
+import { vehicles } from './vehicle.schema'
 import { workOrders } from './work-order.schema'
 
 export type SaleStatus = 'completed' | 'void'
@@ -15,7 +16,10 @@ export type PaymentStatus = 'paid' | 'refunded' | 'void'
 export const sales = sqliteTable('sales', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   workOrderId: integer('work_order_id').references(() => workOrders.id),
+  vehicleId: integer('vehicle_id').references(() => vehicles.id),
   customerId: integer('customer_id').references(() => customers.id),
+  customerNameSnapshot: text('customer_name_snapshot'),
+  customerPhoneSnapshot: text('customer_phone_snapshot'),
   createdById: integer('created_by_id').references(() => users.id),
   status: text('status').notNull().$type<SaleStatus>().default('completed'),
   subtotal: integer('subtotal').notNull().default(0),

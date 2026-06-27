@@ -36,6 +36,8 @@ export {
   deleteVehicle,
   listCustomers,
   listVehicles,
+  quickCreateVehicle,
+  searchVehicles,
   updateCustomer,
   updateVehicle,
 } from './customer.service'

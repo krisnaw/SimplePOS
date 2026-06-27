@@ -92,7 +92,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
   const [complaint, setComplaint] = useState('')
   const [notes, setNotes] = useState('')
   const [odometer, setOdometer] = useState('')
-  const [discount, setDiscount] = useState('0')
 
   const [catalogType, setCatalogType] = useState<'service' | 'product'>('service')
   const [catalogId, setCatalogId] = useState('')
@@ -224,7 +223,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
     setComplaint('')
     setNotes('')
     setOdometer('')
-    setDiscount('0')
   }
 
   function syncForm(workOrder: NonNullable<WorkOrderDetail>) {
@@ -235,7 +233,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
     setComplaint(workOrder.complaint)
     setNotes(workOrder.notes ?? '')
     setOdometer(workOrder.odometer ? String(workOrder.odometer) : '')
-    setDiscount(String(workOrder.discount))
   }
 
   async function selectWorkOrder(id: number) {
@@ -261,7 +258,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       complaint,
       notes,
       odometer: odometer ? Number(odometer) : null,
-      discount: discount ? Number(discount) : 0,
       status: selectedWorkOrder?.status ?? 'open',
     }
 
@@ -330,8 +326,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
       createdById: currentUser.id,
       paymentMethod: 'cash',
       amountPaid: selectedWorkOrder.total,
-      discount: selectedWorkOrder.discount,
-      tax: selectedWorkOrder.tax,
       notes: selectedWorkOrder.notes,
     })
 
@@ -616,27 +610,14 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
               />
             </div>
 
-            <div className="grid gap-3 md:grid-cols-[1fr_160px]">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="work-order-notes">{t('common.notes')}</Label>
-                <Input
-                  id="work-order-notes"
-                  value={notes}
-                  disabled={!canEditSelected}
-                  onChange={(event) => setNotes(event.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="work-order-discount">{t('workOrders.form.discount')}</Label>
-                <Input
-                  id="work-order-discount"
-                  type="number"
-                  min="0"
-                  value={discount}
-                  disabled={!canEditSelected}
-                  onChange={(event) => setDiscount(event.target.value)}
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="work-order-notes">{t('common.notes')}</Label>
+              <Input
+                id="work-order-notes"
+                value={notes}
+                disabled={!canEditSelected}
+                onChange={(event) => setNotes(event.target.value)}
+              />
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
@@ -856,14 +837,6 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('sales.subtotal')}</span>
                     <span className="tabular-nums">{formatCurrency(selectedWorkOrder.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('workOrders.form.discount')}</span>
-                    <span className="tabular-nums">{formatCurrency(selectedWorkOrder.discount)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('sales.tax')}</span>
-                    <span className="tabular-nums">{formatCurrency(selectedWorkOrder.tax)}</span>
                   </div>
                   <div className="flex justify-between text-base font-semibold">
                     <span>{t('sales.total')}</span>

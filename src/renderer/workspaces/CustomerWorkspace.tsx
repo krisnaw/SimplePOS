@@ -40,7 +40,7 @@ const emptyVehicleForm: VehicleFormState = {
 function toVehicleForm(vehicle: VehicleSummary): VehicleFormState {
   return {
     plateNumber: vehicle.plateNumber,
-    brand: vehicle.brand,
+    brand: vehicle.brand ?? '',
     model: vehicle.model,
     year: vehicle.year ? String(vehicle.year) : '',
     vin: vehicle.vin ?? '',
@@ -421,6 +421,8 @@ export function CustomerWorkspace() {
     const nextVehicle: VehicleSummary = result?.vehicle ?? {
       id: Math.max(0, ...vehicles.map((vehicle) => vehicle.id)) + 1,
       customerId: selectedCustomer.id,
+      customerName: selectedCustomer.name,
+      customerPhone: selectedCustomer.phone,
       plateNumber,
       brand,
       model,

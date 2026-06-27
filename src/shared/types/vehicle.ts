@@ -1,8 +1,10 @@
 export type VehicleSummary = {
   id: number
-  customerId: number
+  customerId: number | null
+  customerName: string | null
+  customerPhone: string | null
   plateNumber: string
-  brand: string
+  brand: string | null
   model: string
   year: number | null
   vin: string | null
@@ -11,4 +13,18 @@ export type VehicleSummary = {
   isActive: boolean
   createdAt?: string
   updatedAt: string
+}
+
+export type VehicleSearchInput = {
+  query: string
+  limit?: number
+}
+
+export type QuickCreateVehicleInput = {
+  plateNumber: string
+  model: string
+  brand?: string | null
+  customerName?: string | null
+  customerPhone?: string | null
+  notes?: string | null
 }

@@ -51,6 +51,10 @@
       "label": "Inventaris",
       "description": "Suku cadang dan stok"
     },
+    "vehicles": {
+      "label": "Kendaraan",
+      "description": "Data kendaraan"
+    },
     "services": {
       "label": "Layanan",
       "description": "Katalog jasa dan layanan"
@@ -154,7 +158,6 @@
     "noItemsInCart": "Belum ada item",
     "cartEmptyHint": "Tambah produk atau layanan dari katalog untuk memulai penjualan.",
     "subtotal": "Subtotal",
-    "tax": "Pajak 11%",
     "total": "Total",
     "checkout": "Bayar",
     "completed": "Selesai",
@@ -185,6 +188,7 @@
     "walkInCustomer": "Pelanggan langsung",
     "workOrderNumber": "Perintah Kerja {{number}}",
     "print": "Cetak",
+    "preview": "Pratinjau",
     "export": "Ekspor",
     "contact": "Kontak",
     "payment": "Pembayaran",
@@ -198,7 +202,6 @@
     "method": "Metode",
     "amount": "Jumlah",
     "receiptPreview": "Pratinjau Struk",
-    "tax": "Pajak",
     "selectInvoice": "Pilih faktur",
     "detailEmptyHint": "Penjualan selesai akan menampilkan item, total, dan detail pembayaran di sini.",
     "statuses": {
@@ -447,7 +450,7 @@
       "averageInvoice": {
         "title": "Rata-rata Faktur",
         "description": "Nilai rata-rata faktur yang diselesaikan.",
-        "helper": "{{value}} pajak terkumpul"
+        "helper": "Periode terpilih"
       },
       "inventoryValue": {
         "title": "Nilai Inventaris",
@@ -455,11 +458,6 @@
         "helper": "{{count}} item stok rendah",
         "helper_one": "{{count}} item stok rendah",
         "helper_other": "{{count}} item stok rendah"
-      },
-      "discounts": {
-        "title": "Diskon",
-        "description": "Diskon yang diterapkan pada faktur berbayar.",
-        "helper": "Periode terpilih"
       },
       "workOrders": {
         "title": "Perintah Kerja",
@@ -496,7 +494,7 @@
       "settings": {
         "eyebrow": "Konfigurasi",
         "title": "Pengaturan",
-        "description": "Kelola profil toko, pengaturan pajak, pengguna, dan default tanda terima."
+        "description": "Kelola profil toko, pengguna, dan default tanda terima."
       }
     },
     "externalDevices": "Perangkat Eksternal",
@@ -578,8 +576,7 @@
       "unassigned": "Belum ditugaskan",
       "priority": "Prioritas",
       "odometer": "Odometer",
-      "complaint": "Keluhan",
-      "discount": "Diskon"
+      "complaint": "Keluhan"
     },
     "changeStatus": "Ubah status perintah kerja",
     "saveWorkOrder": "Simpan Perintah Kerja",

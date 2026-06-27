@@ -32,6 +32,8 @@ import {
   listUsers,
   listVehicles,
   listWorkOrders,
+  quickCreateVehicle,
+  searchVehicles,
   updateCustomer,
   updateProduct,
   updateService,
@@ -123,6 +125,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('customers:update', (_event, input: unknown) => updateCustomer(input as Record<string, unknown>))
   ipcMain.handle('customers:delete', (_event, input: unknown) => deleteCustomer(input as Record<string, unknown>))
   ipcMain.handle('vehicles:list', () => listVehicles())
+  ipcMain.handle('vehicles:search', (_event, input: unknown) => searchVehicles(input as Record<string, unknown>))
+  ipcMain.handle('vehicles:quickCreate', (_event, input: unknown) => quickCreateVehicle(input as Record<string, unknown>))
   ipcMain.handle('vehicles:create', (_event, input: unknown) => createVehicle(input as Record<string, unknown>))
   ipcMain.handle('vehicles:update', (_event, input: unknown) => updateVehicle(input as Record<string, unknown>))
   ipcMain.handle('vehicles:delete', (_event, input: unknown) => deleteVehicle(input as Record<string, unknown>))
