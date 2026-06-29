@@ -1,9 +1,10 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
-import { Car, Plus, Search } from 'lucide-react'
+import { Car, Plus, Search, X } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
+import { cn } from '@/renderer/lib/utils'
 import type { VehicleSummary } from '@/shared/types/vehicle'
 
 const emptyForm = {
@@ -45,6 +46,11 @@ export function VehicleWorkspace() {
   }, [query, vehicles])
 
   function selectVehicle(vehicle: VehicleSummary) {
+    if (selectedId === vehicle.id) {
+      clearSelection()
+      return
+    }
+
     setSelectedId(vehicle.id)
     setIsCreating(false)
     setForm({
@@ -61,6 +67,13 @@ export function VehicleWorkspace() {
   function startNew() {
     setSelectedId(null)
     setIsCreating(true)
+    setForm(emptyForm)
+    setMessage('')
+  }
+
+  function clearSelection() {
+    setSelectedId(null)
+    setIsCreating(false)
     setForm(emptyForm)
     setMessage('')
   }
@@ -116,8 +129,12 @@ export function VehicleWorkspace() {
               <button
                 key={vehicle.id}
                 type="button"
+                aria-current={selectedId === vehicle.id ? 'true' : undefined}
                 onClick={() => selectVehicle(vehicle)}
-                className="min-h-16 rounded-lg border px-3 py-2 text-left transition-[background-color,border-color,transform] duration-150 hover:bg-muted active:scale-[0.96]"
+                className={cn(
+                  'min-h-16 rounded-lg border px-3 py-2 text-left transition-[background-color,border-color,transform] duration-150 hover:bg-muted active:scale-[0.96]',
+                  selectedId === vehicle.id && 'bg-muted',
+                )}
               >
                 <span className="block font-semibold tabular-nums">{vehicle.plateNumber}</span>
                 <span className="block text-sm text-muted-foreground">{[vehicle.brand, vehicle.model].filter(Boolean).join(' ')}</span>
@@ -152,6 +169,14 @@ export function VehicleWorkspace() {
             <CardHeader>
               <CardTitle>{selectedId ? 'Edit vehicle' : 'New vehicle'}</CardTitle>
               <CardDescription>Plate and model are required. Customer details are optional.</CardDescription>
+              {selectedId ? (
+                <CardAction>
+                  <Button type="button" size="sm" variant="outline" onClick={clearSelection}>
+                    <X data-icon="inline-start" aria-hidden="true" />
+                    Unselect
+                  </Button>
+                </CardAction>
+              ) : null}
             </CardHeader>
             <CardContent>
               <form className="flex flex-col gap-4" onSubmit={save}>
@@ -175,12 +200,7 @@ export function VehicleWorkspace() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setSelectedId(null)
-                  setIsCreating(false)
-                  setForm(emptyForm)
-                  setMessage('')
-                }}
+                onClick={clearSelection}
               >
                 Cancel
               </Button>

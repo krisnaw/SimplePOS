@@ -5,6 +5,7 @@ release/
 *.db
 .idea
 simplepos.sqlite
+drizzle.sqlite
 docs
 .claude/
 .agents

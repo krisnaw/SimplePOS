@@ -27,6 +27,7 @@ import { cn } from '@/renderer/lib/utils'
 import { formatCurrency } from '@/renderer/lib/formatters'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { CustomerSummary } from '@/shared/types/customer'
+import { SalesCatalogListItem } from './SalesCatalogListItem'
 import type { SimplePosApi, SampleProduct, CartItem } from './SalesWorkspace.types'
 
 const UNLIMITED_STOCK = 999
@@ -420,7 +421,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           ) : (
             <div
               className={cn(
-                'stagger-children min-h-0 flex-1 gap-3 overflow-auto px-1 pt-1 pb-2',
+                'scroll-fade stagger-children min-h-0 flex-1 gap-3 overflow-auto px-1 pt-1 pb-2',
                 viewMode === 'grid'
                   ? 'grid auto-rows-auto content-start md:grid-cols-2 xl:grid-cols-3'
                   : 'flex flex-col',
@@ -433,49 +434,24 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 const outOfStock = !isUnlimitedStock(product.stock) && available === 0
 
                 return viewMode === 'list' ? (
-                  <div
+                  <SalesCatalogListItem
                     key={cartKey}
-                    className="flex min-h-[92px] items-center justify-between gap-3 overflow-hidden rounded-lg border bg-background p-3 text-left shadow-sm transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <span
-                        className={cn(
-                          'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ring-1 tabular-nums',
-                          getItemTypeClasses(product),
-                        )}
-                      >
-                        <ItemTypeIcon item={product} />
-                        {product.itemType === 'service' ? t('sales.service') : t('sales.product')}
-                      </span>
-                      <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <span className="min-w-0 truncate text-sm font-medium text-balance">{product.name}</span>
-                        <span className="text-xs text-muted-foreground text-pretty">{product.category}</span>
-                      </div>
-                      <div className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span className="tabular-nums">{product.sku}</span>
-                        <span className="line-clamp-1 text-pretty">{product.description}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-3">
-                      <div className="hidden min-w-24 flex-col items-end gap-0.5 sm:flex">
-                        <span className="text-sm font-semibold tabular-nums">{formatCurrency(product.price)}</span>
-                        <span className="text-sm font-medium text-muted-foreground tabular-nums">
-                          {product.itemType === 'service' ? t('sales.serviceItem') : t('sales.inStock', { count: product.stock })}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={outOfStock}
-                        className={pressableButtonClass}
-                        onClick={() => addToCart(product)}
-                      >
-                        <Plus data-icon="inline-start" aria-hidden="true" />
-                        {t('sales.add')}
-                      </Button>
-                    </div>
-                  </div>
+                    itemType={product.itemType}
+                    typeLabel={product.itemType === 'service' ? t('sales.service') : t('sales.product')}
+                    name={product.name}
+                    category={product.category}
+                    code={product.sku}
+                    description={product.description}
+                    price={product.price}
+                    inventoryLabel={
+                      product.itemType === 'service'
+                        ? t('sales.serviceItem')
+                        : t('sales.inStock', { count: product.stock })
+                    }
+                    addLabel={t('sales.add')}
+                    disabled={outOfStock}
+                    onAdd={() => addToCart(product)}
+                  />
                 ) : (
                   <div
                     key={cartKey}
@@ -595,7 +571,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             </p>
           ) : null}
 
-          <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-1 py-1">
+          <div className="scroll-fade -mx-1 flex min-h-0 flex-1 flex-col gap-2 overflow-auto px-1 py-1">
             {cartItems.length === 0 ? (
               <div className="rounded-lg border border-dashed bg-background px-4 py-3 text-center shadow-border">
                 <p className="text-sm text-muted-foreground text-pretty">

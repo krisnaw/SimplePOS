@@ -7,7 +7,7 @@ import { users } from './user.schema'
 import { vehicles } from './vehicle.schema'
 import { workOrders } from './work-order.schema'
 
-export type SaleStatus = 'completed' | 'void'
+export type SaleStatus = 'in_progress' | 'completed' | 'void'
 export type SaleItemType = 'product' | 'service'
 export type InvoiceStatus = 'paid' | 'void'
 export type PaymentMethod = 'cash' | 'transfer' | 'card'

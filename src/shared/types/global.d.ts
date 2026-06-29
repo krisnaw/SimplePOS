@@ -154,6 +154,7 @@ type CheckoutItemInput = {
 }
 
 type CheckoutInput = {
+  saleId?: number | null
   vehicleId?: number | null
   customerId?: number | null
   createdById?: number | null
@@ -417,6 +418,16 @@ declare global {
       }
       checkout: {
         create: (input: CheckoutInput) => Promise<CheckoutResult>
+      }
+      salesDrafts: {
+        list: () => Promise<Array<{
+          id: number
+          vehicle: VehicleSummary
+          lineItems: Array<{ key: string; id: number; type: 'product' | 'service'; name: string; code: string; price: number; quantity: number }>
+          createdAt: string
+        }>>
+        createOrResume: (input: { vehicleId: number; createdById: number }) => Promise<{ id: number } | null>
+        saveItems: (input: { saleId: number; items: CheckoutItemInput[] }) => Promise<{ ok: boolean }>
       }
       dashboard: {
         getSummary: () => Promise<DashboardSummary>

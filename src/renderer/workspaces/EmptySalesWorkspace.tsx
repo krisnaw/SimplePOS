@@ -3,11 +3,9 @@ import {
   Car,
   Check,
   Minus,
-  Package,
   Plus,
   Search,
   UserRound,
-  Wrench,
   X,
 } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
@@ -18,6 +16,7 @@ import { formatCurrency } from '@/renderer/lib/formatters'
 import { cn } from '@/renderer/lib/utils'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { VehicleSummary } from '@/shared/types/vehicle'
+import { SalesCatalogListItem } from './SalesCatalogListItem'
 import {
   normalizePlateNumber,
   normalizeSearchText,
@@ -40,7 +39,7 @@ type SaleLineItem = MockCatalogItem & {
 }
 
 type MockSaleOrder = {
-  id: string
+  id: number
   vehicle: MockVehicle
   lineItems: SaleLineItem[]
   createdAt: string
@@ -81,13 +80,14 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
     model?: string
   }>({})
   const [orders, setOrders] = useState<MockSaleOrder[]>([])
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
+  const [activeOrderId, setActiveOrderId] = useState<number | null>(null)
 
   const parsedInput = useMemo(() => parseVehicleInput(query), [query])
   const normalizedQuery = normalizeSearchText(query)
   const activeOrder = orders.find((order) => order.id === activeOrderId) ?? null
   const selectedVehicle = activeOrder?.vehicle ?? null
   const lineItems = activeOrder?.lineItems ?? []
+  const saleItemCount = lineItems.reduce((count, item) => count + item.quantity, 0)
   const total = lineItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   useEffect(() => {
@@ -115,6 +115,11 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
         ])
       },
     )
+    void api.salesDrafts.list().then((drafts) => {
+      setOrders(drafts)
+      setActiveOrderId(drafts[0]?.id ?? null)
+      if (drafts[0]) setQuery(`${drafts[0].vehicle.plateNumber} ${drafts[0].vehicle.model}`)
+    })
   }, [])
 
   useEffect(() => {
@@ -150,9 +155,13 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
     setIsAddVehicleOpen(false)
   }
 
-  function selectVehicle(vehicle: MockVehicle) {
+  async function selectVehicle(vehicle: MockVehicle) {
     const existingOrder = orders.find((order) => order.vehicle.id === vehicle.id)
-    const nextOrderId = existingOrder?.id ?? `mock-order-${Date.now()}`
+    const api = window.simplepos
+    if (!api) return
+    const draft = existingOrder ? null : await api.salesDrafts.createOrResume({ vehicleId: vehicle.id, createdById: currentUser.id })
+    const nextOrderId = existingOrder?.id ?? draft?.id
+    if (!nextOrderId) return
 
     if (!existingOrder) {
       setOrders((currentOrders) => [
@@ -217,7 +226,7 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
     const nextVehicle = result.vehicle
 
     setVehicles((currentVehicles) => [nextVehicle, ...currentVehicles])
-    selectVehicle(nextVehicle)
+    await selectVehicle(nextVehicle)
     setNewVehiclePlate('')
     setNewVehicleBrand('')
     setNewVehicleName('')
@@ -232,6 +241,7 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
     const api = window.simplepos
     if (!api) return
     const result = await api.checkout.create({
+      saleId: activeOrder.id,
       vehicleId: activeOrder.vehicle.id,
       createdById: currentUser.id,
       paymentMethod: 'cash',
@@ -269,6 +279,7 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
             )
           : [...order.lineItems, { ...item, quantity: 1 }]
 
+        void saveDraftItems(order.id, lineItems)
         return { ...order, lineItems }
       }),
     )
@@ -285,9 +296,19 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
           ? order.lineItems.filter((item) => item.key !== key)
           : order.lineItems.map((item) => (item.key === key ? { ...item, quantity } : item))
 
+        void saveDraftItems(order.id, lineItems)
         return { ...order, lineItems }
       }),
     )
+  }
+
+  async function saveDraftItems(saleId: number, items: SaleLineItem[]) {
+    const api = window.simplepos
+    if (!api) return
+    await api.salesDrafts.saveItems({
+      saleId,
+      items: items.map((item) => ({ itemType: item.type, id: item.id, quantity: item.quantity })),
+    })
   }
 
   function startNewSale() {
@@ -373,7 +394,7 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
                             key={vehicle.id}
                             type="button"
                             aria-current={isSelected ? 'true' : undefined}
-                            onClick={() => selectVehicle(vehicle)}
+                            onClick={() => void selectVehicle(vehicle)}
                             className={cn(
                               'flex min-h-16 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98]',
                               isSelected ? 'bg-primary/10 text-foreground' : 'hover:bg-muted',
@@ -495,8 +516,7 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
         </CardContent>
       </Card>
 
-      {orders.length > 0 || selectedVehicle ? (
-        <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[240px_minmax(0,1fr)_340px]">
+      <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[240px_minmax(0,1fr)_340px]">
           <Card className="min-h-0 overflow-hidden">
             <CardHeader>
               <CardTitle>In Progress</CardTitle>
@@ -563,44 +583,31 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
                   <CardTitle>Products & Services</CardTitle>
                   <CardDescription>{selectedVehicle.plateNumber} · {vehicleName(selectedVehicle)}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid min-h-0 gap-1.5 overflow-auto">
-                  {catalogItems.map((item) => {
-                    const Icon = item.type === 'service' ? Wrench : Package
-
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => addLineItem(item)}
-                        className="rounded-lg border bg-background px-3 py-2 text-left shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/30 hover:shadow-border-hover active:scale-[0.98]"
-                      >
-                        <span className="flex items-center justify-between gap-3">
-                          <span className="min-w-0">
-                            <span className="flex items-center gap-2">
-                              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                                <Icon className="size-3.5" aria-hidden="true" />
-                              </span>
-                              <span className="min-w-0">
-                                <span className="block truncate text-sm font-semibold">{item.name}</span>
-                                <span className="block text-xs text-muted-foreground tabular-nums">{item.code}</span>
-                              </span>
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-sm font-semibold tabular-nums">{formatCurrency(item.price)}</span>
-                        </span>
-                      </button>
-                    )
-                  })}
+                <CardContent className="scroll-fade flex min-h-0 flex-col gap-3 overflow-auto">
+                  {catalogItems.map((item) => (
+                    <SalesCatalogListItem
+                      key={item.key}
+                      itemType={item.type}
+                      typeLabel={item.type === 'service' ? 'Service' : 'Product'}
+                      name={item.name}
+                      code={item.code}
+                      price={item.price}
+                      addLabel="Add"
+                      onAdd={() => addLineItem(item)}
+                    />
+                  ))}
                 </CardContent>
               </Card>
 
               <Card className="min-h-0 overflow-hidden">
                 <CardHeader>
                   <CardTitle>Current Sale</CardTitle>
-                  <CardDescription>Mock products and services</CardDescription>
+                  <CardDescription>
+                    {saleItemCount} item{saleItemCount === 1 ? '' : 's'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-                  <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
+                  <div className="scroll-fade flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
                     {lineItems.length === 0 ? (
                       <div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed p-4 text-center">
                         <p className="text-sm text-muted-foreground text-pretty">Add a product or service to start.</p>
@@ -668,14 +675,32 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
               </Card>
             </>
           ) : (
-            <Card className="min-h-0 overflow-hidden xl:col-span-2">
-              <CardContent className="flex min-h-40 flex-1 items-center justify-center text-center">
-                <p className="text-sm text-muted-foreground text-pretty">Start a new sale by searching a plate number.</p>
-              </CardContent>
-            </Card>
+            <>
+              <Card className="min-h-0 overflow-hidden">
+                <CardHeader>
+                  <CardTitle>Products &amp; Services</CardTitle>
+                  <CardDescription>No vehicle selected</CardDescription>
+                </CardHeader>
+                <CardContent className="flex min-h-32 flex-1 items-center justify-center p-4 text-center">
+                  <p className="text-sm text-muted-foreground text-pretty">
+                    Select a vehicle to add products and services.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="min-h-0 overflow-hidden">
+                <CardHeader>
+                  <CardTitle>Current Sale</CardTitle>
+                  <CardDescription>No active sale</CardDescription>
+                </CardHeader>
+                <CardContent className="flex min-h-32 flex-1 items-center justify-center p-4 text-center">
+                  <p className="text-sm text-muted-foreground text-pretty">
+                    The selected vehicle&apos;s sale items will appear here.
+                  </p>
+                </CardContent>
+              </Card>
+            </>
           )}
-        </div>
-      ) : null}
+      </div>
 
     </div>
   )

@@ -10,6 +10,7 @@ import {
   authenticateUser,
   createCustomer,
   createCheckout,
+  createOrResumeSalesDraft,
   createProduct,
   createService,
   createWorkOrder,
@@ -29,11 +30,13 @@ import {
   listProductCategories,
   listProducts,
   listServices,
+  listSalesDrafts,
   listUsers,
   listVehicles,
   listWorkOrders,
   quickCreateVehicle,
   searchVehicles,
+  saveSalesDraftItems,
   updateCustomer,
   updateProduct,
   updateService,
@@ -107,6 +110,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('services:create', (_event, input: unknown) => createService(input as Record<string, unknown>))
   ipcMain.handle('services:update', (_event, input: unknown) => updateService(input as Record<string, unknown>))
   ipcMain.handle('checkout:create', (_event, input: unknown) => createCheckout(input as Record<string, unknown>))
+  ipcMain.handle('salesDrafts:list', () => listSalesDrafts())
+  ipcMain.handle('salesDrafts:createOrResume', (_event, input: unknown) => createOrResumeSalesDraft(input as Record<string, unknown>))
+  ipcMain.handle('salesDrafts:saveItems', (_event, input: unknown) => saveSalesDraftItems(input as Record<string, unknown>))
   ipcMain.handle('invoices:list', (_event, input: unknown) => listInvoices(input as Record<string, unknown>))
   ipcMain.handle('invoices:get', (_event, input: unknown) => getInvoiceDetail(input as { id?: unknown }))
   ipcMain.handle('dashboard:getSummary', () => getDashboardSummary())

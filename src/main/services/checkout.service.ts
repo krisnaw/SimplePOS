@@ -11,6 +11,7 @@ export type CheckoutItemInput = {
 }
 
 export type CheckoutInput = {
+  saleId?: unknown
   workOrderId?: unknown
   vehicleId?: unknown
   customerId?: unknown
@@ -65,6 +66,7 @@ export type PreparedCheckoutLineItem = {
 }
 
 type PersistCheckoutInput = {
+  saleId?: number | null
   sourceWorkOrderId?: number | null
   vehicleId?: number | null
   customerId: number | null
@@ -167,6 +169,7 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
   if (!repository) return { ok: false, message: 'Database unavailable' }
 
   const sourceWorkOrderId = positiveInteger(input.workOrderId)
+  const saleId = positiveInteger(input.saleId)
   const vehicleId = positiveInteger(input.vehicleId)
   const paymentMethod = isPaymentMethod(input.paymentMethod) ? input.paymentMethod : 'cash'
   let customerId = positiveInteger(input.customerId)
@@ -185,6 +188,12 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
     if (!vehicleId) return { ok: false, message: 'Select a vehicle before checkout' }
     const [vehicle] = await repository.select().from(vehicles).where(eq(vehicles.id, vehicleId)).limit(1)
     if (!vehicle || !vehicle.isActive) return { ok: false, message: 'Vehicle is no longer available' }
+    if (saleId) {
+      const [draft] = await repository.select().from(sales).where(eq(sales.id, saleId)).limit(1)
+      if (!draft || draft.status !== 'in_progress' || draft.vehicleId !== vehicleId) {
+        return { ok: false, message: 'Sales draft is no longer available' }
+      }
+    }
     customerId = vehicle.customerId
     customerNameSnapshot = vehicle.customerName
     customerPhoneSnapshot = vehicle.customerPhone
@@ -200,6 +209,7 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
 
   return persistCheckout({
     sourceWorkOrderId,
+    saleId,
     vehicleId,
     customerId,
     customerNameSnapshot,
@@ -239,14 +249,14 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
   const invoiceNumber = createInvoiceNumber()
 
   const checkout = repository.transaction((tx) => {
-    const savedSale = tx.insert(sales).values({
+    const saleValues = {
       workOrderId: input.sourceWorkOrderId,
       vehicleId: input.vehicleId,
       customerId: input.customerId,
       customerNameSnapshot: input.customerNameSnapshot,
       customerPhoneSnapshot: input.customerPhoneSnapshot,
       createdById: input.createdById,
-      status: 'completed',
+      status: 'completed' as const,
       subtotal,
       discount: 0,
       tax: 0,
@@ -254,7 +264,12 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
       notes: input.notes,
       createdAt: now,
       updatedAt: now,
-    }).returning().get()
+    }
+    const savedSale = input.saleId
+      ? tx.update(sales).set(saleValues).where(eq(sales.id, input.saleId)).returning().get()
+      : tx.insert(sales).values(saleValues).returning().get()
+
+    if (input.saleId) tx.delete(saleItems).where(eq(saleItems.saleId, input.saleId)).run()
 
     const savedItems = input.items.map((item) => {
       const savedItem = tx.insert(saleItems).values({

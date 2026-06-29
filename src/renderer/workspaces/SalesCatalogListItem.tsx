@@ -1,0 +1,84 @@
+import { Package, Plus, Wrench } from 'lucide-react'
+import { Button } from '@/renderer/components/ui/button'
+import { formatCurrency } from '@/renderer/lib/formatters'
+import { cn } from '@/renderer/lib/utils'
+
+type SalesCatalogListItemProps = {
+  itemType: 'product' | 'service'
+  typeLabel: string
+  name: string
+  category?: string
+  code: string
+  description?: string
+  price: number
+  inventoryLabel?: string
+  addLabel: string
+  disabled?: boolean
+  onAdd: () => void
+}
+
+const pressableButtonClass =
+  'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
+
+export function SalesCatalogListItem({
+  itemType,
+  typeLabel,
+  name,
+  category,
+  code,
+  description,
+  price,
+  inventoryLabel,
+  addLabel,
+  disabled = false,
+  onAdd,
+}: SalesCatalogListItemProps) {
+  const Icon = itemType === 'service' ? Wrench : Package
+
+  return (
+    <div className="flex min-h-[92px] items-center justify-between gap-3 overflow-hidden rounded-lg border bg-background p-3 text-left shadow-sm transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
+      <div className="min-w-0 flex-1">
+        <span
+          className={cn(
+            'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ring-1 tabular-nums',
+            itemType === 'service'
+              ? 'bg-amber-500/10 text-amber-700 ring-amber-500/20'
+              : 'bg-sky-500/10 text-sky-700 ring-sky-500/20',
+          )}
+        >
+          <Icon className="size-3.5" aria-hidden="true" />
+          {typeLabel}
+        </span>
+        <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="min-w-0 truncate text-sm font-medium text-balance">{name}</span>
+          {category ? <span className="text-xs text-muted-foreground text-pretty">{category}</span> : null}
+        </div>
+        <div className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="tabular-nums">{code}</span>
+          {description ? <span className="line-clamp-1 text-pretty">{description}</span> : null}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-3">
+        <div className="hidden min-w-24 flex-col items-end gap-0.5 sm:flex">
+          <span className="text-sm font-semibold tabular-nums">{formatCurrency(price)}</span>
+          {inventoryLabel ? (
+            <span className="text-sm font-medium text-muted-foreground tabular-nums">
+              {inventoryLabel}
+            </span>
+          ) : null}
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          disabled={disabled}
+          className={pressableButtonClass}
+          onClick={onAdd}
+        >
+          <Plus data-icon="inline-start" aria-hidden="true" />
+          {addLabel}
+        </Button>
+      </div>
+    </div>
+  )
+}
