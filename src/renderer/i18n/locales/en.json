@@ -12,6 +12,7 @@
     "create": "Create",
     "delete": "Delete",
     "cancel": "Cancel",
+    "close": "Close",
     "save": "Save",
     "saveChanges": "Save Changes",
     "saving": "Saving...",
@@ -451,7 +452,19 @@
     "dateRange": "Reviewing {{from}} to {{to}}.",
     "period": "Period",
     "exportPdf": "Export PDF",
-    "exportCsv": "Export CSV",
+    "pdfPreview": {
+      "title": "PDF Preview",
+      "description": "Preview the report layout before PDF generation is enabled.",
+      "reportTitle": "Performance Report",
+      "activityTitle": "Operational Activity",
+      "activityDescription": "Invoice and work-order progress for this period.",
+      "paidInvoices": "Paid invoices",
+      "completedWorkOrders": "Completed work orders",
+      "invoicedWorkOrders": "Invoiced work orders",
+      "completionRate": "Completion rate",
+      "generatedAt": "Generated {{date}}",
+      "pageNumber": "Page {{page}}"
+    },
     "periods": {
       "today": "Today",
       "week": "This Week",

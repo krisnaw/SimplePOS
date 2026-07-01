@@ -12,6 +12,7 @@
     "create": "Tambah",
     "delete": "Hapus",
     "cancel": "Batal",
+    "close": "Tutup",
     "save": "Simpan",
     "saveChanges": "Simpan Perubahan",
     "saving": "Menyimpan...",
@@ -451,7 +452,19 @@
     "dateRange": "Meninjau {{from}} hingga {{to}}.",
     "period": "Periode",
     "exportPdf": "Ekspor PDF",
-    "exportCsv": "Ekspor CSV",
+    "pdfPreview": {
+      "title": "Pratinjau PDF",
+      "description": "Tinjau tata letak laporan sebelum pembuatan PDF diaktifkan.",
+      "reportTitle": "Laporan Kinerja",
+      "activityTitle": "Aktivitas Operasional",
+      "activityDescription": "Progres faktur dan perintah kerja untuk periode ini.",
+      "paidInvoices": "Faktur dibayar",
+      "completedWorkOrders": "Perintah kerja selesai",
+      "invoicedWorkOrders": "Perintah kerja difakturkan",
+      "completionRate": "Tingkat penyelesaian",
+      "generatedAt": "Dibuat {{date}}",
+      "pageNumber": "Halaman {{page}}"
+    },
     "periods": {
       "today": "Hari Ini",
       "week": "Minggu Ini",
