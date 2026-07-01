@@ -1,8 +1,9 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
-import { Building2, Pencil, Plus, Search } from 'lucide-react'
+import { Building2, MapPin, Pencil, Plus, Search } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -52,6 +53,7 @@ export function SupplierManagement() {
   const [search, setSearch] = useState('')
   const [form, setForm] = useState<SupplierForm>(emptyForm)
   const [editing, setEditing] = useState<SupplierSummary | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState<SupplierFeedback | null>(null)
@@ -88,7 +90,7 @@ export function SupplierManagement() {
     if (!query) return suppliers
 
     return suppliers.filter((supplier) =>
-      [supplier.name, supplier.contactName, supplier.phone]
+      [supplier.name, supplier.contactName, supplier.phone, supplier.address]
         .some((value) => value?.toLocaleLowerCase().includes(query)),
     )
   }, [search, suppliers])
@@ -99,12 +101,21 @@ export function SupplierManagement() {
 
   function resetForm() {
     setEditing(null)
+    setIsCreating(false)
+    setForm(emptyForm)
+    setFeedback(null)
+  }
+
+  function startCreating() {
+    setEditing(null)
+    setIsCreating(true)
     setForm(emptyForm)
     setFeedback(null)
   }
 
   function startEditing(supplier: SupplierSummary) {
     setEditing(supplier)
+    setIsCreating(false)
     setForm(toForm(supplier))
     setFeedback(null)
   }
@@ -138,6 +149,12 @@ export function SupplierManagement() {
               Reusable supplier records for inventory purchases.
             </CardDescription>
           </div>
+          <CardAction>
+            <Button type="button" size="sm" className={pressableClass} onClick={startCreating}>
+              <Plus data-icon="inline-start" aria-hidden="true" />
+              New supplier
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="relative shrink-0">
@@ -145,7 +162,7 @@ export function SupplierManagement() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search supplier, contact, or phone"
+              placeholder="Search supplier, contact, phone, or address"
               className="h-10 pl-10"
               aria-label="Search suppliers"
             />
@@ -169,13 +186,19 @@ export function SupplierManagement() {
                 {filteredSuppliers.map((supplier) => (
                   <div
                     key={supplier.id}
-                    className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/50"
+                    className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/50"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{supplier.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {[supplier.contactName, supplier.phone].filter(Boolean).join(' · ') || 'No contact details'}
                       </p>
+                      {supplier.address ? (
+                        <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="size-3 shrink-0" aria-hidden="true" />
+                          <span className="truncate">{supplier.address}</span>
+                        </p>
+                      ) : null}
                     </div>
                     <Button type="button" variant="ghost" size="icon-sm" className={pressableClass} onClick={() => startEditing(supplier)} aria-label={`Edit ${supplier.name}`}>
                       <Pencil aria-hidden="true" />
@@ -189,64 +212,89 @@ export function SupplierManagement() {
       </Card>
 
       <Card className="min-h-0 overflow-hidden">
-        <CardHeader>
-          <CardTitle>{editing ? 'Edit Supplier' : 'Add Supplier'}</CardTitle>
-          <CardDescription className="text-pretty">
-            {editing ? `Update ${editing.name} or change its contact details.` : 'Create a supplier for future purchase records.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="min-h-0 flex-1 overflow-y-auto">
-          <form onSubmit={saveSupplier}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="supplier-name">Supplier name</FieldLabel>
-                <Input id="supplier-name" value={form.name} onChange={(event) => updateForm('name', event.target.value)} placeholder="Bali Motor Supply" required />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="supplier-contact">Contact name</FieldLabel>
-                <Input id="supplier-contact" value={form.contactName} onChange={(event) => updateForm('contactName', event.target.value)} placeholder="Wayan" />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="supplier-phone">Phone</FieldLabel>
-                <Input id="supplier-phone" value={form.phone} onChange={(event) => updateForm('phone', event.target.value)} placeholder="0812..." />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="supplier-address">Address</FieldLabel>
-                <Input id="supplier-address" value={form.address} onChange={(event) => updateForm('address', event.target.value)} placeholder="Supplier address" />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="supplier-notes">Notes</FieldLabel>
-                <Input id="supplier-notes" value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} placeholder="Delivery or payment notes" />
-              </Field>
-
+        {!editing && !isCreating ? (
+          <CardContent className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-6 text-center">
+            <div className="flex max-w-sm flex-col items-center gap-3">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <Building2 aria-hidden="true" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-balance">No supplier selected</h3>
+                <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                  Edit a supplier from the list or create a new supplier record.
+                </p>
+              </div>
               {feedback ? (
-                <p
-                  className={cn(
-                    'rounded-md px-3 py-2 text-sm text-pretty',
-                    feedback.tone === 'success'
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-destructive/10 text-destructive',
-                  )}
-                  role={feedback.tone === 'error' ? 'alert' : 'status'}
-                >
+                <p className="text-sm text-muted-foreground text-pretty" role="status">
                   {feedback.message}
                 </p>
               ) : null}
+              <Button type="button" variant="outline" className={pressableClass} onClick={startCreating}>
+                <Plus data-icon="inline-start" aria-hidden="true" />
+                Add new supplier
+              </Button>
+            </div>
+          </CardContent>
+        ) : (
+          <>
+            <CardHeader>
+              <CardTitle>{editing ? 'Edit Supplier' : 'New Supplier'}</CardTitle>
+              <CardDescription className="text-pretty">
+                {editing ? `Update ${editing.name} or change its contact details.` : 'Create a supplier for future purchase records.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="min-h-0 flex-1 overflow-y-auto">
+              <form onSubmit={saveSupplier}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="supplier-name">Supplier name</FieldLabel>
+                    <Input id="supplier-name" value={form.name} onChange={(event) => updateForm('name', event.target.value)} placeholder="Bali Motor Supply" required />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="supplier-contact">Contact name</FieldLabel>
+                    <Input id="supplier-contact" value={form.contactName} onChange={(event) => updateForm('contactName', event.target.value)} placeholder="Wayan" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="supplier-phone">Phone</FieldLabel>
+                    <Input id="supplier-phone" value={form.phone} onChange={(event) => updateForm('phone', event.target.value)} placeholder="0812..." />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="supplier-address">Address</FieldLabel>
+                    <Input id="supplier-address" value={form.address} onChange={(event) => updateForm('address', event.target.value)} placeholder="Supplier address" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="supplier-notes">Notes</FieldLabel>
+                    <Input id="supplier-notes" value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} placeholder="Delivery or payment notes" />
+                  </Field>
 
-              <div className="flex gap-2">
-                {editing ? (
-                  <Button type="button" variant="outline" className={cn('flex-1', pressableClass)} onClick={resetForm}>
-                    Cancel
-                  </Button>
-                ) : null}
-                <Button type="submit" className={cn('flex-1', pressableClass)} disabled={isSaving}>
-                  <Plus data-icon="inline-start" aria-hidden="true" />
-                  {isSaving ? 'Saving...' : editing ? 'Save Changes' : 'Add Supplier'}
-                </Button>
-              </div>
-            </FieldGroup>
-          </form>
-        </CardContent>
+                  {feedback ? (
+                    <p
+                      className={cn(
+                        'rounded-md px-3 py-2 text-sm text-pretty',
+                        feedback.tone === 'success'
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-destructive/10 text-destructive',
+                      )}
+                      role={feedback.tone === 'error' ? 'alert' : 'status'}
+                    >
+                      {feedback.message}
+                    </p>
+                  ) : null}
+
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" className={cn('flex-1', pressableClass)} onClick={resetForm}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className={cn('flex-1', pressableClass)} disabled={isSaving}>
+                      <Plus data-icon="inline-start" aria-hidden="true" />
+                      {isSaving ? 'Saving...' : editing ? 'Save Changes' : 'Add Supplier'}
+                    </Button>
+                  </div>
+                </FieldGroup>
+              </form>
+            </CardContent>
+          </>
+        )}
       </Card>
     </div>
   )
