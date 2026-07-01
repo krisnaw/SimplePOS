@@ -7,6 +7,7 @@ import {
   Minus,
   Pencil,
   Plus,
+  ReceiptText,
   Search,
   Trash2,
   UserRound,
@@ -50,7 +51,8 @@ type MockCatalogItem = {
   price: number
 }
 
-type SaleLineItem = MockCatalogItem & {
+type SaleLineItem = Omit<MockCatalogItem, 'category'> & {
+  category?: string
   quantity: number
   basePrice: number
   priceOverriddenById: number | null
@@ -68,6 +70,32 @@ type MockSaleOrder = {
 
 const pressableClass =
   'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]'
+
+function playCheckoutCompleteSound() {
+  const AudioContext = window.AudioContext
+  if (!AudioContext) return
+
+  const audioContext = new AudioContext()
+  const gain = audioContext.createGain()
+  gain.connect(audioContext.destination)
+  gain.gain.setValueAtTime(0.0001, audioContext.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.16, audioContext.currentTime + 0.02)
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.55)
+
+  ;[
+    { frequency: 659.25, startsAt: 0, duration: 0.18 },
+    { frequency: 880, startsAt: 0.16, duration: 0.36 },
+  ].forEach(({ frequency, startsAt, duration }) => {
+    const oscillator = audioContext.createOscillator()
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + startsAt)
+    oscillator.connect(gain)
+    oscillator.start(audioContext.currentTime + startsAt)
+    oscillator.stop(audioContext.currentTime + startsAt + duration)
+  })
+
+  window.setTimeout(() => void audioContext.close(), 750)
+}
 
 function vehicleSearchText(vehicle: MockVehicle): string {
   return normalizeSearchText([
@@ -283,6 +311,7 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
       setStatusMessage(result.message)
       setIsCheckoutConfirmOpen(false)
       if (result.ok) {
+        playCheckoutCompleteSound()
         setOrders((current) => current.filter((order) => order.id !== activeOrder.id))
         setActiveOrderId(null)
         setQuery('')
@@ -906,28 +935,116 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
       >
         <AlertDialogPortal>
           <AlertDialogBackdrop />
-          <AlertDialogPopup>
-            <AlertDialogTitle>Confirm full cash payment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Confirm that {formatCurrency(total)} was received in cash. This completes the sale, creates a paid invoice, and reduces product stock.
-            </AlertDialogDescription>
-            <div className="mt-5 flex justify-end gap-2">
-              <AlertDialogClose
-                render={
-                  <Button type="button" variant="outline" className={pressableClass} disabled={isCheckingOut}>
-                    Go back
-                  </Button>
-                }
-              />
-              <Button
-                type="button"
-                className={pressableClass}
-                disabled={isCheckingOut}
-                onClick={() => void checkoutActiveSale()}
-              >
-                <Banknote data-icon="inline-start" aria-hidden="true" />
-                {isCheckingOut ? 'Completing...' : 'Cash received'}
-              </Button>
+          <AlertDialogPopup className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+            <div className="flex items-start gap-3 px-6 pt-6">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <ReceiptText aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-lg">Review sale &amp; confirm payment</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Check the sale details before confirming that full cash payment was received.
+                </AlertDialogDescription>
+              </div>
+            </div>
+
+            <div className="min-h-0 overflow-y-auto px-6 py-5">
+              <div className="rounded-lg bg-muted/40 p-4">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sale</p>
+                    <p className="mt-1 font-semibold tabular-nums">#{activeOrder?.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vehicle</p>
+                    <p className="mt-1 font-semibold">{selectedVehicle?.plateNumber}</p>
+                    <p className="text-sm text-muted-foreground text-pretty">
+                      {selectedVehicle ? vehicleName(selectedVehicle) : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Customer</p>
+                    <p className="mt-1 font-semibold">
+                      {selectedVehicle?.customerName || 'Walk-in customer'}
+                    </p>
+                    {selectedVehicle?.customerPhone ? (
+                      <p className="text-sm text-muted-foreground tabular-nums">
+                        {selectedVehicle.customerPhone}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 overflow-hidden rounded-lg border">
+                <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_8rem] bg-muted/40 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <span className="px-3 py-2">Item</span>
+                  <span className="border-l px-3 py-2 text-right">Qty</span>
+                  <span className="border-l px-3 py-2 text-right">Amount</span>
+                </div>
+                <div className="flex flex-col divide-y border-t">
+                  {lineItems.map((item) => (
+                    <div
+                      key={item.key}
+                      className="grid grid-cols-[minmax(0,1fr)_4.5rem_8rem] items-stretch"
+                    >
+                      <div className="min-w-0 px-3 py-3">
+                        <p className="truncate text-sm font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground tabular-nums">
+                          {formatCurrency(item.price)} each
+                        </p>
+                      </div>
+                      <span className="border-l px-3 py-3 text-right text-sm tabular-nums">
+                        {item.quantity}
+                      </span>
+                      <span className="border-l px-3 py-3 text-right text-sm font-medium tabular-nums">
+                        {formatCurrency(item.price * item.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="w-16 text-muted-foreground">Items</span>
+                    <span className="tabular-nums">{saleItemCount}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="w-16 text-muted-foreground">Payment</span>
+                    <span>Cash</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-6 text-lg font-semibold sm:justify-end">
+                  <span>Total</span>
+                  <span className="tabular-nums">{formatCurrency(total)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-2 bg-muted/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-muted-foreground text-pretty">
+                Completing this sale creates a paid invoice and updates product stock.
+              </p>
+              <div className="flex shrink-0 justify-end gap-2">
+                <AlertDialogClose
+                  render={
+                    <Button type="button" variant="outline" className={pressableClass} disabled={isCheckingOut}>
+                      Go back
+                    </Button>
+                  }
+                />
+                <Button
+                  type="button"
+                  className={pressableClass}
+                  disabled={isCheckingOut}
+                  onClick={() => void checkoutActiveSale()}
+                >
+                  <Banknote data-icon="inline-start" aria-hidden="true" />
+                  {isCheckingOut ? 'Completing...' : 'Cash received'}
+                </Button>
+              </div>
             </div>
           </AlertDialogPopup>
         </AlertDialogPortal>
