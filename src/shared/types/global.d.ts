@@ -27,7 +27,7 @@ type LoginResult = {
   message: string
   user?: {
     id: number
-    email: string
+    username: string
     name: string
     role: UserRole
   }
@@ -37,7 +37,7 @@ type UserRole = 'admin' | 'cashier'
 
 type UserSummary = {
   id: number
-  email: string
+  username: string
   name: string
   role: UserRole
   isActive: boolean
@@ -416,14 +416,14 @@ declare global {
         getStatus: () => Promise<DatabaseStatus>
       }
       auth: {
-        login: (credentials: { email: string; password: string }) => Promise<LoginResult>
+        login: (credentials: { username: string; password: string }) => Promise<LoginResult>
       }
       users: {
         list: () => Promise<UserSummary[]>
-        create: (input: { email: string; name: string; role: UserRole; password: string }) => Promise<UserMutationResult>
+        create: (input: { username: string; name: string; role: UserRole; password: string }) => Promise<UserMutationResult>
         update: (input: {
           id: number
-          email: string
+          username: string
           name: string
           role: UserRole
           isActive: boolean

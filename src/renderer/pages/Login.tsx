@@ -13,7 +13,7 @@ import type { DatabaseConnectionState, DatabaseIndicator } from './Login.types'
 export default function Login() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [database, setDatabase] = useState<DatabaseIndicator>({
     state: 'checking',
@@ -64,7 +64,7 @@ export default function Login() {
     setAuthIsError(false)
 
     try {
-      const result = await window.simplepos?.auth.login({ email, password })
+      const result = await window.simplepos?.auth.login({ username, password })
 
       setAuthMessage(result?.message ?? t('login.authUnavailable'))
       setAuthIsError(!result?.ok)
@@ -102,15 +102,19 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="email">{t('login.email')}</Label>
+                <Label htmlFor="username">{t('login.username')}</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@simplepos.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="admin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
-                  autoComplete="email"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                 />
               </div>
               <div className="flex flex-col gap-2">

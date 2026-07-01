@@ -5,18 +5,18 @@ contextBridge.exposeInMainWorld('simplepos', {
     getStatus: () => ipcRenderer.invoke('db:getStatus'),
   },
   auth: {
-    login: (credentials: { email: string; password: string }) => {
+    login: (credentials: { username: string; password: string }) => {
       return ipcRenderer.invoke('auth:login', credentials)
     },
   },
   users: {
     list: () => ipcRenderer.invoke('users:list'),
-    create: (input: { email: string; name: string; role: 'admin' | 'cashier'; password: string }) => {
+    create: (input: { username: string; name: string; role: 'admin' | 'cashier'; password: string }) => {
       return ipcRenderer.invoke('users:create', input)
     },
     update: (input: {
       id: number
-      email: string
+      username: string
       name: string
       role: 'admin' | 'cashier'
       isActive: boolean

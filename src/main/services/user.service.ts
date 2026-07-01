@@ -3,11 +3,12 @@ import { users } from '../db/schema/index'
 import { flushDatabase } from '../db/client'
 import { getUserRepository } from '../repositories/user.repository'
 import { createPasswordCredentials } from './password.service'
-import { asc, eq, ne } from 'drizzle-orm'
+import { isValidUsername, normalizeUsername } from './username'
+import { asc, eq } from 'drizzle-orm'
 
 export type UserSummary = {
   id: number
-  email: string
+  username: string
   name: string
   role: User['role']
   isActive: boolean
@@ -25,7 +26,7 @@ export type UserMutationResult = {
 export function toUserSummary(user: User): UserSummary {
   return {
     id: user.id,
-    email: user.email,
+    username: user.username,
     name: user.name,
     role: user.role,
     isActive: user.isActive,
@@ -39,10 +40,6 @@ export function isValidRole(role: unknown): role is User['role'] {
   return role === 'admin' || role === 'cashier'
 }
 
-export function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase()
-}
-
 export async function listUsers(): Promise<UserSummary[]> {
   const repository = getUserRepository()
 
@@ -54,7 +51,7 @@ export async function listUsers(): Promise<UserSummary[]> {
 }
 
 export async function createUser(input: {
-  email?: unknown
+  username?: unknown
   name?: unknown
   role?: unknown
   password?: unknown
@@ -69,7 +66,7 @@ export async function createUser(input: {
   }
 
   if (
-    typeof input.email !== 'string' ||
+    typeof input.username !== 'string' ||
     typeof input.name !== 'string' ||
     typeof input.password !== 'string' ||
     !isValidRole(input.role)
@@ -80,37 +77,45 @@ export async function createUser(input: {
     }
   }
 
-  const email = normalizeEmail(input.email)
+  const username = normalizeUsername(input.username)
   const name = input.name.trim()
   const password = input.password.trim()
 
-  if (!email || !name || password.length < 6) {
+  if (!isValidUsername(username) || !name || password.length < 6) {
     return {
       ok: false,
-      message: 'Name, email, and a password with at least 6 characters are required',
+      message: 'Username must be 3–32 lowercase letters or numbers; name and a password with at least 6 characters are required',
     }
   }
 
-  const existingUser = await repository.select().from(users).where(eq(users.email, email)).limit(1)
+  const existingUser = await repository.select().from(users).where(eq(users.username, username)).limit(1)
 
   if (existingUser.length > 0) {
     return {
       ok: false,
-      message: 'A user with this email already exists',
+      message: 'Username is already in use',
     }
   }
 
   const now = new Date().toISOString()
-  const [savedUser] = await repository.insert(users).values({
-    email,
-    name,
-    role: input.role,
-    isActive: true,
-    createdAt: now,
-    updatedAt: now,
-    lastLoginAt: null,
-    ...createPasswordCredentials(password),
-  }).returning()
+  let savedUser: User
+  try {
+    [savedUser] = await repository.insert(users).values({
+      username,
+      name,
+      role: input.role,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      lastLoginAt: null,
+      ...createPasswordCredentials(password),
+    }).returning()
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('UNIQUE constraint failed: users.username')) {
+      return { ok: false, message: 'Username is already in use' }
+    }
+    throw error
+  }
   await flushDatabase()
 
   return {
@@ -122,7 +127,7 @@ export async function createUser(input: {
 
 export async function updateUser(input: {
   id?: unknown
-  email?: unknown
+  username?: unknown
   name?: unknown
   role?: unknown
   password?: unknown
@@ -139,7 +144,7 @@ export async function updateUser(input: {
 
   if (
     typeof input.id !== 'number' ||
-    typeof input.email !== 'string' ||
+    typeof input.username !== 'string' ||
     typeof input.name !== 'string' ||
     !isValidRole(input.role) ||
     typeof input.isActive !== 'boolean'
@@ -150,14 +155,14 @@ export async function updateUser(input: {
     }
   }
 
-  const email = normalizeEmail(input.email)
+  const username = normalizeUsername(input.username)
   const name = input.name.trim()
   const password = typeof input.password === 'string' ? input.password.trim() : ''
 
-  if (!email || !name) {
+  if (!isValidUsername(username) || !name) {
     return {
       ok: false,
-      message: 'Name and email are required',
+      message: 'Username must be 3–32 lowercase letters or numbers, and name is required',
     }
   }
 
@@ -180,25 +185,33 @@ export async function updateUser(input: {
   const existingUser = await repository
     .select()
     .from(users)
-    .where(eq(users.email, email))
+    .where(eq(users.username, username))
     .limit(1)
 
   if (existingUser[0] && existingUser[0].id !== user.id) {
     return {
       ok: false,
-      message: 'A user with this email already exists',
+      message: 'Username is already in use',
     }
   }
 
   const passwordFields = password ? createPasswordCredentials(password) : {}
-  const [updatedUser] = await repository.update(users).set({
-    email,
-    name,
-    role: input.role,
-    isActive: input.isActive,
-    updatedAt: new Date().toISOString(),
-    ...passwordFields,
-  }).where(eq(users.id, user.id)).returning()
+  let updatedUser: User
+  try {
+    [updatedUser] = await repository.update(users).set({
+      username,
+      name,
+      role: input.role,
+      isActive: input.isActive,
+      updatedAt: new Date().toISOString(),
+      ...passwordFields,
+    }).where(eq(users.id, user.id)).returning()
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('UNIQUE constraint failed: users.username')) {
+      return { ok: false, message: 'Username is already in use' }
+    }
+    throw error
+  }
   await flushDatabase()
 
   return {

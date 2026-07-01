@@ -3,7 +3,7 @@
 ## Getting Started
 
 1. Launch SimplePOS.
-2. Enter your email and password.
+2. Enter your username and password.
 3. Select **Sign in**.
 4. Confirm the database indicator shows that SimplePOS is connected.
 
@@ -136,5 +136,5 @@ invoices that still need payment.
 - Vehicle already has an ongoing sale: select it from **In Progress**.
 - Invoice missing: confirm checkout showed a success message.
 - Stock did not change: confirm checkout completed rather than leaving a draft.
-- Login failed: verify your email and password with an administrator.
+- Login failed: verify your username and password with an administrator.
 - Database unavailable: restart SimplePOS and check the database indicator.

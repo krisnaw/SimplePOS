@@ -5,7 +5,7 @@ export type UserRole = 'admin' | 'cashier'
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  email: text('email').notNull().unique(),
+  username: text('username').notNull().unique(),
   name: text('name').notNull(),
   role: text('role').notNull().$type<UserRole>().default('cashier'),
   passwordHash: text('password_hash').notNull(),

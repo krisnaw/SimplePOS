@@ -13,7 +13,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
   const [users, setUsers] = useState<UserSummary[]>([])
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [role, setRole] = useState<UserRole>('cashier')
   const [password, setPassword] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -52,7 +52,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
   function resetForm() {
     setSelectedUserId(null)
     setName('')
-    setEmail('')
+    setUsername('')
     setRole('cashier')
     setPassword('')
     setIsActive(true)
@@ -62,7 +62,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
   function selectUser(user: UserSummary) {
     setSelectedUserId(user.id)
     setName(user.name)
-    setEmail(user.email)
+    setUsername(user.username)
     setRole(user.role)
     setPassword('')
     setIsActive(user.isActive)
@@ -90,14 +90,14 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
       const result = selectedUser
         ? await window.simplepos?.users.update({
             id: selectedUser.id,
-            email,
+            username,
             name,
             role,
             isActive,
             password: password || undefined,
           })
         : await window.simplepos?.users.create({
-            email,
+            username,
             name,
             role,
             password,
@@ -156,7 +156,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{user.name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
+                    <span className="block truncate text-xs text-muted-foreground">@{user.username}</span>
                   </span>
                   <span className="capitalize">{user.role}</span>
                   <span className={cn('text-xs font-medium', user.isActive ? 'text-foreground' : 'text-muted-foreground')}>
@@ -198,15 +198,24 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="user-email">Email</Label>
+                <Label htmlFor="user-username">Username</Label>
                 <Input
-                  id="user-email"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="cashier@simplepos.com"
+                  id="user-username"
+                  name="username"
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value.toLowerCase())}
+                  placeholder="kasir1"
                   required
+                  minLength={3}
+                  maxLength={32}
+                  pattern="[a-z0-9]{3,32}"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                 />
+                <p className="text-xs text-muted-foreground">3–32 lowercase letters or numbers, with no spaces.</p>
               </div>
 
               <div className="flex flex-col gap-2">

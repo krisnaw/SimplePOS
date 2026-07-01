@@ -191,7 +191,7 @@ export default function Dashboard() {
               <div className="flex flex-col gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{user.name}</p>
-                  <p className="truncate text-[11px] leading-4 text-muted-foreground">{user.email}</p>
+                  <p className="truncate text-[11px] leading-4 text-muted-foreground">@{user.username}</p>
                 </div>
                 <Button
                   variant="outline"

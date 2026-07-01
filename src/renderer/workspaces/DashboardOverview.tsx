@@ -59,7 +59,7 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col">
-              <span className="truncate text-pretty">{user.email}</span>
+              <span className="truncate text-pretty">@{user.username}</span>
               <span className="capitalize text-muted-foreground text-pretty">{user.role}</span>
             </div>
           </CardContent>

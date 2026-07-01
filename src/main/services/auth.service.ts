@@ -3,7 +3,7 @@ import { users } from '../db/schema/index'
 import { flushDatabase } from '../db/client'
 import { getUserRepository } from '../repositories/user.repository'
 import { verifyPassword } from './password.service'
-import { normalizeEmail } from './user.service'
+import { isValidUsername, normalizeUsername } from './username'
 import { and, eq } from 'drizzle-orm'
 
 export type LoginResult = {
@@ -11,13 +11,13 @@ export type LoginResult = {
   message: string
   user?: {
     id: number
-    email: string
+    username: string
     name: string
     role: User['role']
   }
 }
 
-export async function authenticateUser(email: string, password: string): Promise<LoginResult> {
+export async function authenticateUser(username: string, password: string): Promise<LoginResult> {
   const repository = getUserRepository()
 
   if (!repository) {
@@ -27,17 +27,25 @@ export async function authenticateUser(email: string, password: string): Promise
     }
   }
 
-  const normalizedEmail = normalizeEmail(email)
+  const normalizedUsername = normalizeUsername(username)
+
+  if (!isValidUsername(normalizedUsername)) {
+    return {
+      ok: false,
+      message: 'Invalid username or password',
+    }
+  }
+
   const [user] = await repository
     .select()
     .from(users)
-    .where(and(eq(users.email, normalizedEmail), eq(users.isActive, true)))
+    .where(and(eq(users.username, normalizedUsername), eq(users.isActive, true)))
     .limit(1)
 
   if (!user || !verifyPassword(password, user.passwordSalt, user.passwordHash)) {
     return {
       ok: false,
-      message: 'Invalid email or password',
+      message: 'Invalid username or password',
     }
   }
 
@@ -52,7 +60,7 @@ export async function authenticateUser(email: string, password: string): Promise
     message: 'Signed in',
     user: {
       id: user.id,
-      email: user.email,
+      username: user.username,
       name: user.name,
       role: user.role,
     },

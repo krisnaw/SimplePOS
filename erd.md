@@ -8,7 +8,7 @@
 │─────────────│       │─────────────────│       │─────────────│
 │ id (PK)     │──┐    │ id (PK)         │──┐    │ id (PK)     │
 │ name        │  │    │ customer_id (FK)│  │    │ name        │
-│ email       │  │    │ vehicle_id (FK) │  │    │ phone       │
+│ username    │  │    │ vehicle_id (FK) │  │    │ phone       │
 │ password    │  └───>│ user_id (FK)    │  │    │ email       │
 │ role        │       │ status          │  │    │ address     │
 │ created_at  │       │ notes           │  │    │ created_at  │

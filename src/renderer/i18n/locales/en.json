@@ -105,7 +105,7 @@
     "subtitle": "Car Repair Shop Management",
     "signIn": "Sign in",
     "credentialsHint": "Enter your credentials to continue",
-    "email": "Email",
+    "username": "Username",
     "password": "Password",
     "signingIn": "Signing in",
     "authUnavailable": "Authentication unavailable",

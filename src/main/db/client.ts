@@ -18,7 +18,7 @@ export type DatabaseStatus = {
 
 type DatabaseClient = SQLJsDatabase<typeof schema>
 
-const defaultAdminEmail = 'admin@simplepos.com'
+const defaultAdminUsername = 'admin'
 const defaultAdminPassword = 'admin123'
 const defaultAdminSalt = 'simplepos-default-admin-salt'
 
@@ -273,7 +273,7 @@ function runSchemaMigration(database: SqlJsDatabase): void {
   database.run(`
     CREATE TABLE IF NOT EXISTS users (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-      email text NOT NULL,
+      username text NOT NULL,
       name text NOT NULL,
       role text NOT NULL DEFAULT ('cashier'),
       password_hash text NOT NULL,
@@ -282,23 +282,23 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
       updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP),
       last_login_at text,
-      CONSTRAINT UQ_users_email UNIQUE (email)
+      CONSTRAINT UQ_users_username UNIQUE (username)
     )
   `)
 
   database.run(
     `
-      INSERT INTO users (email, name, role, password_hash, password_salt, is_active)
+      INSERT INTO users (username, name, role, password_hash, password_salt, is_active)
       SELECT ?, ?, ?, ?, ?, 1
-      WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = ?)
+      WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = ?)
     `,
     [
-      defaultAdminEmail,
+      defaultAdminUsername,
       'Administrator',
       'admin',
       hashPassword(defaultAdminPassword, defaultAdminSalt),
       defaultAdminSalt,
-      defaultAdminEmail,
+      defaultAdminUsername,
     ],
   )
 

@@ -179,15 +179,15 @@ app.whenReady().then(async () => {
 
     return updateUser(input)
   })
-  ipcMain.handle('auth:login', async (event, credentials: { email?: unknown; password?: unknown }) => {
-    if (typeof credentials.email !== 'string' || typeof credentials.password !== 'string') {
+  ipcMain.handle('auth:login', async (event, credentials: { username?: unknown; password?: unknown }) => {
+    if (typeof credentials.username !== 'string' || typeof credentials.password !== 'string') {
       return {
         ok: false,
         message: 'Invalid login request',
       }
     }
 
-    const result = await authenticateUser(credentials.email, credentials.password)
+    const result = await authenticateUser(credentials.username, credentials.password)
 
     if (result.ok) {
       const win = BrowserWindow.fromWebContents(event.sender)

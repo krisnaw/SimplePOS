@@ -4,7 +4,7 @@
 
 | Screen | Role | Description |
 |---|---|---|
-| Login | All | Email + password login, role-based redirect |
+| Login | All | Username + password login, role-based redirect |
 
 ---
 
