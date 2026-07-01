@@ -3,7 +3,12 @@ export type UnitType = 'piece' | 'litre' | 'set' | 'box'
 export type ProductCategorySummary = {
   id: number
   name: string
-  description: string | null
+}
+
+export type ProductCategoryMutationResult = {
+  ok: boolean
+  message: string
+  category?: ProductCategorySummary
 }
 
 export type ProductSummary = {
@@ -17,6 +22,7 @@ export type ProductSummary = {
   unitType: UnitType
   stockQty: number
   minStock: number
+  lastPurchaseCost: number
   isActive: boolean
   createdAt?: string
   updatedAt: string

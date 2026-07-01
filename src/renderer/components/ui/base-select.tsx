@@ -43,8 +43,8 @@ export function BaseSelect({
           !selectedOption && 'text-muted-foreground',
         )}
       >
-        <Select.Value placeholder={placeholder}>
-          {() => <span className="min-w-0 truncate">{selectedOption?.label ?? placeholder}</span>}
+        <Select.Value className="min-w-0 flex-1 overflow-hidden" placeholder={placeholder}>
+          {() => <span className="block truncate">{selectedOption?.label ?? placeholder}</span>}
         </Select.Value>
         <Select.Icon className="flex shrink-0 text-muted-foreground">
           <ChevronDown className="size-4" aria-hidden="true" />
@@ -52,16 +52,16 @@ export function BaseSelect({
       </Select.Trigger>
       <Select.Portal>
         <Select.Positioner sideOffset={4} alignItemWithTrigger={false} className="outline-none">
-          <Select.Popup className="max-h-64 min-w-[var(--anchor-width)] overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-border">
+          <Select.Popup className="max-h-64 w-[var(--anchor-width)] max-w-[calc(100vw-2rem)] overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-border">
             {options.map((option) => (
               <Select.Item
                 key={option.value}
                 value={option.value}
                 disabled={option.disabled}
-                className="flex min-h-9 cursor-default items-center rounded-sm px-2.5 py-1.5 text-sm outline-none transition-[background-color,color] duration-150 ease-out data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-muted data-[selected]:font-medium"
+                className="flex min-h-9 min-w-0 cursor-default items-center rounded-sm px-2.5 py-1.5 text-sm outline-none transition-[background-color,color] duration-150 ease-out data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-muted data-[selected]:font-medium"
               >
-                <Select.ItemText>
-                  <span className="truncate">{option.label}</span>
+                <Select.ItemText className="min-w-0 flex-1 overflow-hidden">
+                  <span className="block truncate">{option.label}</span>
                 </Select.ItemText>
               </Select.Item>
             ))}

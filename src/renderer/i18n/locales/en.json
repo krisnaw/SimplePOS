@@ -51,6 +51,10 @@
       "label": "Inventory",
       "description": "Parts and stock"
     },
+    "suppliers": {
+      "label": "Suppliers",
+      "description": "Supplier records"
+    },
     "vehicles": {
       "label": "Vehicles",
       "description": "Vehicle records"
@@ -86,6 +90,15 @@
     "settings": {
       "label": "Settings",
       "description": "Shop preferences"
+    }
+  },
+  "suppliers": {
+    "sections": {
+      "suppliers": {
+        "eyebrow": "Procurement",
+        "title": "Suppliers",
+        "description": "Manage supplier records and purchasing contact details."
+      }
     }
   },
   "login": {
@@ -175,7 +188,7 @@
     "invoiceCount_one": "{{count}} invoice",
     "invoiceCount_other": "{{count}} invoices",
     "refresh": "Refresh invoices",
-    "searchPlaceholder": "Search invoice, work order, customer, payment",
+    "searchPlaceholder": "Search plate, invoice, customer, payment",
     "invoiceStatus": "Invoice status",
     "paid": "Paid",
     "loading": "Loading invoices",
@@ -190,12 +203,16 @@
     "print": "Print",
     "preview": "Preview",
     "export": "Export",
-    "contact": "Contact",
+    "contact": "Phone",
     "payment": "Payment",
+    "vehicle": "Vehicle",
+    "plateNumber": "Plate Number",
+    "vehicleNotRecorded": "Vehicle not recorded",
     "workOrder": "Work Order",
     "notRecorded": "Not recorded",
     "directSale": "Direct sale",
     "item": "Item",
+    "category": "Category",
     "qty": "Qty",
     "noSku": "No SKU",
     "paymentDetails": "Payment Details",
@@ -466,13 +483,14 @@
       }
     },
     "topSelling": {
-      "title": "Top Selling Items",
-      "description": "Products and services ranked by revenue.",
-      "noSales": "No item sales in this period.",
+      "title": "Products Sold",
+      "description": "Products sold during the selected period.",
+      "noSales": "No products sold in this period.",
       "table": {
-        "item": "Item",
-        "qty": "Qty",
-        "revenue": "Revenue"
+        "productName": "Product Name",
+        "category": "Category",
+        "totalUnit": "Total Unit",
+        "total": "Total"
       }
     },
     "paymentMethods": {

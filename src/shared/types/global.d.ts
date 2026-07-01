@@ -1,6 +1,16 @@
 export {}
 
 import type { UpdateStatus } from './updates'
+import type { SupplierMutationResult, SupplierSummary } from './supplier'
+import type {
+  PurchaseCreateInput,
+  PurchaseDetail,
+  PurchaseInvoiceStatus,
+  PurchaseInvoiceUpdateInput,
+  PurchaseMutationResult,
+  PurchasePaymentStatus,
+  PurchaseSummary,
+} from './purchase'
 
 type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -45,7 +55,12 @@ type UserMutationResult = {
 type ProductCategorySummary = {
   id: number
   name: string
-  description: string | null
+}
+
+type ProductCategoryMutationResult = {
+  ok: boolean
+  message: string
+  category?: ProductCategorySummary
 }
 
 type UnitType = 'piece' | 'litre' | 'set' | 'box'
@@ -61,6 +76,7 @@ type ProductSummary = {
   unitType: UnitType
   stockQty: number
   minStock: number
+  lastPurchaseCost: number
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -151,6 +167,7 @@ type CheckoutItemInput = {
   itemType: 'product' | 'service'
   id: number
   quantity: number
+  unitPrice?: number
 }
 
 type CheckoutInput = {
@@ -172,7 +189,10 @@ type CheckoutLineItemSummary = {
   name: string
   sku: string | null
   quantity: number
+  basePrice: number
   unitPrice: number
+  priceOverriddenById: number | null
+  priceOverriddenAt: string | null
   lineTotal: number
 }
 
@@ -213,6 +233,11 @@ type InvoiceSummary = {
   invoiceNumber: string
   status: InvoiceStatus
   customerName: string | null
+  vehiclePlateNumber: string | null
+  vehicleBrand: string | null
+  vehicleModel: string | null
+  vehicleYear: number | null
+  vehicleColor: string | null
   paymentMethod: PaymentMethod | null
   paymentStatus: PaymentStatus | null
   itemCount: number
@@ -228,6 +253,7 @@ type InvoiceLineItemSummary = {
   serviceId: number | null
   name: string
   sku: string | null
+  category: string | null
   quantity: number
   unitPrice: number
   lineTotal: number
@@ -352,6 +378,7 @@ type TopSellingItemSummary = {
   itemType: 'product' | 'service'
   name: string
   sku: string | null
+  category: string | null
   quantity: number
   total: number
 }
@@ -405,11 +432,24 @@ declare global {
       }
       categories: {
         list: () => Promise<ProductCategorySummary[]>
+        create: (input: { name: string }) => Promise<ProductCategoryMutationResult>
       }
       products: {
         list: () => Promise<ProductSummary[]>
         create: (input: Record<string, unknown>) => Promise<ProductMutationResult>
         update: (input: Record<string, unknown>) => Promise<ProductMutationResult>
+      }
+      suppliers: {
+        list: (input?: { includeInactive?: boolean }) => Promise<SupplierSummary[]>
+        create: (input: Record<string, unknown>) => Promise<SupplierMutationResult>
+        update: (input: Record<string, unknown>) => Promise<SupplierMutationResult>
+      }
+      purchases: {
+        list: (input?: { paymentStatus?: PurchasePaymentStatus; invoiceStatus?: PurchaseInvoiceStatus; search?: string }) => Promise<PurchaseSummary[]>
+        get: (input: { id: number }) => Promise<PurchaseDetail | null>
+        create: (input: PurchaseCreateInput) => Promise<PurchaseMutationResult>
+        markPaid: (input: { id: number }) => Promise<PurchaseMutationResult>
+        updateInvoice: (input: PurchaseInvoiceUpdateInput) => Promise<PurchaseMutationResult>
       }
       services: {
         list: () => Promise<ServiceSummary[]>
@@ -423,11 +463,25 @@ declare global {
         list: () => Promise<Array<{
           id: number
           vehicle: VehicleSummary
-          lineItems: Array<{ key: string; id: number; type: 'product' | 'service'; name: string; code: string; price: number; quantity: number }>
+          lineItems: Array<{
+            key: string
+            id: number
+            type: 'product' | 'service'
+            name: string
+            code: string
+            price: number
+            basePrice: number
+            priceOverriddenById: number | null
+            priceOverriddenAt: string | null
+            quantity: number
+          }>
           createdAt: string
+          updatedAt: string
+          isStale: boolean
         }>>
-        createOrResume: (input: { vehicleId: number; createdById: number }) => Promise<{ id: number } | null>
-        saveItems: (input: { saleId: number; items: CheckoutItemInput[] }) => Promise<{ ok: boolean }>
+        create: (input: { vehicleId: number; createdById: number }) => Promise<{ id: number; created: boolean } | null>
+        delete: (input: { saleId: number }) => Promise<{ ok: boolean; message: string }>
+        saveItems: (input: { saleId: number; updatedById: number; items: CheckoutItemInput[] }) => Promise<{ ok: boolean }>
       }
       dashboard: {
         getSummary: () => Promise<DashboardSummary>

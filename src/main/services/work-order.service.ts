@@ -712,7 +712,10 @@ export async function checkoutWorkOrder(input: Record<string, unknown>): Promise
         name: item.name,
         sku: item.sku,
         quantity: item.quantity,
+        basePrice: item.unitPrice,
         unitPrice: item.unitPrice,
+        priceOverriddenById: null,
+        priceOverriddenAt: null,
         lineTotal: item.lineTotal,
         stockQty: product.stockQty,
       })
@@ -724,7 +727,10 @@ export async function checkoutWorkOrder(input: Record<string, unknown>): Promise
         name: item.name,
         sku: item.sku,
         quantity: item.quantity,
+        basePrice: item.unitPrice,
         unitPrice: item.unitPrice,
+        priceOverriddenById: null,
+        priceOverriddenAt: null,
         lineTotal: item.lineTotal,
       })
     }

@@ -1,8 +1,10 @@
 import {
-  ClipboardList,
+  Building2,
   Car,
   LayoutDashboard,
   Package,
+  ReceiptText,
+  ScrollText,
   ShoppingCart,
 } from 'lucide-react'
 import type { AppSection, SectionDetail } from '@/shared/types/app'
@@ -29,6 +31,20 @@ export const navigationItems: Array<{
     icon: ShoppingCart,
   },
   {
+    id: 'invoices',
+    translationKey: 'invoices',
+    label: 'Invoices',
+    description: 'Completed sales and receipts',
+    icon: ReceiptText,
+  },
+  {
+    id: 'reports',
+    translationKey: 'reports',
+    label: 'Reports',
+    description: 'Sales and operations',
+    icon: ScrollText,
+  },
+  {
     id: 'inventory',
     translationKey: 'inventory',
     label: 'Inventory',
@@ -36,18 +52,18 @@ export const navigationItems: Array<{
     icon: Package,
   },
   {
+    id: 'suppliers',
+    translationKey: 'suppliers',
+    label: 'Suppliers',
+    description: 'Supplier records',
+    icon: Building2,
+  },
+  {
     id: 'vehicles',
     translationKey: 'vehicles',
     label: 'Vehicles',
     description: 'Vehicle records',
     icon: Car,
-  },
-  {
-    id: 'work-orders',
-    translationKey: 'workOrders',
-    label: 'Work Orders',
-    description: 'Repairs in progress',
-    icon: ClipboardList,
   },
 ]
 
@@ -66,6 +82,11 @@ export const sectionDetails: Record<AppSection, SectionDetail> = {
     eyebrow: 'Stock control',
     title: 'Inventory',
     description: 'Track spare parts, supplies, stock levels, and reorder needs.',
+  },
+  suppliers: {
+    eyebrow: 'Procurement',
+    title: 'Suppliers',
+    description: 'Manage supplier records and purchasing contact details.',
   },
   vehicles: {
     eyebrow: 'Vehicle records',

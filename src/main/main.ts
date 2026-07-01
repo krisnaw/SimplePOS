@@ -10,8 +10,9 @@ import {
   authenticateUser,
   createCustomer,
   createCheckout,
-  createOrResumeSalesDraft,
+  createSalesDraft,
   createProduct,
+  createProductCategory,
   createService,
   createWorkOrder,
   createUser,
@@ -19,6 +20,7 @@ import {
   addWorkOrderItem,
   checkoutWorkOrder,
   deleteCustomer,
+  deleteSalesDraft,
   deleteVehicle,
   deleteWorkOrderItem,
   getDashboardSummary,
@@ -45,6 +47,14 @@ import {
   updateWorkOrder,
   updateWorkOrderItem,
   updateWorkOrderStatus,
+  createSupplier,
+  listSuppliers,
+  updateSupplier,
+  createPurchase,
+  getPurchaseDetail,
+  listPurchases,
+  markPurchasePaid,
+  updatePurchaseInvoice,
 } from './services'
 import { registerUpdateHandlers } from './services/update.service'
 
@@ -103,15 +113,27 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
   ipcMain.handle('categories:list', () => listProductCategories())
+  ipcMain.handle('categories:create', (_event, input: unknown) => (
+    createProductCategory(input as { name?: unknown })
+  ))
   ipcMain.handle('products:list', () => listProducts())
   ipcMain.handle('products:create', (_event, input: unknown) => createProduct(input as Record<string, unknown>))
   ipcMain.handle('products:update', (_event, input: unknown) => updateProduct(input as Record<string, unknown>))
+  ipcMain.handle('suppliers:list', (_event, input: unknown) => listSuppliers(input as Record<string, unknown>))
+  ipcMain.handle('suppliers:create', (_event, input: unknown) => createSupplier(input as Record<string, unknown>))
+  ipcMain.handle('suppliers:update', (_event, input: unknown) => updateSupplier(input as Record<string, unknown>))
+  ipcMain.handle('purchases:list', (_event, input: unknown) => listPurchases(input as Record<string, unknown>))
+  ipcMain.handle('purchases:get', (_event, input: unknown) => getPurchaseDetail(input as { id?: unknown }))
+  ipcMain.handle('purchases:create', (_event, input: unknown) => createPurchase(input as Record<string, unknown>))
+  ipcMain.handle('purchases:markPaid', (_event, input: unknown) => markPurchasePaid(input as { id?: unknown }))
+  ipcMain.handle('purchases:updateInvoice', (_event, input: unknown) => updatePurchaseInvoice(input as Record<string, unknown>))
   ipcMain.handle('services:list', () => listServices())
   ipcMain.handle('services:create', (_event, input: unknown) => createService(input as Record<string, unknown>))
   ipcMain.handle('services:update', (_event, input: unknown) => updateService(input as Record<string, unknown>))
   ipcMain.handle('checkout:create', (_event, input: unknown) => createCheckout(input as Record<string, unknown>))
   ipcMain.handle('salesDrafts:list', () => listSalesDrafts())
-  ipcMain.handle('salesDrafts:createOrResume', (_event, input: unknown) => createOrResumeSalesDraft(input as Record<string, unknown>))
+  ipcMain.handle('salesDrafts:create', (_event, input: unknown) => createSalesDraft(input as Record<string, unknown>))
+  ipcMain.handle('salesDrafts:delete', (_event, input: unknown) => deleteSalesDraft(input as Record<string, unknown>))
   ipcMain.handle('salesDrafts:saveItems', (_event, input: unknown) => saveSalesDraftItems(input as Record<string, unknown>))
   ipcMain.handle('invoices:list', (_event, input: unknown) => listInvoices(input as Record<string, unknown>))
   ipcMain.handle('invoices:get', (_event, input: unknown) => getInvoiceDetail(input as { id?: unknown }))

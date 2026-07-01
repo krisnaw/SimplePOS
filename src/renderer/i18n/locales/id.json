@@ -51,6 +51,10 @@
       "label": "Inventaris",
       "description": "Suku cadang dan stok"
     },
+    "suppliers": {
+      "label": "Pemasok",
+      "description": "Data pemasok"
+    },
     "vehicles": {
       "label": "Kendaraan",
       "description": "Data kendaraan"
@@ -86,6 +90,15 @@
     "settings": {
       "label": "Pengaturan",
       "description": "Preferensi bengkel"
+    }
+  },
+  "suppliers": {
+    "sections": {
+      "suppliers": {
+        "eyebrow": "Pengadaan",
+        "title": "Pemasok",
+        "description": "Kelola data pemasok dan informasi kontak pembelian."
+      }
     }
   },
   "login": {
@@ -175,7 +188,7 @@
     "invoiceCount_one": "{{count}} faktur",
     "invoiceCount_other": "{{count}} faktur",
     "refresh": "Muat ulang faktur",
-    "searchPlaceholder": "Cari faktur, perintah kerja, pelanggan, pembayaran",
+    "searchPlaceholder": "Cari plat, faktur, pelanggan, pembayaran",
     "invoiceStatus": "Status faktur",
     "paid": "Lunas",
     "loading": "Memuat faktur",
@@ -190,12 +203,16 @@
     "print": "Cetak",
     "preview": "Pratinjau",
     "export": "Ekspor",
-    "contact": "Kontak",
+    "contact": "Telepon",
     "payment": "Pembayaran",
+    "vehicle": "Kendaraan",
+    "plateNumber": "Nomor Plat",
+    "vehicleNotRecorded": "Kendaraan tidak tercatat",
     "workOrder": "Perintah Kerja",
     "notRecorded": "Tidak tercatat",
     "directSale": "Penjualan langsung",
     "item": "Item",
+    "category": "Kategori",
     "qty": "Qty",
     "noSku": "Tanpa SKU",
     "paymentDetails": "Detail Pembayaran",
@@ -466,13 +483,14 @@
       }
     },
     "topSelling": {
-      "title": "Item Terlaris",
-      "description": "Produk dan layanan diurutkan berdasarkan pendapatan.",
-      "noSales": "Tidak ada penjualan item pada periode ini.",
+      "title": "Produk Terjual",
+      "description": "Produk yang terjual selama periode terpilih.",
+      "noSales": "Tidak ada produk terjual pada periode ini.",
       "table": {
-        "item": "Item",
-        "qty": "Jml",
-        "revenue": "Pendapatan"
+        "productName": "Nama Produk",
+        "category": "Kategori",
+        "totalUnit": "Total Unit",
+        "total": "Total"
       }
     },
     "paymentMethods": {

@@ -1,860 +1,1287 @@
-import { type FormEvent, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import {
-  AlertCircle,
+  ArrowLeft,
   CalendarClock,
   Check,
-  ClipboardList,
-  CreditCard,
   FileText,
-  History,
+  Loader2,
   Package,
   PackageCheck,
+  PackagePlus,
+  PencilLine,
   Plus,
   ReceiptText,
   Search,
   Trash2,
-  Truck,
   WalletCards,
   X,
 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogClose,
+  AlertDialogDescription,
+  AlertDialogPopup,
+  AlertDialogPortal,
+  AlertDialogTitle,
+} from '@/renderer/components/ui/alert-dialog'
+import { Badge } from '@/renderer/components/ui/badge'
 import { Button } from '@/renderer/components/ui/button'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/renderer/components/ui/card'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/renderer/components/ui/field'
 import { Input } from '@/renderer/components/ui/input'
-import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { formatCurrency } from '@/renderer/lib/formatters'
 import { cn } from '@/renderer/lib/utils'
+import type { ProductCategorySummary, ProductSummary } from '@/shared/types/product'
+import type {
+  PurchaseDetail,
+  PurchaseInvoiceStatus,
+  PurchaseInvoiceUpdateInput,
+  PurchaseItemInput,
+  PurchasePaymentStatus,
+  PurchaseSummary,
+} from '@/shared/types/purchase'
+import { ProductCategoryBadge } from './ProductCategoryBadge'
+import type { SupplierSummary } from '@/shared/types/supplier'
+import type { AuthenticatedUser } from '@/shared/types/user'
+import type { ProductFormState } from './InventoryWorkspace.types'
 
-type InventoryView = 'products' | 'purchases' | 'payables'
-type PaymentStatus = 'unpaid' | 'partial' | 'paid'
-type ReceiptStatus = 'received' | 'void'
+type InventoryView = 'products' | 'purchases' | 'pending' | 'unpaid'
+type WorkspaceScreen = 'list' | 'recordPurchase' | 'purchaseDetail' | 'invoiceForm' | 'productForm'
+type CategoryFilter = 'all' | `${number}`
 
-type InventoryProduct = {
-  id: number
-  sku: string
-  name: string
-  category: string
-  unitType: 'piece' | 'litre' | 'set' | 'box'
-  stockQty: number
-  minStock: number
-  sellingPrice: number
-  lastPurchaseCost: number
-}
-
-type PurchaseLineDraft = {
-  productId: number
-  quantity: number
-  unitCost: number
-}
-
-type PurchaseInvoice = {
-  id: string
-  supplierName: string
-  invoiceNumber: string
+type PurchaseForm = {
+  supplierId: string
+  supplierInvoiceNumber: string
   invoiceDate: string
+  paymentStatus: PurchasePaymentStatus
   dueDate: string
-  receiptStatus: ReceiptStatus
-  paymentStatus: PaymentStatus
-  amountPaid: number
-  notes: string
-  items: Array<PurchaseLineDraft & {
-    sku: string
-    name: string
-  }>
-}
-
-type PurchaseFormState = {
-  supplierName: string
-  invoiceNumber: string
-  invoiceDate: string
-  dueDate: string
-  amountPaid: string
   notes: string
   productId: string
   quantity: string
   unitCost: string
 }
 
-const today = new Date().toISOString().slice(0, 10)
+type Feedback = {
+  message: string
+  tone: 'success' | 'error'
+}
 
-const initialProducts: InventoryProduct[] = [
-  {
-    id: 1,
-    sku: 'OIL-FLT-014',
-    name: 'Oil Filter',
-    category: 'Engine',
-    unitType: 'piece',
-    stockQty: 8,
-    minStock: 6,
-    sellingPrice: 55000,
-    lastPurchaseCost: 38000,
-  },
-  {
-    id: 2,
-    sku: 'ENG-OIL-4L',
-    name: 'Engine Oil 4L',
-    category: 'Lubricants',
-    unitType: 'litre',
-    stockQty: 14,
-    minStock: 8,
-    sellingPrice: 320000,
-    lastPurchaseCost: 255000,
-  },
-  {
-    id: 3,
-    sku: 'BRK-PAD-FR',
-    name: 'Brake Pad Front',
-    category: 'Brake',
-    unitType: 'set',
-    stockQty: 3,
-    minStock: 4,
-    sellingPrice: 420000,
-    lastPurchaseCost: 310000,
-  },
-  {
-    id: 4,
-    sku: 'SPK-PLG-STD',
-    name: 'Spark Plug Standard',
-    category: 'Ignition',
-    unitType: 'piece',
-    stockQty: 24,
-    minStock: 12,
-    sellingPrice: 45000,
-    lastPurchaseCost: 28000,
-  },
-]
+type InvoiceForm = {
+  supplierInvoiceNumber: string
+  invoiceDate: string
+  paymentStatus: PurchasePaymentStatus
+  dueDate: string
+  paidAt: string
+  notes: string
+}
 
-const initialPurchases: PurchaseInvoice[] = [
-  {
-    id: 'PI-LOCAL-1',
-    supplierName: 'Bali Motor Supply',
-    invoiceNumber: 'BMS-2026-041',
-    invoiceDate: today,
-    dueDate: today,
-    receiptStatus: 'received',
-    paymentStatus: 'unpaid',
-    amountPaid: 0,
-    notes: 'Pay after closing cash count.',
-    items: [
-      { productId: 1, sku: 'OIL-FLT-014', name: 'Oil Filter', quantity: 10, unitCost: 38000 },
-      { productId: 4, sku: 'SPK-PLG-STD', name: 'Spark Plug Standard', quantity: 12, unitCost: 28000 },
-    ],
-  },
-  {
-    id: 'PI-LOCAL-2',
-    supplierName: 'Dewata Parts',
-    invoiceNumber: 'DP-7712',
-    invoiceDate: '2026-06-22',
-    dueDate: '2026-06-28',
-    receiptStatus: 'received',
-    paymentStatus: 'partial',
-    amountPaid: 500000,
-    notes: 'Remaining balance due this week.',
-    items: [
-      { productId: 2, sku: 'ENG-OIL-4L', name: 'Engine Oil 4L', quantity: 4, unitCost: 255000 },
-    ],
-  },
-]
-
-const emptyForm: PurchaseFormState = {
-  supplierName: '',
-  invoiceNumber: '',
+const emptyProductForm: ProductFormState = {
+  sku: '',
+  barcode: '',
+  name: '',
+  description: '',
+  categoryId: '',
+  unitPrice: '',
+  unitType: 'piece',
+  stockQty: '',
+  minStock: '',
+}
+const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
+const now = new Date()
+const today = [
+  now.getFullYear(),
+  String(now.getMonth() + 1).padStart(2, '0'),
+  String(now.getDate()).padStart(2, '0'),
+].join('-')
+const emptyForm: PurchaseForm = {
+  supplierId: '',
+  supplierInvoiceNumber: '',
   invoiceDate: today,
+  paymentStatus: 'unpaid',
   dueDate: '',
-  amountPaid: '',
   notes: '',
   productId: '',
   quantity: '1',
   unitCost: '',
 }
-
+const emptyInvoiceForm: InvoiceForm = {
+  supplierInvoiceNumber: '',
+  invoiceDate: '',
+  paymentStatus: 'unpaid',
+  dueDate: '',
+  paidAt: today,
+  notes: '',
+}
 const pressableClass =
   'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]'
 
-const productGridClass =
-  'grid-cols-[minmax(0,1.25fr)_minmax(0,0.65fr)_104px_96px_104px_112px]'
-
-const purchaseGridClass =
-  'grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)_104px_108px_112px]'
-
-function getInvoiceTotal(invoice: PurchaseInvoice): number {
-  return invoice.items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0)
-}
-
-function getInvoiceBalance(invoice: PurchaseInvoice): number {
-  return Math.max(getInvoiceTotal(invoice) - invoice.amountPaid, 0)
-}
-
-function getPaymentStatus(amountPaid: number, total: number): PaymentStatus {
-  if (total > 0 && amountPaid >= total) return 'paid'
-  if (amountPaid > 0) return 'partial'
-  return 'unpaid'
-}
-
-function formatDate(value: string): string {
-  if (!value) return '-'
-
+function formatDate(value: string | null): string {
+  if (!value) return '—'
   return new Intl.DateTimeFormat('en', {
-    month: 'short',
     day: 'numeric',
+    month: 'short',
     year: 'numeric',
   }).format(new Date(`${value}T00:00:00`))
 }
 
-function isDueSoon(value: string): boolean {
-  if (!value) return false
-
-  const due = new Date(`${value}T00:00:00`).getTime()
-  const now = new Date(`${today}T00:00:00`).getTime()
-  const diffDays = Math.ceil((due - now) / 86_400_000)
-
-  return diffDays <= 2
-}
-
-function PaymentStatusPill({ status }: { status: PaymentStatus }) {
+function PaymentBadge({ status }: { status: PurchasePaymentStatus }) {
   return (
-    <span
-      className={cn(
-        'inline-flex min-h-6 w-fit items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium capitalize tabular-nums',
-        status === 'paid' && 'bg-emerald-500/10 text-emerald-700',
-        status === 'partial' && 'bg-amber-500/10 text-amber-700',
-        status === 'unpaid' && 'bg-destructive/10 text-destructive',
-      )}
-    >
-      {status === 'paid' ? <Check className="size-3.5" aria-hidden="true" /> : null}
-      {status === 'partial' ? <WalletCards className="size-3.5" aria-hidden="true" /> : null}
-      {status === 'unpaid' ? <CalendarClock className="size-3.5" aria-hidden="true" /> : null}
-      {status}
-    </span>
+    <Badge variant={status === 'paid' ? 'secondary' : 'destructive'}>
+      {status === 'paid' ? <Check data-icon="inline-start" aria-hidden="true" /> : <CalendarClock data-icon="inline-start" aria-hidden="true" />}
+      {status === 'paid' ? 'Paid' : 'Unpaid'}
+    </Badge>
   )
 }
 
-function MetricCard({
-  title,
-  description,
-  value,
-  icon: Icon,
-}: {
-  title: string
-  description: string
-  value: string
-  icon: typeof Package
-}) {
+function InvoiceBadge({ status }: { status: PurchaseInvoiceStatus }) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="truncate text-sm">{title}</CardTitle>
-            <CardDescription className="text-xs text-pretty">{description}</CardDescription>
-          </div>
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-            <Icon className="size-4" aria-hidden="true" />
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="truncate text-2xl font-semibold tabular-nums">{value}</p>
-      </CardContent>
-    </Card>
+    <Badge variant={status === 'received' ? 'secondary' : 'outline'}>
+      {status === 'received' ? <ReceiptText data-icon="inline-start" aria-hidden="true" /> : <CalendarClock data-icon="inline-start" aria-hidden="true" />}
+      {status === 'received' ? 'Invoice received' : 'Needs invoice'}
+    </Badge>
   )
 }
 
-export function PurchasingInventoryWorkspace() {
-  const [view, setView] = useState<InventoryView>('purchases')
-  const [products, setProducts] = useState<InventoryProduct[]>(initialProducts)
-  const [purchases, setPurchases] = useState<PurchaseInvoice[]>(initialPurchases)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [form, setForm] = useState<PurchaseFormState>(emptyForm)
-  const [draftLines, setDraftLines] = useState<PurchaseLineDraft[]>([])
-  const [message, setMessage] = useState('')
+function toProductForm(product: ProductSummary): ProductFormState {
+  return {
+    sku: product.sku,
+    barcode: product.barcode ?? '',
+    name: product.name,
+    description: product.description ?? '',
+    categoryId: product.categoryId ? String(product.categoryId) : '',
+    unitPrice: String(product.unitPrice),
+    unitType: product.unitType,
+    stockQty: String(product.stockQty),
+    minStock: String(product.minStock),
+  }
+}
 
-  const normalizedSearch = searchQuery.trim().toLowerCase()
+export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
+  const [products, setProducts] = useState<ProductSummary[]>([])
+  const [categories, setCategories] = useState<ProductCategorySummary[]>([])
+  const [suppliers, setSuppliers] = useState<SupplierSummary[]>([])
+  const [purchases, setPurchases] = useState<PurchaseSummary[]>([])
+  const [selectedPurchase, setSelectedPurchase] = useState<PurchaseDetail | null>(null)
+  const [view, setView] = useState<InventoryView>('products')
+  const [screen, setScreen] = useState<WorkspaceScreen>('list')
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [form, setForm] = useState<PurchaseForm>(emptyForm)
+  const [invoiceForm, setInvoiceForm] = useState<InvoiceForm>(emptyInvoiceForm)
+  const [productForm, setProductForm] = useState<ProductFormState>(emptyProductForm)
+  const [editingProduct, setEditingProduct] = useState<ProductSummary | null>(null)
+  const [lines, setLines] = useState<PurchaseItemInput[]>([])
+  const [feedback, setFeedback] = useState<Feedback | null>(null)
+  const [productFeedback, setProductFeedback] = useState<Feedback | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isProductSaving, setIsProductSaving] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
+  async function loadWorkspace() {
+    const api = window.simplepos
+    if (!api) {
+      setFeedback({ message: 'Database service is unavailable.', tone: 'error' })
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    const [productList, supplierList, purchaseList, categoryList] = await Promise.all([
+      api.products.list(),
+      api.suppliers.list(),
+      api.purchases.list(),
+      api.categories.list(),
+    ])
+    setProducts(productList)
+    setSuppliers(supplierList)
+    setPurchases(purchaseList)
+    setCategories(categoryList)
+    setForm((current) => ({
+      ...current,
+      supplierId: current.supplierId || (supplierList[0] ? String(supplierList[0].id) : ''),
+    }))
+    setProductForm((current) => ({
+      ...current,
+      categoryId: current.categoryId || (categoryList[0] ? String(categoryList[0].id) : ''),
+    }))
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    void loadWorkspace().catch(() => {
+      setFeedback({ message: 'Unable to load purchasing data.', tone: 'error' })
+      setIsLoading(false)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (feedback?.tone !== 'success') return
+    const timeout = window.setTimeout(() => {
+      setFeedback((current) => current === feedback ? null : current)
+    }, 3000)
+    return () => window.clearTimeout(timeout)
+  }, [feedback])
+
+  const query = search.trim().toLocaleLowerCase()
+  const categoryNames = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories],
+  )
   const filteredProducts = useMemo(() => {
-    if (!normalizedSearch) return products
+    return products.filter((product) => {
+      const matchesCategory = categoryFilter === 'all'
+        || product.categoryId === Number(categoryFilter)
+      if (!matchesCategory) return false
+      if (!query) return true
 
-    return products.filter((product) =>
-      [product.name, product.sku, product.category].some((value) => value.toLowerCase().includes(normalizedSearch)),
-    )
-  }, [normalizedSearch, products])
-
+      const categoryName = product.categoryId === null
+        ? 'Uncategorized'
+        : categoryNames.get(product.categoryId) ?? 'Uncategorized'
+      return [product.name, categoryName]
+        .some((value) => value.toLocaleLowerCase().includes(query))
+    })
+  }, [categoryFilter, categoryNames, products, query])
   const filteredPurchases = useMemo(() => {
-    if (!normalizedSearch) return purchases
-
-    return purchases.filter((purchase) =>
-      [
-        purchase.supplierName,
-        purchase.invoiceNumber,
-        purchase.paymentStatus,
-        ...purchase.items.flatMap((item) => [item.name, item.sku]),
-      ].some((value) => value.toLowerCase().includes(normalizedSearch)),
+    const source = view === 'pending'
+      ? purchases.filter((purchase) => purchase.invoiceStatus === 'pending')
+      : view === 'unpaid'
+      ? purchases.filter((purchase) => purchase.paymentStatus === 'unpaid')
+      : purchases
+    if (!query) return source
+    return source.filter((purchase) =>
+      [purchase.purchaseNumber, purchase.supplierName, purchase.supplierInvoiceNumber ?? '']
+        .some((value) => value.toLocaleLowerCase().includes(query)),
     )
-  }, [normalizedSearch, purchases])
+  }, [purchases, query, view])
 
-  const unpaidPurchases = purchases.filter((purchase) => purchase.paymentStatus !== 'paid')
-  const lowStockCount = products.filter((product) => product.stockQty <= product.minStock).length
-  const totalStockUnits = products.reduce((sum, product) => sum + product.stockQty, 0)
-  const retailValue = products.reduce((sum, product) => sum + product.stockQty * product.sellingPrice, 0)
-  const payableTotal = unpaidPurchases.reduce((sum, purchase) => sum + getInvoiceBalance(purchase), 0)
-  const draftTotal = draftLines.reduce((sum, line) => sum + line.quantity * line.unitCost, 0)
-  const amountPaid = Math.max(Number(form.amountPaid) || 0, 0)
-  const draftBalance = Math.max(draftTotal - amountPaid, 0)
+  const purchaseTotal = lines.reduce((sum, line) => sum + line.quantity * line.unitCost, 0)
+  const receivedUnits = lines.reduce((sum, line) => sum + line.quantity, 0)
+  const formattedProductPrice = formatCurrency(
+    Number.isFinite(Number(productForm.unitPrice)) ? Number(productForm.unitPrice) : 0,
+  )
 
-  function updateForm<K extends keyof PurchaseFormState>(field: K, value: PurchaseFormState[K]) {
+  function updateForm<K extends keyof PurchaseForm>(field: K, value: PurchaseForm[K]) {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
-  function addDraftLine() {
+  function updateInvoiceForm<K extends keyof InvoiceForm>(field: K, value: InvoiceForm[K]) {
+    setInvoiceForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateProductForm<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) {
+    setProductForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function resetProductForm({ clearFeedback = true }: { clearFeedback?: boolean } = {}) {
+    setProductForm((current) => ({ ...emptyProductForm, categoryId: current.categoryId }))
+    setEditingProduct(null)
+    if (clearFeedback) setProductFeedback(null)
+  }
+
+  function startNewProduct() {
+    resetProductForm()
+    setView('products')
+    setScreen('productForm')
+  }
+
+  function editProduct(product: ProductSummary) {
+    setEditingProduct(product)
+    setProductForm(toProductForm(product))
+    setProductFeedback(null)
+    setView('products')
+    setScreen('productForm')
+  }
+
+  function resetPurchaseForm() {
+    setForm({
+      ...emptyForm,
+      supplierId: suppliers[0] ? String(suppliers[0].id) : '',
+    })
+    setLines([])
+    setFeedback(null)
+  }
+
+  function invoiceFormFromPurchase(purchase: PurchaseDetail): InvoiceForm {
+    return {
+      supplierInvoiceNumber: purchase.supplierInvoiceNumber ?? '',
+      invoiceDate: purchase.invoiceDate ?? '',
+      paymentStatus: purchase.paymentStatus,
+      dueDate: purchase.dueDate ?? '',
+      paidAt: purchase.paidAt ? purchase.paidAt.slice(0, 10) : today,
+      notes: purchase.notes ?? '',
+    }
+  }
+
+  function startNewPurchase() {
+    resetPurchaseForm()
+    setView('purchases')
+    setScreen('recordPurchase')
+  }
+
+  function editInvoiceDetails() {
+    if (!selectedPurchase) return
+    setInvoiceForm(invoiceFormFromPurchase(selectedPurchase))
+    setFeedback(null)
+    setScreen('invoiceForm')
+  }
+
+  function showList() {
+    setScreen('list')
+    setSelectedPurchase(null)
+    setFeedback(null)
+  }
+
+  async function saveProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const unitPrice = Number(productForm.unitPrice)
+    const stockQty = Number(productForm.stockQty)
+    const minStock = Number(productForm.minStock)
+
+    if (
+      !productForm.name.trim() ||
+      !productForm.categoryId ||
+      !Number.isFinite(unitPrice) ||
+      !Number.isFinite(stockQty) ||
+      !Number.isFinite(minStock) ||
+      unitPrice < 0 ||
+      stockQty < 0 ||
+      minStock < 0
+    ) {
+      setProductFeedback({ message: 'Enter product name, category, and valid stock and price values.', tone: 'error' })
+      return
+    }
+
+    const payload = {
+      sku: productForm.sku.trim(),
+      barcode: productForm.barcode.trim() || null,
+      name: productForm.name.trim(),
+      description: productForm.description.trim() || null,
+      categoryId: Number(productForm.categoryId),
+      unitPrice,
+      unitType: productForm.unitType,
+      stockQty,
+      minStock,
+    }
+
+    setIsProductSaving(true)
+    const result = editingProduct
+      ? await window.simplepos?.products.update({
+          ...payload,
+          id: editingProduct.id,
+          isActive: editingProduct.isActive,
+        })
+      : await window.simplepos?.products.create(payload)
+    setIsProductSaving(false)
+
+    if (!result) {
+      setProductFeedback({ message: 'Database service is unavailable.', tone: 'error' })
+      return
+    }
+
+    const feedback: Feedback = { message: result.message, tone: result.ok ? 'success' : 'error' }
+    setProductFeedback(feedback)
+    if (!result.ok) return
+
+    resetProductForm({ clearFeedback: false })
+    setProductFeedback(feedback)
+    const productList = await window.simplepos?.products.list()
+    if (productList) setProducts(productList)
+  }
+
+  async function deactivateProduct(product: ProductSummary) {
+    setIsProductSaving(true)
+    const result = await window.simplepos?.products.update({ ...product, isActive: false })
+    setIsProductSaving(false)
+    if (!result) {
+      setProductFeedback({ message: 'Database service is unavailable.', tone: 'error' })
+      return
+    }
+
+    setProductFeedback({ message: result.message, tone: result.ok ? 'success' : 'error' })
+    if (!result.ok) return
+
+    if (editingProduct?.id === product.id) {
+      resetProductForm()
+      setScreen('list')
+    }
+    const productList = await window.simplepos?.products.list()
+    if (productList) setProducts(productList)
+  }
+
+  function selectProduct(value: string) {
+    const product = products.find((item) => item.id === Number(value))
+    setForm((current) => ({
+      ...current,
+      productId: value,
+      unitCost: product?.lastPurchaseCost ? String(product.lastPurchaseCost) : current.unitCost,
+    }))
+  }
+
+  function addLine() {
     const productId = Number(form.productId)
     const quantity = Number(form.quantity)
     const unitCost = Number(form.unitCost)
     const product = products.find((item) => item.id === productId)
 
-    if (!product || quantity <= 0 || unitCost < 0) {
-      setMessage('Choose a product, quantity, and purchase cost before adding a line.')
+    if (!product || !Number.isInteger(quantity) || quantity <= 0 || !Number.isInteger(unitCost) || unitCost < 0) {
+      setFeedback({ message: 'Choose a product and enter a valid quantity and unit cost.', tone: 'error' })
+      return
+    }
+    if (lines.some((line) => line.productId === productId)) {
+      setFeedback({ message: 'This product is already in the purchase.', tone: 'error' })
       return
     }
 
-    setDraftLines((current) => {
-      const existing = current.find((line) => line.productId === productId)
-      if (!existing) return [...current, { productId, quantity, unitCost }]
-
-      return current.map((line) =>
-        line.productId === productId
-          ? { ...line, quantity: line.quantity + quantity, unitCost }
-          : line,
-      )
-    })
+    setLines((current) => [...current, { productId, quantity, unitCost }])
     setForm((current) => ({ ...current, productId: '', quantity: '1', unitCost: '' }))
-    setMessage('')
+    setFeedback(null)
   }
 
-  function removeDraftLine(productId: number) {
-    setDraftLines((current) => current.filter((line) => line.productId !== productId))
+  function removeLine(productId: number) {
+    setLines((current) => current.filter((line) => line.productId !== productId))
   }
 
-  function savePurchase(event: FormEvent<HTMLFormElement>) {
+  function updateLine(productId: number, field: 'quantity' | 'unitCost', value: string) {
+    const nextValue = Number(value)
+    if (!Number.isInteger(nextValue) || nextValue < 0) return
+    setLines((current) => current.map((line) => {
+      if (line.productId !== productId) return line
+      if (field === 'quantity' && nextValue === 0) return line
+      return { ...line, [field]: nextValue }
+    }))
+  }
+
+  function requestSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
-    if (!form.supplierName.trim() || !form.invoiceNumber.trim() || draftLines.length === 0) {
-      setMessage('Supplier, invoice number, and at least one product line are required.')
+    if (!form.supplierId || lines.length === 0) {
+      setFeedback({ message: 'Supplier and at least one product are required.', tone: 'error' })
       return
     }
-
-    if (amountPaid > draftTotal) {
-      setMessage('Amount paid cannot exceed the invoice total.')
-      return
-    }
-
-    const nextPurchase: PurchaseInvoice = {
-      id: `PI-LOCAL-${Date.now()}`,
-      supplierName: form.supplierName.trim(),
-      invoiceNumber: form.invoiceNumber.trim(),
-      invoiceDate: form.invoiceDate || today,
-      dueDate: form.dueDate,
-      receiptStatus: 'received',
-      paymentStatus: getPaymentStatus(amountPaid, draftTotal),
-      amountPaid,
-      notes: form.notes.trim(),
-      items: draftLines.map((line) => {
-        const product = products.find((item) => item.id === line.productId)
-
-        return {
-          ...line,
-          sku: product?.sku ?? 'UNKNOWN',
-          name: product?.name ?? 'Unknown product',
-        }
-      }),
-    }
-
-    setProducts((currentProducts) =>
-      currentProducts.map((product) => {
-        const line = draftLines.find((item) => item.productId === product.id)
-        if (!line) return product
-
-        return {
-          ...product,
-          stockQty: product.stockQty + line.quantity,
-          lastPurchaseCost: line.unitCost,
-        }
-      }),
-    )
-    setPurchases((current) => [nextPurchase, ...current])
-    setForm(emptyForm)
-    setDraftLines([])
-    setMessage(`Recorded ${nextPurchase.invoiceNumber}. Stock was added; payment is ${nextPurchase.paymentStatus}.`)
+    setIsConfirmOpen(true)
   }
 
-  function recordPayment(invoiceId: string) {
-    setPurchases((current) =>
-      current.map((purchase) => {
-        if (purchase.id !== invoiceId) return purchase
+  async function savePurchase() {
+    const api = window.simplepos?.purchases
+    if (!api || isSaving) return
 
-        const total = getInvoiceTotal(purchase)
-        return {
-          ...purchase,
-          amountPaid: total,
-          paymentStatus: 'paid',
-        }
-      }),
-    )
+    setIsSaving(true)
+    let result = await api.create({
+      supplierId: Number(form.supplierId),
+      supplierInvoiceNumber: form.supplierInvoiceNumber.trim() || null,
+      invoiceDate: form.invoiceDate || null,
+      paymentStatus: form.paymentStatus,
+      dueDate: form.paymentStatus === 'unpaid' && form.dueDate ? form.dueDate : null,
+      notes: form.notes.trim() || null,
+      createdById: currentUser.id,
+      items: lines,
+    })
+    if (result.ok && result.purchase && form.paymentStatus === 'paid' && result.purchase.paymentStatus !== 'paid') {
+      const paidResult = await api.markPaid({ id: result.purchase.id })
+      if (paidResult.ok) result = paidResult
+    }
+    setIsSaving(false)
+    setIsConfirmOpen(false)
+    setFeedback({ message: result.message, tone: result.ok ? 'success' : 'error' })
+
+    if (result.ok && result.purchase) {
+      await loadWorkspace()
+      setSelectedPurchase(result.purchase)
+      setScreen('purchaseDetail')
+      setLines([])
+      setForm({
+        ...emptyForm,
+        supplierId: suppliers[0] ? String(suppliers[0].id) : '',
+      })
+    }
+  }
+
+  async function showPurchase(id: number) {
+    const detail = await window.simplepos?.purchases.get({ id })
+    if (!detail) {
+      setFeedback({ message: 'Unable to load purchase detail.', tone: 'error' })
+      return
+    }
+    setSelectedPurchase(detail)
+    setScreen('purchaseDetail')
+    setFeedback(null)
+  }
+
+  async function markPaid() {
+    if (!selectedPurchase) return
+    const result = await window.simplepos?.purchases.markPaid({ id: selectedPurchase.id })
+    if (!result) return
+
+    setFeedback({ message: result.message, tone: result.ok ? 'success' : 'error' })
+    if (result.ok && result.purchase) {
+      setSelectedPurchase(result.purchase)
+      await loadWorkspace()
+    }
+  }
+
+  async function saveInvoiceDetails(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selectedPurchase || isSaving) return
+
+    const payload: PurchaseInvoiceUpdateInput = {
+      id: selectedPurchase.id,
+      supplierInvoiceNumber: invoiceForm.supplierInvoiceNumber.trim() || null,
+      invoiceDate: invoiceForm.invoiceDate || null,
+      paymentStatus: invoiceForm.paymentStatus,
+      dueDate: invoiceForm.paymentStatus === 'unpaid' && invoiceForm.dueDate ? invoiceForm.dueDate : null,
+      paidAt: invoiceForm.paymentStatus === 'paid' ? invoiceForm.paidAt || today : null,
+      notes: invoiceForm.notes.trim() || null,
+    }
+
+    setIsSaving(true)
+    const result = await window.simplepos?.purchases.updateInvoice(payload)
+    setIsSaving(false)
+    if (!result) {
+      setFeedback({ message: 'Database service is unavailable.', tone: 'error' })
+      return
+    }
+
+    setFeedback({ message: result.message, tone: result.ok ? 'success' : 'error' })
+    if (result.ok && result.purchase) {
+      setSelectedPurchase(result.purchase)
+      setInvoiceForm(invoiceFormFromPurchase(result.purchase))
+      setScreen('purchaseDetail')
+      await loadWorkspace()
+    }
   }
 
   return (
-    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
-        <div className="grid shrink-0 gap-3 md:grid-cols-4">
-          <MetricCard title="Active SKUs" description="Products available for jobs" value={String(products.length)} icon={Package} />
-          <MetricCard title="Stock Units" description="Current quantity on hand" value={String(totalStockUnits)} icon={PackageCheck} />
-          <MetricCard title="Low Stock" description="At or below minimum" value={String(lowStockCount)} icon={AlertCircle} />
-          <MetricCard title="Payables" description="Unpaid supplier invoices" value={formatCurrency(payableTotal)} icon={CreditCard} />
-        </div>
-
+    <div
+      className={cn(
+        'grid h-full min-h-0 min-w-0 gap-3 overflow-hidden',
+        'grid-cols-1',
+      )}
+    >
+      <div className={cn('flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden', screen !== 'list' && 'hidden')}>
         <Card className="min-h-0 flex-1 overflow-hidden">
           <CardHeader className="pb-3">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
-                <CardTitle>Inventory Purchasing</CardTitle>
-                <CardDescription>
-                  Record supplier invoices, receive stock, and track unpaid balances.
-                </CardDescription>
-              </div>
-              <CardAction>
-                <div className="flex h-10 items-center gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Inventory views">
-                  {[
-                    { id: 'products', label: 'Products', icon: Package },
-                    { id: 'purchases', label: 'Purchases', icon: ReceiptText },
-                    { id: 'payables', label: 'Payables', icon: WalletCards },
-                  ].map((item) => {
-                    const Icon = item.icon
-                    const isActive = view === item.id
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={isActive}
-                        onClick={() => setView(item.id as InventoryView)}
-                        className={cn(
-                          'flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
-                          isActive
-                            ? 'bg-background text-foreground shadow-border'
-                            : 'text-muted-foreground hover:text-foreground',
-                        )}
-                      >
-                        <Icon className="size-3.5" aria-hidden="true" />
-                        <span className="hidden sm:inline">{item.label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </CardAction>
+            <div className="min-w-0">
+              <CardTitle className="text-balance">Inventory Purchasing</CardTitle>
+              <CardDescription className="text-pretty">
+                Receive supplier stock and track paid or unpaid invoices.
+              </CardDescription>
             </div>
+            <CardAction>
+              {view === 'products' ? (
+                <Button type="button" size="sm" className={pressableClass} onClick={startNewProduct}>
+                  <PackagePlus data-icon="inline-start" aria-hidden="true" />
+                  New Product
+                </Button>
+              ) : (
+                <Button type="button" size="sm" className={pressableClass} onClick={startNewPurchase}>
+                  <Plus data-icon="inline-start" aria-hidden="true" />
+                  Record Purchase
+                </Button>
+              )}
+            </CardAction>
           </CardHeader>
-
-          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
-            <div className="relative shrink-0">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder={view === 'products' ? 'Search SKU, product, or category' : 'Search supplier, invoice, status, or item'}
-                className="h-10 pl-10 pr-10"
-              />
-              {searchQuery ? (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
-                >
-                  <X className="size-4" aria-hidden="true" />
-                </button>
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
+              <div className="flex h-10 shrink-0 items-center gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Inventory purchasing views">
+                {[
+                  { id: 'products' as const, label: 'Products', icon: Package },
+                  { id: 'purchases' as const, label: 'Purchases', icon: ReceiptText },
+                  { id: 'pending' as const, label: 'Needs Invoice', icon: CalendarClock },
+                  { id: 'unpaid' as const, label: 'Unpaid', icon: WalletCards },
+                ].map((item) => {
+                  const Icon = item.icon
+                  const isActive = view === item.id
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => {
+                        setView(item.id)
+                        setScreen('list')
+                      }}
+                      className={cn(
+                        'flex h-8 min-w-10 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
+                        isActive ? 'bg-background text-foreground shadow-border' : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <Icon className="size-3.5" aria-hidden="true" />
+                      <span className="hidden sm:inline">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              {view === 'products' ? (
+                <div className="w-full shrink-0 sm:w-52">
+                  <BaseSelect
+                    value={categoryFilter}
+                    ariaLabel="Filter products by category"
+                    options={[
+                      { value: 'all', label: 'All categories' },
+                      ...categories.map((category) => ({
+                        value: String(category.id),
+                        label: category.name,
+                      })),
+                    ]}
+                    onValueChange={(value) => setCategoryFilter(value as CategoryFilter)}
+                  />
+                </div>
               ) : null}
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder={view === 'products' ? 'Search product or category' : 'Search purchase, supplier, or invoice'}
+                  className="h-10 pl-10 pr-10"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearch('')}
+                    className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                ) : null}
+              </div>
             </div>
 
-            {view === 'products' ? (
-              <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
-                <div
-                  className={cn(
-                    'sticky top-0 z-10 grid min-w-[760px] items-center gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur',
-                    productGridClass,
-                  )}
-                >
-                  <span>Product</span>
-                  <span>Category</span>
-                  <span className="text-right">Sell Price</span>
-                  <span>Stock</span>
-                  <span>Last Cost</span>
-                  <span>Status</span>
+            <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
+              {isLoading ? (
+                <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+                  <p className="text-sm">Loading purchasing data...</p>
                 </div>
-                <div className="min-w-[760px] divide-y">
-                  {filteredProducts.map((product) => {
-                    const lowStock = product.stockQty <= product.minStock
-
-                    return (
-                      <div
-                        key={product.id}
-                        className={cn(
-                          'grid min-h-14 items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-muted/50',
-                          productGridClass,
-                        )}
+              ) : view === 'products' ? (
+                filteredProducts.length === 0 ? (
+                  <p className="p-6 text-center text-sm text-muted-foreground">No matching products.</p>
+                ) : (
+                  <div className="min-w-[800px]">
+                    <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+                      <span>Product</span>
+                      <span>Category</span>
+                      <span className="text-right">Sell price</span>
+                      <span>Stock</span>
+                      <span className="text-right">Last cost</span>
+                      <span>Status</span>
+                    </div>
+                    <div className="divide-y">
+                      {filteredProducts.map((product) => {
+                        const lowStock = product.stockQty <= product.minStock
+                        const categoryName = product.categoryId === null
+                          ? 'Uncategorized'
+                          : categoryNames.get(product.categoryId) ?? 'Uncategorized'
+                        return (
+                          <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => editProduct(product)}
+                            className={cn(
+                              'grid min-h-14 w-full grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color,transform] duration-150 ease-out hover:bg-muted/50 active:scale-[0.99]',
+                              editingProduct?.id === product.id && 'bg-muted/60',
+                            )}
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium">{product.name}</span>
+                            </span>
+                            <ProductCategoryBadge name={categoryName} />
+                            <span className="text-right tabular-nums">{formatCurrency(product.unitPrice)}</span>
+                            <span className="tabular-nums">{product.stockQty} {product.unitType}</span>
+                            <span className="text-right tabular-nums">{formatCurrency(product.lastPurchaseCost)}</span>
+                            <Badge variant={lowStock ? 'destructive' : 'secondary'}>{lowStock ? 'Low' : 'In stock'}</Badge>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              ) : filteredPurchases.length === 0 ? (
+                <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
+                  <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
+                  <p className="font-medium">{view === 'pending' ? 'No pending invoices' : view === 'unpaid' ? 'No unpaid invoices' : 'No purchases yet'}</p>
+                  <p className="text-sm text-muted-foreground text-pretty">
+                    {view === 'pending' ? 'All received goods have supplier invoice details.' : view === 'unpaid' ? 'All supplier invoices are paid.' : 'Record a purchase to receive inventory.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="min-w-[720px]">
+                  <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+                    <span>Purchase</span>
+                    <span>Supplier invoice</span>
+                    <span className="text-right">Total</span>
+                    <span>Invoice</span>
+                    <span>Payment</span>
+                    <span>Date</span>
+                  </div>
+                  <div className="divide-y">
+                    {filteredPurchases.map((purchase) => (
+                      <button
+                        key={purchase.id}
+                        type="button"
+                        onClick={() => void showPurchase(purchase.id)}
+                        className="grid min-h-16 w-full grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color,transform] duration-150 ease-out hover:bg-muted/50 active:scale-[0.99]"
                       >
                         <span className="min-w-0">
-                          <span className="block truncate font-medium">{product.name}</span>
-                          <span className="block truncate text-xs text-muted-foreground tabular-nums">{product.sku}</span>
+                          <span className="block truncate font-medium">{purchase.purchaseNumber}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{purchase.supplierName}</span>
                         </span>
-                        <span className="truncate text-muted-foreground">{product.category}</span>
-                        <span className="text-right tabular-nums">{formatCurrency(product.sellingPrice)}</span>
-                        <span className="tabular-nums">{product.stockQty} {product.unitType}</span>
-                        <span className="tabular-nums">{formatCurrency(product.lastPurchaseCost)}</span>
-                        <span
-                          className={cn(
-                            'inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium',
-                            lowStock ? 'bg-destructive/10 text-destructive' : 'bg-emerald-500/10 text-emerald-700',
-                          )}
-                        >
-                          {lowStock ? 'Low stock' : 'In stock'}
+                        <span className="min-w-0">
+                          <span className="block truncate">{purchase.supplierInvoiceNumber ?? 'Pending invoice'}</span>
+                          <span className="block text-xs text-muted-foreground">{purchase.itemCount} product{purchase.itemCount === 1 ? '' : 's'}</span>
                         </span>
-                      </div>
-                    )
-                  })}
+                        <span className="text-right font-medium tabular-nums">{formatCurrency(purchase.total)}</span>
+                        <InvoiceBadge status={purchase.invoiceStatus} />
+                        <PaymentBadge status={purchase.paymentStatus} />
+                        <span className="text-xs text-muted-foreground tabular-nums">{formatDate(purchase.invoiceDate)}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {screen === 'productForm' ? (
+        <Card className="min-h-0 overflow-hidden">
+          <CardHeader>
+            <div className="min-w-0">
+              <CardTitle>{editingProduct ? 'Edit Product' : 'Create Product'}</CardTitle>
+              <CardDescription className="text-pretty">
+                {editingProduct
+                  ? `Update ${editingProduct.name} for sales and purchasing.`
+                  : 'Add products here before receiving them in Record Purchase.'}
+              </CardDescription>
+            </div>
+            <CardAction>
+              <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
+                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                Products
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="min-h-0 flex-1 overflow-y-auto">
+            <form onSubmit={saveProduct}>
+              <FieldGroup className="mx-auto max-w-3xl">
+                <Field>
+                  <FieldLabel htmlFor="inventory-name">Product name</FieldLabel>
+                  <Input
+                    id="inventory-name"
+                    value={productForm.name}
+                    onChange={(event) => updateProductForm('name', event.target.value)}
+                    placeholder="Brake Pad Front"
+                    required
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="inventory-category">Category</FieldLabel>
+                  <BaseSelect
+                    id="inventory-category"
+                    value={productForm.categoryId}
+                    placeholder="Select category"
+                    options={categories.map((category) => ({
+                      value: String(category.id),
+                      label: category.name,
+                    }))}
+                    onValueChange={(value) => updateProductForm('categoryId', value)}
+                  />
+                </Field>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="inventory-price">Sell price</FieldLabel>
+                    <Input
+                      id="inventory-price"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={productForm.unitPrice}
+                      onChange={(event) => updateProductForm('unitPrice', event.target.value)}
+                      placeholder="120000"
+                      required
+                    />
+                    <FieldDescription className="tabular-nums" aria-live="polite">
+                      {formattedProductPrice}
+                    </FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="inventory-unit">Unit type</FieldLabel>
+                    <BaseSelect
+                      id="inventory-unit"
+                      value={productForm.unitType}
+                      options={unitTypes.map((unitType) => ({
+                        value: unitType,
+                        label: unitType,
+                      }))}
+                      onValueChange={(value) => updateProductForm('unitType', value as ProductFormState['unitType'])}
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="inventory-stock">Opening stock</FieldLabel>
+                    <Input
+                      id="inventory-stock"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={productForm.stockQty}
+                      onChange={(event) => updateProductForm('stockQty', event.target.value)}
+                      placeholder="0"
+                      required
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="inventory-min-stock">Minimum stock</FieldLabel>
+                    <Input
+                      id="inventory-min-stock"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={productForm.minStock}
+                      onChange={(event) => updateProductForm('minStock', event.target.value)}
+                      placeholder="4"
+                      required
+                    />
+                  </Field>
+                </div>
+
+                <Field>
+                  <FieldLabel htmlFor="inventory-description">Description <span className="text-muted-foreground">Optional</span></FieldLabel>
+                  <Input
+                    id="inventory-description"
+                    value={productForm.description}
+                    onChange={(event) => updateProductForm('description', event.target.value)}
+                    placeholder="Short product note"
+                  />
+                </Field>
+
+                {productFeedback ? (
+                  <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', productFeedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={productFeedback.tone === 'error' ? 'alert' : 'status'}>
+                    {productFeedback.message}
+                  </p>
+                ) : null}
+
+                <div className="flex gap-2">
+                  <Button type="submit" className={cn('h-10 flex-1', pressableClass)} disabled={isProductSaving}>
+                    <PackagePlus data-icon="inline-start" aria-hidden="true" />
+                    {isProductSaving ? 'Saving...' : editingProduct ? 'Save Changes' : 'Create'}
+                  </Button>
+                  <Button type="button" variant="outline" className={cn('h-10', pressableClass)} onClick={editingProduct ? showList : () => resetProductForm()}>
+                    {editingProduct ? 'Cancel' : 'Clear'}
+                  </Button>
+                </div>
+
+                {editingProduct ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className={cn('h-10 w-full', pressableClass)}
+                    onClick={() => void deactivateProduct(editingProduct)}
+                    disabled={isProductSaving}
+                  >
+                    <Trash2 data-icon="inline-start" aria-hidden="true" />
+                    Delete Product
+                  </Button>
+                ) : null}
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+      ) : screen === 'purchaseDetail' && selectedPurchase ? (
+        <Card className="min-h-0 overflow-hidden">
+          <CardHeader>
+            <div className="min-w-0">
+              <CardTitle className="truncate">{selectedPurchase.purchaseNumber}</CardTitle>
+              <CardDescription className="truncate">{selectedPurchase.supplierName}</CardDescription>
+            </div>
+            <CardAction>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
+                  <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                  Purchases
+                </Button>
+                <InvoiceBadge status={selectedPurchase.invoiceStatus} />
+                <PaymentBadge status={selectedPurchase.paymentStatus} />
+              </div>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-md bg-muted p-3">
+                <p className="text-xs text-muted-foreground">Supplier invoice</p>
+                <p className="mt-1 truncate font-medium">{selectedPurchase.supplierInvoiceNumber ?? 'Pending invoice'}</p>
+              </div>
+              <div className="rounded-md bg-muted p-3">
+                <p className="text-xs text-muted-foreground">Invoice date</p>
+                <p className="mt-1 font-medium tabular-nums">{formatDate(selectedPurchase.invoiceDate)}</p>
+              </div>
+              <div className="rounded-md bg-muted p-3">
+                <p className="text-xs text-muted-foreground">Due date</p>
+                <p className="mt-1 font-medium tabular-nums">{formatDate(selectedPurchase.dueDate)}</p>
+              </div>
+              <div className="rounded-md bg-muted p-3">
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="mt-1 font-medium tabular-nums">{formatCurrency(selectedPurchase.total)}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-semibold">Received products</p>
+              {selectedPurchase.items.map((item) => (
+                <div key={item.id} className="rounded-md bg-muted/70 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{item.productName}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{item.sku}</span>
+                    </span>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums">{formatCurrency(item.lineTotal)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground tabular-nums">{item.quantity} × {formatCurrency(item.unitCost)}</p>
+                </div>
+              ))}
+            </div>
+
+            {selectedPurchase.notes ? (
+              <div>
+                <p className="text-sm font-semibold">Notes</p>
+                <p className="mt-1 text-sm text-muted-foreground text-pretty">{selectedPurchase.notes}</p>
               </div>
             ) : null}
 
-            {view === 'purchases' ? (
-              <div className="grid min-h-0 flex-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1fr)_280px]">
-                <div className="min-h-0 overflow-auto rounded-lg border bg-background">
-                  <div
-                    className={cn(
-                      'sticky top-0 z-10 grid min-w-[720px] items-center gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur',
-                      purchaseGridClass,
-                    )}
-                  >
-                    <span>Supplier Invoice</span>
-                    <span>Items</span>
-                    <span className="text-right">Total</span>
-                    <span>Payment</span>
-                    <span>Due</span>
-                  </div>
-                  <div className="min-w-[720px] divide-y">
-                    {filteredPurchases.map((purchase) => {
-                      const total = getInvoiceTotal(purchase)
-                      const balance = getInvoiceBalance(purchase)
+            {feedback ? (
+              <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', feedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={feedback.tone === 'error' ? 'alert' : 'status'}>
+                {feedback.message}
+              </p>
+            ) : null}
 
+            <div className="mt-auto flex gap-2">
+              <Button type="button" variant="outline" className={cn('flex-1', pressableClass)} onClick={editInvoiceDetails}>
+                <PencilLine data-icon="inline-start" aria-hidden="true" />
+                Edit Invoice
+              </Button>
+              {selectedPurchase.paymentStatus === 'unpaid' ? (
+                <Button type="button" className={cn('flex-1', pressableClass)} onClick={() => void markPaid()}>
+                  <WalletCards data-icon="inline-start" aria-hidden="true" />
+                  Mark Paid
+                </Button>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      ) : screen === 'invoiceForm' && selectedPurchase ? (
+        <Card className="min-h-0 overflow-hidden">
+          <CardHeader>
+            <div className="min-w-0">
+              <CardTitle className="truncate">Invoice Details</CardTitle>
+              <CardDescription className="truncate">{selectedPurchase.purchaseNumber} · {selectedPurchase.supplierName}</CardDescription>
+            </div>
+            <CardAction>
+              <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={() => setScreen('purchaseDetail')}>
+                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                Detail
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="min-h-0 flex-1 overflow-y-auto">
+            <form onSubmit={saveInvoiceDetails}>
+              <FieldGroup className="mx-auto max-w-3xl">
+                <div className="rounded-lg bg-muted p-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground">Locked stock total</span>
+                    <span className="font-semibold tabular-nums">{formatCurrency(selectedPurchase.total)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground text-pretty">
+                    Supplier, products, quantities, costs, and stock movement are locked after posting.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="invoice-edit-number">Supplier invoice number</FieldLabel>
+                    <Input
+                      id="invoice-edit-number"
+                      value={invoiceForm.supplierInvoiceNumber}
+                      onChange={(event) => updateInvoiceForm('supplierInvoiceNumber', event.target.value)}
+                      placeholder="SUP-INV-001"
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="invoice-edit-date">Invoice date</FieldLabel>
+                    <Input
+                      id="invoice-edit-date"
+                      type="date"
+                      value={invoiceForm.invoiceDate}
+                      onChange={(event) => updateInvoiceForm('invoiceDate', event.target.value)}
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Field>
+                    <FieldLabel htmlFor="invoice-edit-payment">Payment</FieldLabel>
+                    <BaseSelect
+                      id="invoice-edit-payment"
+                      value={invoiceForm.paymentStatus}
+                      onValueChange={(value) => updateInvoiceForm('paymentStatus', value as PurchasePaymentStatus)}
+                      options={[
+                        { value: 'unpaid', label: 'Unpaid' },
+                        { value: 'paid', label: 'Paid' },
+                      ]}
+                    />
+                  </Field>
+                  {invoiceForm.paymentStatus === 'unpaid' ? (
+                    <Field>
+                      <FieldLabel htmlFor="invoice-edit-due">Due date</FieldLabel>
+                      <Input
+                        id="invoice-edit-due"
+                        type="date"
+                        min={invoiceForm.invoiceDate}
+                        value={invoiceForm.dueDate}
+                        onChange={(event) => updateInvoiceForm('dueDate', event.target.value)}
+                      />
+                    </Field>
+                  ) : (
+                    <Field>
+                      <FieldLabel htmlFor="invoice-edit-paid">Paid date</FieldLabel>
+                      <Input
+                        id="invoice-edit-paid"
+                        type="date"
+                        value={invoiceForm.paidAt}
+                        onChange={(event) => updateInvoiceForm('paidAt', event.target.value)}
+                      />
+                    </Field>
+                  )}
+                </div>
+
+                <Field>
+                  <FieldLabel htmlFor="invoice-edit-notes">Notes</FieldLabel>
+                  <Input
+                    id="invoice-edit-notes"
+                    value={invoiceForm.notes}
+                    onChange={(event) => updateInvoiceForm('notes', event.target.value)}
+                    placeholder="Optional payment or supplier note"
+                  />
+                </Field>
+
+                {feedback ? (
+                  <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', feedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={feedback.tone === 'error' ? 'alert' : 'status'}>
+                    {feedback.message}
+                  </p>
+                ) : null}
+
+                <Button type="submit" className={cn('h-10 w-full', pressableClass)} disabled={isSaving}>
+                  <PencilLine data-icon="inline-start" aria-hidden="true" />
+                  {isSaving ? 'Saving...' : selectedPurchase.invoiceStatus === 'pending' ? 'Complete Invoice Details' : 'Save Invoice Details'}
+                </Button>
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+      ) : screen === 'recordPurchase' ? (
+        <Card className="min-h-0 overflow-hidden">
+          <CardHeader>
+            <div className="min-w-0">
+              <CardTitle>Record Purchase</CardTitle>
+              <CardDescription className="text-pretty">
+                Saving receives stock immediately. Supplier invoice details can be completed later.
+              </CardDescription>
+            </div>
+            <CardAction>
+              <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
+                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                Purchases
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="min-h-0 flex-1 overflow-y-auto">
+            <form onSubmit={requestSave}>
+              <FieldGroup className="mx-auto max-w-3xl">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="purchase-supplier">Supplier</FieldLabel>
+                    <BaseSelect
+                      id="purchase-supplier"
+                      value={form.supplierId}
+                      onValueChange={(value) => updateForm('supplierId', value)}
+                      placeholder={suppliers.length ? 'Choose supplier' : 'Add a supplier first'}
+                      disabled={suppliers.length === 0}
+                      options={suppliers.map((supplier) => ({ value: String(supplier.id), label: supplier.name }))}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="purchase-invoice">Supplier invoice number <span className="text-muted-foreground">Optional</span></FieldLabel>
+                    <Input id="purchase-invoice" value={form.supplierInvoiceNumber} onChange={(event) => updateForm('supplierInvoiceNumber', event.target.value)} placeholder="SUP-INV-001" />
+                  </Field>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Field>
+                    <FieldLabel htmlFor="purchase-date">Invoice date <span className="text-muted-foreground">Optional</span></FieldLabel>
+                    <Input id="purchase-date" type="date" value={form.invoiceDate} onChange={(event) => updateForm('invoiceDate', event.target.value)} />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="purchase-status">Payment</FieldLabel>
+                    <BaseSelect
+                      id="purchase-status"
+                      value={form.paymentStatus}
+                      onValueChange={(value) => updateForm('paymentStatus', value as PurchasePaymentStatus)}
+                      options={[
+                        { value: 'unpaid', label: 'Unpaid' },
+                        { value: 'paid', label: 'Paid' },
+                      ]}
+                    />
+                  </Field>
+                  {form.paymentStatus === 'unpaid' ? (
+                    <Field>
+                      <FieldLabel htmlFor="purchase-due">Due date</FieldLabel>
+                      <Input id="purchase-due" type="date" min={form.invoiceDate || undefined} value={form.dueDate} onChange={(event) => updateForm('dueDate', event.target.value)} />
+                    </Field>
+                  ) : null}
+                </div>
+
+                <div className="rounded-lg border bg-background p-3">
+                  <p className="text-sm font-semibold">Products received</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground text-pretty">Add existing products with the received quantity and purchase cost.</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_140px_auto] md:items-end">
+                    <Field>
+                      <FieldLabel htmlFor="purchase-product">Product</FieldLabel>
+                      <BaseSelect
+                        id="purchase-product"
+                        value={form.productId}
+                        onValueChange={selectProduct}
+                        placeholder="Choose product"
+                        options={products.map((product) => ({
+                          value: String(product.id),
+                          label: product.name,
+                          disabled: lines.some((line) => line.productId === product.id),
+                        }))}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="purchase-quantity">Quantity</FieldLabel>
+                      <Input id="purchase-quantity" type="number" min="1" step="1" value={form.quantity} onChange={(event) => updateForm('quantity', event.target.value)} />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="purchase-cost">Unit cost</FieldLabel>
+                      <Input id="purchase-cost" type="number" min="0" step="1" value={form.unitCost} onChange={(event) => updateForm('unitCost', event.target.value)} placeholder="0" />
+                    </Field>
+                    <Button type="button" variant="outline" className={cn('h-10', pressableClass)} onClick={addLine}>
+                      <Plus data-icon="inline-start" aria-hidden="true" />
+                      Add
+                    </Button>
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-2">
+                    {lines.length === 0 ? (
+                      <p className="rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">No products added.</p>
+                    ) : lines.map((line) => {
+                      const product = products.find((item) => item.id === line.productId)
                       return (
-                        <div
-                          key={purchase.id}
-                          className={cn(
-                            'grid min-h-16 items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-muted/50',
-                            purchaseGridClass,
-                          )}
-                        >
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">{purchase.invoiceNumber}</span>
-                            <span className="block truncate text-xs text-muted-foreground">{purchase.supplierName} · {formatDate(purchase.invoiceDate)}</span>
+                        <div key={line.productId} className="grid gap-2 rounded-md bg-muted/70 p-2.5 md:grid-cols-[minmax(0,1fr)_100px_130px_120px_auto] md:items-end">
+                          <span className="min-w-0 md:pb-2">
+                            <span className="block truncate text-sm font-medium">{product?.name}</span>
                           </span>
-                          <span className="min-w-0">
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {purchase.items.length} line{purchase.items.length === 1 ? '' : 's'}
-                            </span>
-                            <span className="block truncate text-xs">
-                              {purchase.items.map((item) => item.name).join(', ')}
-                            </span>
-                          </span>
-                          <span className="text-right tabular-nums">
-                            <span className="block font-medium">{formatCurrency(total)}</span>
-                            {balance > 0 ? <span className="block text-xs text-muted-foreground">{formatCurrency(balance)} due</span> : null}
-                          </span>
-                          <PaymentStatusPill status={purchase.paymentStatus} />
-                          <span className={cn('text-xs tabular-nums', isDueSoon(purchase.dueDate) && purchase.paymentStatus !== 'paid' ? 'font-medium text-destructive' : 'text-muted-foreground')}>
-                            {purchase.dueDate ? formatDate(purchase.dueDate) : '-'}
-                          </span>
+                          <Field>
+                            <FieldLabel htmlFor={`purchase-line-qty-${line.productId}`} className="text-xs">Qty</FieldLabel>
+                            <Input
+                              id={`purchase-line-qty-${line.productId}`}
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={line.quantity}
+                              onChange={(event) => updateLine(line.productId, 'quantity', event.target.value)}
+                              className="h-9"
+                            />
+                          </Field>
+                          <Field>
+                            <FieldLabel htmlFor={`purchase-line-cost-${line.productId}`} className="text-xs">Unit cost</FieldLabel>
+                            <Input
+                              id={`purchase-line-cost-${line.productId}`}
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={line.unitCost}
+                              onChange={(event) => updateLine(line.productId, 'unitCost', event.target.value)}
+                              className="h-9"
+                            />
+                          </Field>
+                          <span className="text-sm font-semibold tabular-nums md:pb-2">{formatCurrency(line.quantity * line.unitCost)}</span>
+                          <Button type="button" variant="ghost" size="icon-sm" className={cn('md:mb-0.5', pressableClass)} onClick={() => removeLine(line.productId)} aria-label={`Remove ${product?.name}`}>
+                            <Trash2 aria-hidden="true" />
+                          </Button>
                         </div>
                       )
                     })}
                   </div>
                 </div>
 
-                <div className="min-h-0 overflow-auto rounded-lg border bg-muted/30 p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex size-8 items-center justify-center rounded-md bg-background text-muted-foreground shadow-border">
-                      <History className="size-4" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold">Recent activity</p>
-                      <p className="text-xs text-muted-foreground text-pretty">UI-only local purchase records.</p>
-                    </div>
+                <Field>
+                  <FieldLabel htmlFor="purchase-notes">Notes</FieldLabel>
+                  <Input id="purchase-notes" value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} placeholder="Optional payment or delivery notes" />
+                </Field>
+
+                <div className="rounded-lg bg-muted p-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Products received</span>
+                    <span className="tabular-nums">{receivedUnits}</span>
                   </div>
-                  <div className="mt-3 flex flex-col gap-2">
-                    {purchases.slice(0, 3).map((purchase) => (
-                      <div key={purchase.id} className="rounded-md bg-background p-2 shadow-border">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="min-w-0 truncate text-sm font-medium">{purchase.supplierName}</p>
-                          <PaymentStatusPill status={purchase.paymentStatus} />
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                          {purchase.invoiceNumber} · {formatCurrency(getInvoiceTotal(purchase))}
-                        </p>
-                      </div>
-                    ))}
+                  <div className="mt-2 flex items-center justify-between text-base font-semibold">
+                    <span>Invoice total</span>
+                    <span className="tabular-nums">{formatCurrency(purchaseTotal)}</span>
                   </div>
                 </div>
-              </div>
-            ) : null}
 
-            {view === 'payables' ? (
-              <div className="grid min-h-0 flex-1 content-start gap-3 overflow-auto md:grid-cols-2 xl:grid-cols-3">
-                {unpaidPurchases.length === 0 ? (
-                  <div className="flex min-h-44 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center md:col-span-2 xl:col-span-3">
-                    <div className="flex max-w-sm flex-col items-center gap-2">
-                      <Check className="size-6 text-emerald-600" aria-hidden="true" />
-                      <p className="text-sm font-medium">No unpaid supplier invoices</p>
-                      <p className="text-sm text-muted-foreground text-pretty">New unpaid purchases will appear here after stock is received.</p>
-                    </div>
-                  </div>
-                ) : (
-                  unpaidPurchases.map((purchase) => {
-                    const balance = getInvoiceBalance(purchase)
+                {feedback ? (
+                  <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', feedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={feedback.tone === 'error' ? 'alert' : 'status'}>
+                    {feedback.message}
+                  </p>
+                ) : null}
 
-                    return (
-                      <div key={purchase.id} className="flex min-h-44 flex-col justify-between rounded-lg border bg-background p-3 shadow-sm">
-                        <div>
-                          <div className="flex items-start justify-between gap-3">
-                            <span className="min-w-0">
-                              <span className="block truncate text-sm font-semibold">{purchase.supplierName}</span>
-                              <span className="block truncate text-xs text-muted-foreground tabular-nums">{purchase.invoiceNumber}</span>
-                            </span>
-                            <PaymentStatusPill status={purchase.paymentStatus} />
-                          </div>
-                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                            <div className="rounded-md bg-muted/70 p-2">
-                              <p className="text-muted-foreground">Balance</p>
-                              <p className="mt-1 font-semibold tabular-nums">{formatCurrency(balance)}</p>
-                            </div>
-                            <div className="rounded-md bg-muted/70 p-2">
-                              <p className="text-muted-foreground">Due</p>
-                              <p className={cn('mt-1 font-semibold tabular-nums', isDueSoon(purchase.dueDate) && 'text-destructive')}>
-                                {purchase.dueDate ? formatDate(purchase.dueDate) : '-'}
-                              </p>
-                            </div>
-                          </div>
-                          {purchase.notes ? (
-                            <p className="mt-3 line-clamp-2 text-xs text-muted-foreground text-pretty">{purchase.notes}</p>
-                          ) : null}
-                        </div>
-                        <Button type="button" size="sm" className={cn('mt-3 w-full', pressableClass)} onClick={() => recordPayment(purchase.id)}>
-                          <CreditCard data-icon="inline-start" aria-hidden="true" />
-                          Mark paid
+                <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                  <Button type="submit" className={cn('h-10 w-full', pressableClass)} disabled={isSaving || suppliers.length === 0}>
+                    <FileText data-icon="inline-start" aria-hidden="true" />
+                    {isSaving ? 'Saving...' : 'Review and Save'}
+                  </Button>
+                  <AlertDialogPortal>
+                    <AlertDialogBackdrop />
+                    <AlertDialogPopup>
+                      <AlertDialogTitle>Receive this purchase into inventory?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will add {receivedUnits} unit{receivedUnits === 1 ? '' : 's'} to stock and record a {formatCurrency(purchaseTotal)} purchase. Invoice details can be completed later, but posted products, quantities, and costs cannot be changed.
+                      </AlertDialogDescription>
+                      <div className="mt-5 flex justify-end gap-2">
+                        <AlertDialogClose render={<Button type="button" variant="outline" className={pressableClass}>Cancel</Button>} />
+                        <Button type="button" className={pressableClass} onClick={() => void savePurchase()} disabled={isSaving}>
+                          <PackageCheck data-icon="inline-start" aria-hidden="true" />
+                          {isSaving ? 'Receiving...' : 'Receive Stock'}
                         </Button>
                       </div>
-                    )
-                  })
-                )}
-              </div>
-            ) : null}
+                    </AlertDialogPopup>
+                  </AlertDialogPortal>
+                </AlertDialog>
+              </FieldGroup>
+            </form>
           </CardContent>
         </Card>
-      </div>
-
-      <Card className="min-h-0 overflow-hidden">
-        <CardHeader>
-          <CardTitle>Record Purchase</CardTitle>
-          <CardDescription>
-            Receive supplier stock now, then track whether the invoice is unpaid, partial, or paid.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="min-h-0 flex-1 overflow-y-auto">
-          <form onSubmit={savePurchase} className="flex flex-col gap-4">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <div className="grid gap-2">
-                <Label htmlFor="purchase-supplier">Supplier</Label>
-                <Input
-                  id="purchase-supplier"
-                  value={form.supplierName}
-                  onChange={(event) => updateForm('supplierName', event.target.value)}
-                  placeholder="Bali Motor Supply"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="purchase-invoice">Invoice number</Label>
-                <Input
-                  id="purchase-invoice"
-                  value={form.invoiceNumber}
-                  onChange={(event) => updateForm('invoiceNumber', event.target.value)}
-                  placeholder="BMS-2026-042"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="purchase-date">Invoice date</Label>
-                <Input
-                  id="purchase-date"
-                  type="date"
-                  value={form.invoiceDate}
-                  onChange={(event) => updateForm('invoiceDate', event.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="purchase-due-date">Due date</Label>
-                <Input
-                  id="purchase-due-date"
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(event) => updateForm('dueDate', event.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-lg border bg-background p-3">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                  <Truck className="size-4" aria-hidden="true" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">Received items</p>
-                  <p className="text-xs text-muted-foreground text-pretty">Saving these lines will add stock locally.</p>
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="purchase-product">Product</Label>
-                <BaseSelect
-                  id="purchase-product"
-                  value={form.productId}
-                  ariaLabel="Product"
-                  placeholder="Choose product"
-                  options={[
-                    { value: '', label: 'Choose product' },
-                    ...products.map((product) => ({
-                      value: String(product.id),
-                      label: `${product.sku} · ${product.name}`,
-                    })),
-                  ]}
-                  onValueChange={(value) => updateForm('productId', value)}
-                />
-              </div>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="purchase-qty">Qty</Label>
-                  <Input
-                    id="purchase-qty"
-                    type="number"
-                    min="1"
-                    value={form.quantity}
-                    onChange={(event) => updateForm('quantity', event.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="purchase-cost">Unit cost</Label>
-                  <Input
-                    id="purchase-cost"
-                    type="number"
-                    min="0"
-                    value={form.unitCost}
-                    onChange={(event) => updateForm('unitCost', event.target.value)}
-                    placeholder="38000"
-                  />
-                </div>
-              </div>
-
-              <Button type="button" variant="outline" className={cn('mt-3 w-full', pressableClass)} onClick={addDraftLine}>
-                <Plus data-icon="inline-start" aria-hidden="true" />
-                Add line
-              </Button>
-
-              <div className="mt-3 flex flex-col gap-2">
-                {draftLines.length === 0 ? (
-                  <div className="rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">
-                    No items added yet.
-                  </div>
-                ) : (
-                  draftLines.map((line) => {
-                    const product = products.find((item) => item.id === line.productId)
-
-                    return (
-                      <div key={line.productId} className="flex items-center justify-between gap-2 rounded-md bg-muted/70 p-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{product?.name ?? 'Unknown product'}</p>
-                          <p className="text-xs text-muted-foreground tabular-nums">
-                            {line.quantity} x {formatCurrency(line.unitCost)}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                          <span className="text-sm font-semibold tabular-nums">{formatCurrency(line.quantity * line.unitCost)}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            className={pressableClass}
-                            onClick={() => removeDraftLine(line.productId)}
-                            aria-label={`Remove ${product?.name ?? 'line item'}`}
-                          >
-                            <Trash2 aria-hidden="true" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="purchase-paid">Amount paid</Label>
-              <Input
-                id="purchase-paid"
-                type="number"
-                min="0"
-                value={form.amountPaid}
-                onChange={(event) => updateForm('amountPaid', event.target.value)}
-                placeholder="0"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="purchase-notes">Notes</Label>
-              <Input
-                id="purchase-notes"
-                value={form.notes}
-                onChange={(event) => updateForm('notes', event.target.value)}
-                placeholder="Pay at end of week"
-              />
-            </div>
-
-            <div className="rounded-lg bg-muted/70 p-3">
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-muted-foreground">Purchase total</span>
-                <span className="font-semibold tabular-nums">{formatCurrency(draftTotal)}</span>
-              </div>
-              <div className="mt-1 flex items-center justify-between gap-3 text-sm">
-                <span className="text-muted-foreground">Amount paid</span>
-                <span className="font-semibold tabular-nums">{formatCurrency(amountPaid)}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-3 border-t pt-2 text-base font-semibold">
-                <span>Balance due</span>
-                <span className="tabular-nums">{formatCurrency(draftBalance)}</span>
-              </div>
-            </div>
-
-            {message ? (
-              <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground text-pretty" role="status">
-                {message}
-              </p>
-            ) : null}
-
-            <Button type="submit" className={cn('h-10 w-full', pressableClass)}>
-              <FileText data-icon="inline-start" aria-hidden="true" />
-              Save supplier invoice
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      ) : null}
     </div>
   )
 }

@@ -8,6 +8,7 @@ export type CheckoutItemInput = {
   itemType?: unknown
   id?: unknown
   quantity?: unknown
+  unitPrice?: unknown
 }
 
 export type CheckoutInput = {
@@ -30,7 +31,10 @@ export type CheckoutLineItemSummary = {
   name: string
   sku: string | null
   quantity: number
+  basePrice: number
   unitPrice: number
+  priceOverriddenById: number | null
+  priceOverriddenAt: string | null
   lineTotal: number
 }
 
@@ -60,7 +64,10 @@ export type PreparedCheckoutLineItem = {
   name: string
   sku: string | null
   quantity: number
+  basePrice: number
   unitPrice: number
+  priceOverriddenById: number | null
+  priceOverriddenAt: string | null
   lineTotal: number
   stockQty?: number
 }
@@ -105,7 +112,11 @@ function createInvoiceNumber(date = new Date()): string {
   return `INV-${timestamp}-${suffix}`
 }
 
-async function prepareCheckoutItems(inputItems: unknown): Promise<PreparedCheckoutLineItem[] | string> {
+async function prepareCheckoutItems(
+  inputItems: unknown,
+  overriddenById: number | null,
+  existingItems: Array<typeof saleItems.$inferSelect> = [],
+): Promise<PreparedCheckoutLineItem[] | string> {
   const repository = getCheckoutRepository()
 
   if (!repository) return 'Database unavailable'
@@ -120,16 +131,28 @@ async function prepareCheckoutItems(inputItems: unknown): Promise<PreparedChecko
     const itemType = item.itemType
     const itemId = positiveInteger(item.id)
     const quantity = positiveInteger(item.quantity)
+    const requestedUnitPrice = nonNegativeInteger(item.unitPrice)
 
     if (!isSaleItemType(itemType) || itemId === null || quantity === null) {
       return 'Invalid checkout item'
     }
+    if (item.unitPrice !== undefined && requestedUnitPrice === null) return 'Price must be a non-negative whole number'
+
+    const existing = existingItems.find((savedItem) =>
+      savedItem.itemType === itemType &&
+      (savedItem.productId ?? savedItem.serviceId) === itemId
+    )
 
     if (itemType === 'product') {
       const [product] = await repository.select().from(products).where(eq(products.id, itemId)).limit(1)
 
       if (!product || !product.isActive) return 'Product is no longer available'
       if (product.stockQty < quantity) return `Only ${product.stockQty} in stock for ${product.name}`
+      const basePrice = existing?.basePrice ?? product.unitPrice
+      const unitPrice = requestedUnitPrice ?? existing?.unitPrice ?? basePrice
+      const isOverride = unitPrice !== basePrice
+      if (isOverride && !overriddenById) return 'A user is required to override a price'
+      const unchangedOverride = isOverride && existing?.unitPrice === unitPrice
 
       prepared.push({
         itemType,
@@ -138,14 +161,26 @@ async function prepareCheckoutItems(inputItems: unknown): Promise<PreparedChecko
         name: product.name,
         sku: product.sku,
         quantity,
-        unitPrice: product.unitPrice,
-        lineTotal: product.unitPrice * quantity,
+        basePrice,
+        unitPrice,
+        priceOverriddenById: isOverride
+          ? unchangedOverride ? existing.priceOverriddenById ?? overriddenById : overriddenById
+          : null,
+        priceOverriddenAt: isOverride
+          ? unchangedOverride ? existing.priceOverriddenAt ?? new Date().toISOString() : new Date().toISOString()
+          : null,
+        lineTotal: unitPrice * quantity,
         stockQty: product.stockQty,
       })
     } else {
       const [service] = await repository.select().from(services).where(eq(services.id, itemId)).limit(1)
 
       if (!service || !service.isActive) return 'Service is no longer available'
+      const basePrice = existing?.basePrice ?? service.price
+      const unitPrice = requestedUnitPrice ?? existing?.unitPrice ?? basePrice
+      const isOverride = unitPrice !== basePrice
+      if (isOverride && !overriddenById) return 'A user is required to override a price'
+      const unchangedOverride = isOverride && existing?.unitPrice === unitPrice
 
       prepared.push({
         itemType,
@@ -154,8 +189,15 @@ async function prepareCheckoutItems(inputItems: unknown): Promise<PreparedChecko
         name: service.name,
         sku: service.code,
         quantity,
-        unitPrice: service.price,
-        lineTotal: service.price * quantity,
+        basePrice,
+        unitPrice,
+        priceOverriddenById: isOverride
+          ? unchangedOverride ? existing.priceOverriddenById ?? overriddenById : overriddenById
+          : null,
+        priceOverriddenAt: isOverride
+          ? unchangedOverride ? existing.priceOverriddenAt ?? new Date().toISOString() : new Date().toISOString()
+          : null,
+        lineTotal: unitPrice * quantity,
       })
     }
   }
@@ -178,11 +220,7 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
   const createdById = positiveInteger(input.createdById)
   const amountPaidInput = nonNegativeInteger(input.amountPaid)
   const notes = typeof input.notes === 'string' && input.notes.trim() ? input.notes.trim() : null
-  const preparedItems = await prepareCheckoutItems(input.items)
-
-  if (typeof preparedItems === 'string') {
-    return { ok: false, message: preparedItems }
-  }
+  let existingItems: Array<typeof saleItems.$inferSelect> = []
 
   if (!sourceWorkOrderId) {
     if (!vehicleId) return { ok: false, message: 'Select a vehicle before checkout' }
@@ -193,17 +231,30 @@ export async function createCheckout(input: CheckoutInput): Promise<CheckoutResu
       if (!draft || draft.status !== 'in_progress' || draft.vehicleId !== vehicleId) {
         return { ok: false, message: 'Sales draft is no longer available' }
       }
+      existingItems = await repository.select().from(saleItems).where(eq(saleItems.saleId, saleId))
     }
     customerId = vehicle.customerId
     customerNameSnapshot = vehicle.customerName
     customerPhoneSnapshot = vehicle.customerPhone
   }
 
+  const preparedItems = await prepareCheckoutItems(input.items, createdById, existingItems)
+
+  if (typeof preparedItems === 'string') {
+    return { ok: false, message: preparedItems }
+  }
+
   const subtotal = preparedItems.reduce((total, item) => total + item.lineTotal, 0)
   const total = subtotal
   const amountPaid = amountPaidInput ?? total
 
-  if (amountPaid < total) {
+  if (!sourceWorkOrderId && paymentMethod !== 'cash') {
+    return { ok: false, message: 'Direct sales accept cash payment only' }
+  }
+  if (!sourceWorkOrderId && amountPaid !== total) {
+    return { ok: false, message: 'Cash payment must equal the sale total' }
+  }
+  if (sourceWorkOrderId && amountPaid < total) {
     return { ok: false, message: 'Amount paid cannot be less than total' }
   }
 
@@ -280,7 +331,10 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
         name: item.name,
         sku: item.sku,
         quantity: item.quantity,
+        basePrice: item.basePrice,
         unitPrice: item.unitPrice,
+        priceOverriddenById: item.priceOverriddenById,
+        priceOverriddenAt: item.priceOverriddenAt,
         lineTotal: item.lineTotal,
         createdAt: now,
       }).returning().get()
@@ -300,7 +354,10 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
         name: savedItem.name,
         sku: savedItem.sku,
         quantity: savedItem.quantity,
+        basePrice: savedItem.basePrice,
         unitPrice: savedItem.unitPrice,
+        priceOverriddenById: savedItem.priceOverriddenById,
+        priceOverriddenAt: savedItem.priceOverriddenAt,
         lineTotal: savedItem.lineTotal,
       }
     })

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { customers } from './customer.schema'
 import { products } from './product.schema'
 import { services } from './service.schema'
@@ -29,7 +29,11 @@ export const sales = sqliteTable('sales', {
   notes: text('notes'),
   createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text('updated_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
-})
+}, (table) => [
+  uniqueIndex('sales_open_vehicle_unique')
+    .on(table.vehicleId)
+    .where(sql`${table.status} = 'in_progress' AND ${table.vehicleId} IS NOT NULL`),
+])
 
 export type Sale = typeof sales.$inferSelect
 export type NewSale = typeof sales.$inferInsert
@@ -43,7 +47,10 @@ export const saleItems = sqliteTable('sale_items', {
   name: text('name').notNull(),
   sku: text('sku'),
   quantity: integer('quantity').notNull(),
+  basePrice: integer('base_price').notNull(),
   unitPrice: integer('unit_price').notNull(),
+  priceOverriddenById: integer('price_overridden_by_id').references(() => users.id),
+  priceOverriddenAt: text('price_overridden_at'),
   lineTotal: integer('line_total').notNull(),
   createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
 })

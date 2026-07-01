@@ -11,6 +11,7 @@ import { CustomerWorkspace } from '@/renderer/workspaces/CustomerWorkspace'
 import { DashboardOverview } from '@/renderer/workspaces/DashboardOverview'
 import { InvoiceWorkspace } from '@/renderer/workspaces/InvoiceWorkspace'
 import { PurchasingInventoryWorkspace } from '@/renderer/workspaces/PurchasingInventoryWorkspace'
+import { SupplierManagement } from '@/renderer/workspaces/SupplierManagement'
 import { ReportsWorkspace } from '@/renderer/workspaces/ReportsWorkspace'
 import { EmptySalesWorkspace } from '@/renderer/workspaces/EmptySalesWorkspace'
 import { SectionWorkspace } from '@/renderer/workspaces/SectionWorkspace'
@@ -51,6 +52,7 @@ const sectionTranslationKeys: Record<AppSection, string> = {
   dashboard: 'dashboard',
   sales: 'sales',
   inventory: 'inventory',
+  suppliers: 'suppliers',
   vehicles: 'vehicles',
   services: 'services',
   'work-orders': 'workOrders',
@@ -232,6 +234,7 @@ export default function Dashboard() {
                 'flex flex-col gap-4',
                 (activeSection === 'sales' ||
                   activeSection === 'inventory' ||
+                  activeSection === 'suppliers' ||
                   activeSection === 'services' ||
                   activeSection === 'invoices') &&
                   'min-h-0 flex-1 overflow-hidden',
@@ -240,7 +243,8 @@ export default function Dashboard() {
             >
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
               {activeSection === 'sales' ? <EmptySalesWorkspace currentUser={user} /> : null}
-              {activeSection === 'inventory' ? <PurchasingInventoryWorkspace /> : null}
+              {activeSection === 'inventory' ? <PurchasingInventoryWorkspace currentUser={user} /> : null}
+              {activeSection === 'suppliers' ? <SupplierManagement /> : null}
               {activeSection === 'vehicles' ? <VehicleWorkspace /> : null}
               {activeSection === 'services' ? <ServicesWorkspace /> : null}
               {activeSection === 'work-orders' ? <WorkOrderWorkspace currentUser={user} /> : null}
@@ -253,6 +257,7 @@ export default function Dashboard() {
               {activeSection !== 'dashboard' &&
               activeSection !== 'sales' &&
               activeSection !== 'inventory' &&
+              activeSection !== 'suppliers' &&
               activeSection !== 'vehicles' &&
               activeSection !== 'services' &&
               activeSection !== 'work-orders' &&

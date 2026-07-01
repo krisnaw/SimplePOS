@@ -2,6 +2,7 @@ import { Package, Plus, Wrench } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { formatCurrency } from '@/renderer/lib/formatters'
 import { cn } from '@/renderer/lib/utils'
+import { ProductCategoryBadge } from './ProductCategoryBadge'
 
 type SalesCatalogListItemProps = {
   itemType: 'product' | 'service'
@@ -38,20 +39,23 @@ export function SalesCatalogListItem({
   return (
     <div className="flex min-h-[92px] items-center justify-between gap-3 overflow-hidden rounded-lg border bg-background p-3 text-left shadow-sm transition-[box-shadow] duration-150 ease-out hover:shadow-border-hover">
       <div className="min-w-0 flex-1">
-        <span
-          className={cn(
-            'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ring-1 tabular-nums',
-            itemType === 'service'
-              ? 'bg-amber-500/10 text-amber-700 ring-amber-500/20'
-              : 'bg-sky-500/10 text-sky-700 ring-sky-500/20',
-          )}
-        >
-          <Icon className="size-3.5" aria-hidden="true" />
-          {typeLabel}
-        </span>
+        {itemType === 'product' && category ? (
+          <ProductCategoryBadge name={category} />
+        ) : (
+          <span
+            className={cn(
+              'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ring-1 tabular-nums',
+              itemType === 'service'
+                ? 'bg-amber-500/10 text-amber-700 ring-amber-500/20'
+                : 'bg-sky-500/10 text-sky-700 ring-sky-500/20',
+            )}
+          >
+            <Icon className="size-3.5" aria-hidden="true" />
+            {typeLabel}
+          </span>
+        )}
         <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="min-w-0 truncate text-sm font-medium text-balance">{name}</span>
-          {category ? <span className="text-xs text-muted-foreground text-pretty">{category}</span> : null}
         </div>
         <div className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="tabular-nums">{code}</span>

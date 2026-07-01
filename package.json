@@ -11,7 +11,7 @@
     "build:electron": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/typescript/bin/tsc -p tsconfig.electron.json",
     "test": "vitest run --config vitest.config.mts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "npm run build:electron && ELECTRON_RUN_AS_NODE=1 electron ./dist-electron/db/migrate.js .",
     "db:seed": "npm run build:electron && ELECTRON_RUN_AS_NODE=1 electron ./dist-electron/db/seeder/seed-products.js",
     "start": "npm run build && electron .",
     "dist:mac": "npm run build && electron-builder --mac --arm64",

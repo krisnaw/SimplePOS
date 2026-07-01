@@ -1,225 +1,140 @@
 # SimplePOS End User Guide
 
-Welcome to the **SimplePOS** user guide. This document will help you navigate and use the application effectively to manage your car repair shop.
+## Getting Started
 
-## 🔑 Getting Started
+1. Launch SimplePOS.
+2. Enter your email and password.
+3. Select **Sign in**.
+4. Confirm the database indicator shows that SimplePOS is connected.
 
-### Logging In
-1.  Launch the SimplePOS application.
-2.  Enter your **Email** and **Password** on the login screen.
-3.  Click **Login**. Your access level (Admin or Cashier) will determine which features you can see and use.
+Admin accounts can manage configuration and inventory. Cashier accounts focus
+on daily sales and invoice lookup.
 
----
+## Daily Sales Workflow
 
-## 📊 Dashboard
-The Dashboard is your command center.
--   **Admin View**: Monitor today's total revenue, active work orders, and items that are running low in stock.
--   **Cashier View**: See today's transactions and work orders you are currently managing.
+SimplePOS uses one customer-sale flow:
 
----
-
-## Sales vs Work Orders
-
-SimplePOS has two related but separate workflows:
-
-```txt
-Direct Sale
-Sales / POS -> Checkout -> Sale + Invoice + Payment
+```text
+Vehicle Intake
+-> In Progress sale
+-> Products & Services
+-> Current Sale
+-> Cash checkout
+-> Invoice
 ```
 
-```txt
-Repair Job
-Work Order -> Add services/products -> Complete -> Checkout -> Sale + Invoice + Payment
-```
+### 1. Find or Add the Vehicle
 
-Use **Sales / POS** when the customer pays immediately. This is best for quick product sales, simple service charges, or any transaction where the items and payment are known right away.
+1. Open **Sales**.
+2. Search Vehicle Intake by plate, vehicle, customer, phone, or notes.
+3. Select the vehicle to start a sale.
+4. If no vehicle matches, add the vehicle from the search results.
 
-Use **Work Orders** when a vehicle or repair job needs to be tracked before payment. A work order records the customer, vehicle, complaint, notes, assigned staff, job status, services, and products while the repair is still being handled.
+Every sale requires a vehicle. A vehicle can have only one open sale. Selecting
+a vehicle that already has an open sale activates that sale instead of creating
+a duplicate.
 
-The records have different purposes:
+### 2. Work With Open Sales
 
-| Record | Purpose |
-|---|---|
-| **Work Order** | Tracks the repair job before checkout. |
-| **Sale** | Records the financial transaction at checkout. |
-| **Invoice** | Provides the final bill or receipt from the sale. |
-| **Payment** | Records how the customer paid. |
+- All open sales remain visible under **In Progress**.
+- Select an In Progress entry to continue it without searching again.
+- A **Stale** badge means the sale has not been updated for more than seven days.
+- Stale sales remain usable.
+- Use the trash action to permanently delete an unfinished sale that is no
+  longer needed. Deleting a draft does not change stock.
 
-When a completed Work Order is checked out, SimplePOS creates a normal **Sale**, **Sale Items**, **Invoice**, and **Payment**. The sale and invoice are linked back to the original work order, so the job history and financial record stay connected.
+### 3. Add Products and Services
 
----
+1. Select an open sale.
+2. Choose products or services from the catalog.
+3. Use plus and minus controls to adjust quantities.
+4. Review each line total and the sale total.
 
-## 🚗 Managing Customers & Vehicles
-Before creating a work order, you need a customer and their vehicle in the system.
+Products come from inventory and reduce stock only after checkout. Services do
+not affect stock.
 
-### Adding a New Customer
-1.  Navigate to the **Customers** section.
-2.  Click **Add Customer**.
-3.  Fill in the name, phone number, email, and address.
-4.  Click **Save**.
+### 4. Adjust a Unit Price
 
-### Adding a Vehicle
-1.  Open a customer's profile.
-2.  Click **Add Vehicle**.
-3.  Enter the vehicle details (Make, Model, Year, Plate Number).
-4.  Click **Save**.
+1. Select the edit-price action on a Current Sale line.
+2. Enter a non-negative whole amount.
+3. Confirm the new price.
 
----
+An adjusted line shows an **Adjusted** badge and its original catalog price.
+SimplePOS records who changed the price and when. No reason is required.
+Entering the catalog price again clears the adjustment.
 
-## 🛠 Work Orders (POS)
-The Work Order system is where you record repair jobs. A work order is the parent record for one customer visit: it connects the customer, their vehicle, the reported problem, the services performed, and the products used.
+### 5. Complete Cash Checkout
 
-### Work Order Workflow
-The normal repair shop flow is:
-
-1.  **Customer arrives**: Select or create the customer record.
-2.  **Vehicle is selected**: Link the customer's vehicle to the job.
-3.  **Work order is created**: Record the complaint, notes, odometer, and job status.
-4.  **Services are added**: Add labor/task items such as inspection, oil change, or brake replacement.
-5.  **Products are added**: Add physical inventory items used for the repair, such as oil, filters, brake pads, or fluids.
-6.  **Work is completed**: Update the work order status to **Completed**.
-7.  **Checkout happens**: Convert the completed work order into a sale/invoice.
-8.  **Payment is recorded**: Confirm payment and mark the work order as **Invoiced**.
-
-Relationship example:
-
-```txt
-Customer
-  Vehicle
-    Work Order
-      Service item
-      Service item
-      Product item
-      Product item
-```
-
-In this structure, services and products are both line items inside the work order. The difference is that products come from inventory and may reduce stock, while services are labor/task charges.
-
-### Sample Work Order Data
-This is an example of how one repair job can be stored and checked out.
-
-Customer:
-
-| Field | Value |
-|---|---|
-| Name | Budi Santoso |
-| Phone | 0812-3456-7890 |
-| Email | budi@example.com |
-| Address | Jl. Gatot Subroto No. 10 |
-
-Vehicle:
-
-| Field | Value |
-|---|---|
-| Plate Number | DK 1234 AB |
-| Brand | Toyota |
-| Model | Avanza |
-| Year | 2020 |
-| Color | Silver |
-
-Work order:
-
-| Field | Value |
-|---|---|
-| Work Order Number | WO-00028 |
-| Customer | Budi Santoso |
-| Vehicle | Toyota Avanza - DK 1234 AB |
-| Status | Completed |
-| Odometer | 42,500 km |
-| Complaint | Brake noise when stopping |
-| Notes | Inspect front brake system and replace worn parts if needed. |
-
-Line items:
-
-| Type | Item | Qty | Unit Price | Line Total |
-|---|---|---:|---:|---:|
-| Service | Brake Inspection | 1 | 75,000 | 75,000 |
-| Service | Front Brake Pad Replacement | 1 | 150,000 | 150,000 |
-| Product | Front Brake Pad Set | 1 | 450,000 | 450,000 |
-| Product | Brake Fluid DOT 4 | 1 | 85,000 | 85,000 |
+1. Confirm the Current Sale quantities, prices, and total.
+2. Select **Checkout**.
+3. Confirm that cash equal to the exact displayed total was received.
+4. Select **Cash received** once.
 
 Checkout:
 
-| Field | Value |
-|---|---:|
-| Subtotal | 760,000 |
-| Total | 760,000 |
-| Payment Method | Cash |
-| Amount Paid | 760,000 |
+- completes the sale;
+- creates a paid invoice;
+- records a paid cash payment equal to the total;
+- decreases product stock;
+- removes the sale from **In Progress**.
 
-After checkout, the work order status becomes **Invoiced**.
+SimplePOS does not handle deposits, partial payments, unpaid completion,
+overpayment, change calculation, transfer, card payment, or refunds.
+Physical cash handling and cash-drawer balancing occur outside the app.
 
-### Creating a Work Order
-1.  Go to the **Sales/POS** workspace.
-2.  Click **New Work Order**.
-3.  Select a **Customer** and then select the **Vehicle** to be serviced.
-4.  **Add Services**: Select labor items or standard services (e.g., "Oil Change").
-5.  **Add Parts**: Select any parts used from the inventory (e.g., "Oil Filter").
-6.  Set the initial status to **Pending** or **In Progress**.
-7.  Click **Create Work Order**.
+## Invoices and Receipts
 
-### Progressing a Work Order
-Work orders follow a simple lifecycle:
-`Pending` → `In Progress` → `Completed` → `Invoiced`
+1. Open **Invoices** after checkout.
+2. Search by plate, invoice number, customer, or payment information.
+3. Select an invoice to review it.
 
-Update the status as the work moves through your shop. Once the work is done, set it to **Completed**.
+The vehicle plate is the primary invoice identifier. Invoice detail includes:
 
-### Checkout & Invoicing
-1.  Open a **Completed** work order.
-2.  Click **Checkout**.
-3.  Review the totals.
-4.  Select a **Payment Method** (Cash, Transfer, or Card).
-5.  Click **Confirm Payment**.
-6.  The work order status will change to **Invoiced**, and you can now print or save the **Receipt**.
+- plate number and vehicle description;
+- customer and phone;
+- product and service lines;
+- quantities, unit prices, and totals;
+- cash payment status and amount.
 
-### Sample Sale With Products
-A sale can contain product line items from inventory. In a repair shop, this usually means the final checkout includes both service work and physical parts used during the repair.
+Use **Preview** to inspect the receipt and **Print** to produce a customer copy.
 
-Example:
+## Vehicles
 
-| Type | Item | Qty | Unit Price | Line Total |
-|---|---|---:|---:|---:|
-| Service | Brake Inspection | 1 | 75,000 | 75,000 |
-| Service | Front Brake Pad Replacement | 1 | 150,000 | 150,000 |
-| Product | Front Brake Pad Set | 1 | 450,000 | 450,000 |
-| Product | Brake Fluid DOT 4 | 1 | 85,000 | 85,000 |
+Use **Vehicles** to maintain plate, make, model, year, color, customer, phone,
+and notes. Accurate vehicle records make Sales search and invoice lookup faster.
 
-Sale summary:
+## Inventory
 
-| Field | Value |
-|---|---:|
-| Subtotal | 760,000 |
-| Total | 760,000 |
-| Payment Method | Cash |
-| Amount Paid | 760,000 |
+### Products
 
-In this example, the product items come from inventory and can reduce stock when the sale is completed.
+- Maintain SKU, name, selling price, stock, unit type, and minimum stock.
+- Keep a product active when it should appear in Sales.
+- Low-stock indicators help identify products that need replenishment.
 
----
+### Services
 
-## 📦 Inventory Management (Admin Only)
-Keep track of the parts and supplies in your shop.
+- Maintain the services offered by the shop and their default catalog prices.
+- Service prices can still be adjusted on an individual sale.
 
--   **Product List**: View all items, their current stock, and SKU. Items below their minimum stock level will be highlighted.
--   **Adding Stock**: Edit a product to update its quantity when new shipments arrive.
--   **Services**: Manage the list of services you offer and their standard pricing.
+### Supplier Purchases
 
----
+1. Open **Inventory**, then **Purchases**.
+2. Select **Record Purchase**.
+3. Choose an active supplier.
+4. Enter invoice details when available.
+5. Add products, received quantities, and unit purchase costs.
+6. Review and confirm the purchase.
 
-## 📈 Reports (Admin Only)
-Use the **Reports** section to analyze your business performance:
--   **Sales Report**: View revenue trends over days, weeks, or months.
--   **Work Order Report**: Track how many jobs are being completed and average turnaround times.
--   **Inventory Report**: See which parts are used most often and what needs reordering.
+Posting a purchase immediately increases product stock. Use **Needs Invoice** for
+received goods missing supplier invoice details and **Unpaid** for supplier
+invoices that still need payment.
 
----
+## Troubleshooting
 
-## ⚙️ Settings (Admin Only)
--   **User Management**: Create and manage accounts for your staff.
--   **Shop Settings**: Configure your shop's name, address, and receipt branding.
--   **Categories**: Organize your parts and services into logical categories.
-
----
-
-## ❓ Need Help?
-If you encounter any issues or have questions not covered in this guide, please contact your system administrator.
+- Product missing from Sales: confirm it is active and has stock.
+- Service missing from Sales: confirm it is active.
+- Vehicle already has an ongoing sale: select it from **In Progress**.
+- Invoice missing: confirm checkout showed a success message.
+- Stock did not change: confirm checkout completed rather than leaving a draft.
+- Login failed: verify your email and password with an administrator.
+- Database unavailable: restart SimplePOS and check the database indicator.

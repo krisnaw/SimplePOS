@@ -27,11 +27,24 @@ contextBridge.exposeInMainWorld('simplepos', {
   },
   categories: {
     list: () => ipcRenderer.invoke('categories:list'),
+    create: (input: { name: string }) => ipcRenderer.invoke('categories:create', input),
   },
   products: {
     list: () => ipcRenderer.invoke('products:list'),
     create: (input: Record<string, unknown>) => ipcRenderer.invoke('products:create', input),
     update: (input: Record<string, unknown>) => ipcRenderer.invoke('products:update', input),
+  },
+  suppliers: {
+    list: (input?: { includeInactive?: boolean }) => ipcRenderer.invoke('suppliers:list', input ?? {}),
+    create: (input: Record<string, unknown>) => ipcRenderer.invoke('suppliers:create', input),
+    update: (input: Record<string, unknown>) => ipcRenderer.invoke('suppliers:update', input),
+  },
+  purchases: {
+    list: (input?: Record<string, unknown>) => ipcRenderer.invoke('purchases:list', input ?? {}),
+    get: (input: { id: number }) => ipcRenderer.invoke('purchases:get', input),
+    create: (input: Record<string, unknown>) => ipcRenderer.invoke('purchases:create', input),
+    markPaid: (input: { id: number }) => ipcRenderer.invoke('purchases:markPaid', input),
+    updateInvoice: (input: Record<string, unknown>) => ipcRenderer.invoke('purchases:updateInvoice', input),
   },
   services: {
     list: () => ipcRenderer.invoke('services:list'),
@@ -43,7 +56,8 @@ contextBridge.exposeInMainWorld('simplepos', {
   },
   salesDrafts: {
     list: () => ipcRenderer.invoke('salesDrafts:list'),
-    createOrResume: (input: Record<string, unknown>) => ipcRenderer.invoke('salesDrafts:createOrResume', input),
+    create: (input: Record<string, unknown>) => ipcRenderer.invoke('salesDrafts:create', input),
+    delete: (input: Record<string, unknown>) => ipcRenderer.invoke('salesDrafts:delete', input),
     saveItems: (input: Record<string, unknown>) => ipcRenderer.invoke('salesDrafts:saveItems', input),
   },
   dashboard: {

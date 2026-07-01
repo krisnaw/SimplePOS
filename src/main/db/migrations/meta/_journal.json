@@ -50,6 +50,55 @@
       "when": 1782540582743,
       "tag": "0006_fair_gertrude_yorkes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1782720318141,
+      "tag": "0007_lazy_gauntlet",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782720943433,
+      "tag": "0008_cute_sleepwalker",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782721783351,
+      "tag": "0009_unique_annihilus",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1782810000000,
+      "tag": "0010_delayed_supplier_invoice",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1782878911649,
+      "tag": "0011_strong_liz_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1782881202097,
+      "tag": "0012_fuzzy_nighthawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1782890852102,
+      "tag": "0013_chilly_starhawk",
+      "breakpoints": true
     }
   ]
 }

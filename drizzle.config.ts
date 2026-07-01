@@ -5,6 +5,6 @@ export default defineConfig({
   out: './src/main/db/migrations',
   dialect: 'sqlite',
   dbCredentials: {
-    url: './simplepos.sqlite',
+    url: 'file:./simplepos.sqlite',
   },
 })

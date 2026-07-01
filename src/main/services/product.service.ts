@@ -1,4 +1,5 @@
-import { asc, eq } from 'drizzle-orm'
+import { randomUUID } from 'crypto'
+import { asc, eq, sql } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
 import { productCategories, products } from '../db/schema/index'
 import type { Product, ProductCategory, UnitType } from '../db/schema/index'
@@ -7,7 +8,12 @@ import { getProductRepository } from '../repositories/product.repository'
 export type ProductCategorySummary = {
   id: number
   name: string
-  description: string | null
+}
+
+export type ProductCategoryMutationResult = {
+  ok: boolean
+  message: string
+  category?: ProductCategorySummary
 }
 
 export type ProductSummary = {
@@ -21,6 +27,7 @@ export type ProductSummary = {
   unitType: UnitType
   stockQty: number
   minStock: number
+  lastPurchaseCost: number
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -36,7 +43,6 @@ function toProductCategorySummary(category: ProductCategory): ProductCategorySum
   return {
     id: category.id,
     name: category.name,
-    description: category.description,
   }
 }
 
@@ -52,6 +58,7 @@ function toProductSummary(product: Product): ProductSummary {
     unitType: product.unitType,
     stockQty: product.stockQty,
     minStock: product.minStock,
+    lastPurchaseCost: product.lastPurchaseCost,
     isActive: product.isActive,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
@@ -70,10 +77,64 @@ export async function listProductCategories(): Promise<ProductCategorySummary[]>
   const list = await repository
     .select()
     .from(productCategories)
-    .where(eq(productCategories.isActive, true))
     .orderBy(asc(productCategories.name))
 
   return list.map(toProductCategorySummary)
+}
+
+export async function createProductCategory(input: {
+  name?: unknown
+}): Promise<ProductCategoryMutationResult> {
+  const repository = getProductRepository()
+
+  if (!repository) return { ok: false, message: 'Database unavailable' }
+  if (typeof input.name !== 'string') return { ok: false, message: 'Category name is required' }
+
+  const name = input.name.trim().replace(/\s+/g, ' ')
+  if (!name) return { ok: false, message: 'Category name is required' }
+
+  const duplicate = await repository
+    .select({ id: productCategories.id })
+    .from(productCategories)
+    .where(sql`lower(${productCategories.name}) = lower(${name})`)
+    .limit(1)
+
+  if (duplicate.length > 0) {
+    return { ok: false, message: 'A category with this name already exists' }
+  }
+
+  const [saved] = await repository.insert(productCategories).values({ name }).returning()
+  await flushDatabase()
+
+  return {
+    ok: true,
+    message: 'Category created',
+    category: toProductCategorySummary(saved),
+  }
+}
+
+async function resolveCategoryId(
+  categoryId: unknown,
+): Promise<{ ok: true; categoryId: number } | { ok: false; message: string }> {
+  if (categoryId === null || categoryId === undefined) {
+    return { ok: false, message: 'Product category is required' }
+  }
+  if (typeof categoryId !== 'number' || !Number.isInteger(categoryId) || categoryId <= 0) {
+    return { ok: false, message: 'Invalid product category' }
+  }
+
+  const repository = getProductRepository()
+  if (!repository) return { ok: false, message: 'Database unavailable' }
+
+  const [category] = await repository
+    .select({ id: productCategories.id })
+    .from(productCategories)
+    .where(eq(productCategories.id, categoryId))
+    .limit(1)
+
+  return category
+    ? { ok: true, categoryId: category.id }
+    : { ok: false, message: 'Product category not found' }
 }
 
 export async function listProducts(): Promise<ProductSummary[]> {
@@ -106,24 +167,27 @@ export async function createProduct(input: {
   if (!repository) return { ok: false, message: 'Database unavailable' }
 
   if (
-    typeof input.sku !== 'string' ||
     typeof input.name !== 'string' ||
     typeof input.unitPrice !== 'number' ||
     !isValidUnitType(input.unitType)
   ) {
-    return { ok: false, message: 'SKU, name, unit price, and unit type are required' }
+    return { ok: false, message: 'Name, unit price, and unit type are required' }
   }
 
-  const sku = input.sku.trim().toUpperCase()
+  const requestedSku = typeof input.sku === 'string' ? input.sku.trim().toUpperCase() : ''
+  const sku = requestedSku || `P-${randomUUID().slice(0, 8).toUpperCase()}`
   const name = input.name.trim()
   const unitPrice = input.unitPrice
   const stockQty = typeof input.stockQty === 'number' ? input.stockQty : 0
   const minStock = typeof input.minStock === 'number' ? input.minStock : 0
-  const categoryId = typeof input.categoryId === 'number' ? input.categoryId : null
+  const categoryResult = await resolveCategoryId(input.categoryId)
+  if (!categoryResult.ok) return categoryResult
+
+  const categoryId = categoryResult.categoryId
   const barcode = typeof input.barcode === 'string' && input.barcode.trim() ? input.barcode.trim() : null
   const description = typeof input.description === 'string' && input.description.trim() ? input.description.trim() : null
 
-  if (!sku || !name || unitPrice < 0 || stockQty < 0 || minStock < 0) {
+  if (!name || unitPrice < 0 || stockQty < 0 || minStock < 0) {
     return { ok: false, message: 'Enter valid product details and non-negative numbers' }
   }
 
@@ -193,8 +257,11 @@ export async function updateProduct(input: {
     return { ok: false, message: 'A product with this SKU already exists' }
   }
 
+  const categoryResult = await resolveCategoryId(input.categoryId)
+  if (!categoryResult.ok) return categoryResult
+
   const [updated] = await repository.update(products).set({
-    categoryId: typeof input.categoryId === 'number' ? input.categoryId : null,
+    categoryId: categoryResult.categoryId,
     sku,
     barcode: typeof input.barcode === 'string' && input.barcode.trim() ? input.barcode.trim() : null,
     name: input.name.trim(),

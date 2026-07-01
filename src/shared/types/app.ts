@@ -6,6 +6,7 @@ export type AppSection =
   | 'dashboard'
   | 'sales'
   | 'inventory'
+  | 'suppliers'
   | 'vehicles'
   | 'services'
   | 'work-orders'

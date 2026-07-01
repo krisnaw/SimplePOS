@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Eye, Loader2, Printer, RefreshCw, Search, X } from 'lucide-react'
+import { CalendarDays, Car, Eye, Loader2, Printer, RefreshCw, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
@@ -16,6 +16,7 @@ import {
 import { cn } from '@/renderer/lib/utils'
 import { formatCurrency, formatDateTime, formatPaymentMethod } from '@/renderer/lib/formatters'
 import type { InvoiceSummary, InvoiceDetail, InvoiceStatusFilter } from './InvoiceWorkspace.types'
+import { ProductCategoryBadge } from './ProductCategoryBadge'
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
@@ -90,14 +91,18 @@ function generateReceiptHTML(invoice: NonNullable<InvoiceDetail>): string {
       <div class="meta-value">${fmtDate(invoice.issuedAt)}</div>
     </div>
     <div>
+      <div class="meta-label">Vehicle</div>
+      <div class="meta-value">${invoice.vehiclePlateNumber ?? '-'}</div>
+      <div style="font-size:11px;color:#666">${[invoice.vehicleBrand, invoice.vehicleModel, invoice.vehicleYear].filter(Boolean).join(' ') || '-'}</div>
+    </div>
+    <div>
       <div class="meta-label">Customer</div>
       <div class="meta-value">${invoice.customerName ?? 'Walk-in customer'}</div>
     </div>
     <div>
-      <div class="meta-label">Contact</div>
+      <div class="meta-label">Phone</div>
       <div class="meta-value">${invoice.customerPhone ?? invoice.customerEmail ?? '-'}</div>
     </div>
-    ${invoice.workOrderNumber ? `<div><div class="meta-label">Work Order</div><div class="meta-value">${invoice.workOrderNumber}</div></div>` : ''}
     <div>
       <div class="meta-label">Payment</div>
       <div class="meta-value" style="text-transform:capitalize">${invoice.payment?.method ?? '-'}</div>
@@ -136,6 +141,10 @@ function statusClass(status: string | null): string {
   if (status === 'refunded') return 'bg-amber-500/15 text-amber-700'
   if (status === 'void') return 'bg-destructive/10 text-destructive'
   return 'bg-muted text-muted-foreground'
+}
+
+function formatInvoiceVehicle(invoice: InvoiceSummary): string {
+  return [invoice.vehicleBrand, invoice.vehicleModel, invoice.vehicleYear].filter(Boolean).join(' ')
 }
 
 function InvoiceStatusBadge({
@@ -429,17 +438,15 @@ export function InvoiceWorkspace() {
                       >
                       <span className="flex items-start justify-between gap-3">
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium tabular-nums">
-                            {invoice.invoiceNumber}
+                          <span className="block truncate text-sm font-semibold tabular-nums">
+                            {invoice.vehiclePlateNumber ?? invoice.invoiceNumber}
                           </span>
-                          <span className="mt-1 block truncate text-xs text-muted-foreground">
-                            {invoice.customerName ?? t('invoices.walkInCustomer')}
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground tabular-nums">
+                            {invoice.vehiclePlateNumber ? invoice.invoiceNumber : t('invoices.vehicleNotRecorded')}
                           </span>
-                          {invoice.workOrderNumber ? (
-                            <span className="mt-0.5 block truncate text-xs text-muted-foreground tabular-nums">
-                              {t('invoices.workOrderNumber', { number: invoice.workOrderNumber })}
-                            </span>
-                          ) : null}
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                            {formatInvoiceVehicle(invoice) || invoice.customerName || t('invoices.walkInCustomer')}
+                          </span>
                         </span>
                         <InvoiceStatusBadge
                           status={invoice.status}
@@ -471,9 +478,14 @@ export function InvoiceWorkspace() {
         {selectedInvoice ? (
           <>
             <CardHeader>
-              <CardTitle>{selectedInvoice.invoiceNumber}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Car aria-hidden="true" />
+                <span className="tabular-nums">
+                  {selectedInvoice.vehiclePlateNumber ?? selectedInvoice.invoiceNumber}
+                </span>
+              </CardTitle>
               <CardDescription>
-                {selectedInvoice.customerName ?? t('invoices.walkInCustomer')} · {formatDateTime(selectedInvoice.issuedAt)}
+                {selectedInvoice.invoiceNumber} · {formatDateTime(selectedInvoice.issuedAt)}
               </CardDescription>
               <CardAction className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" className={pressableButtonClass} onClick={handlePreview}>
@@ -518,7 +530,23 @@ export function InvoiceWorkspace() {
             <CardContent className="min-h-0 flex-1 overflow-auto">
               <div className="flex min-w-0 flex-col gap-4">
                   <div className="rounded-lg border bg-background p-4">
-                    <div className="grid gap-3 md:grid-cols-3">
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">{t('invoices.plateNumber')}</Label>
+                        <p className="mt-1 text-sm font-semibold tabular-nums">
+                          {selectedInvoice.vehiclePlateNumber ?? t('invoices.vehicleNotRecorded')}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">{t('invoices.vehicle')}</Label>
+                        {formatInvoiceVehicle(selectedInvoice) || selectedInvoice.vehicleColor ? (
+                          <p className="mt-1 text-sm font-medium text-pretty">
+                            {[formatInvoiceVehicle(selectedInvoice), selectedInvoice.vehicleColor].filter(Boolean).join(' · ')}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-sm">{t('invoices.notRecorded')}</p>
+                        )}
+                      </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">{t('customers.table.customer')}</Label>
                         <p className="mt-1 text-sm font-medium text-pretty">
@@ -531,24 +559,13 @@ export function InvoiceWorkspace() {
                           {selectedInvoice.customerPhone ?? selectedInvoice.customerEmail ?? t('invoices.notRecorded')}
                         </p>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">{t('invoices.payment')}</Label>
-                        <p className="mt-1 text-sm font-medium">
-                          {formatPaymentMethod(selectedInvoice.payment?.method ?? null)}
-                        </p>
-                      </div>
-                      <div className="md:col-span-3">
-                        <Label className="text-xs text-muted-foreground">{t('invoices.workOrder')}</Label>
-                        <p className="mt-1 break-all text-sm font-medium tabular-nums text-pretty">
-                          {selectedInvoice.workOrderNumber ?? t('invoices.directSale')}
-                        </p>
-                      </div>
                     </div>
                   </div>
 
                   <div className="overflow-hidden rounded-lg border bg-background">
-                    <div className="grid grid-cols-[minmax(0,1fr)_72px_96px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
                       <span>{t('invoices.item')}</span>
+                      <span>{t('invoices.category')}</span>
                       <span className="text-right">{t('invoices.qty')}</span>
                       <span className="text-right">{t('services.table.price')}</span>
                       <span className="text-right">{t('sales.total')}</span>
@@ -557,14 +574,14 @@ export function InvoiceWorkspace() {
                       {selectedInvoice.items.map((item) => (
                         <div
                           key={item.id}
-                          className="grid grid-cols-[minmax(0,1fr)_72px_96px_104px] gap-3 px-3 py-2.5 text-sm"
+                          className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] items-center gap-3 px-3 py-2.5 text-sm"
                         >
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-balance">{item.name}</p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {item.itemType === 'service' ? t('sales.service') : t('sales.product')} · {item.sku ?? t('invoices.noSku')}
-                            </p>
-                          </div>
+                          <p className="truncate font-medium text-balance">{item.name}</p>
+                          {item.category ? (
+                            <ProductCategoryBadge name={item.category} />
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                           <span className="text-right tabular-nums">{item.quantity}</span>
                           <span className="text-right tabular-nums">{formatCurrency(item.unitPrice)}</span>
                           <span className="text-right font-medium tabular-nums">{formatCurrency(item.lineTotal)}</span>

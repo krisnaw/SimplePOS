@@ -6,10 +6,6 @@ export type UnitType = 'piece' | 'litre' | 'set' | 'box'
 export const productCategories = sqliteTable('product_categories', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull().unique(),
-  description: text('description'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text('updated_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
 })
 
 export type ProductCategory = typeof productCategories.$inferSelect
@@ -26,6 +22,7 @@ export const products = sqliteTable('products', {
   unitType: text('unit_type').notNull().$type<UnitType>().default('piece'),
   stockQty: integer('stock_qty').notNull().default(0),
   minStock: integer('min_stock').notNull().default(0),
+  lastPurchaseCost: integer('last_purchase_cost').notNull().default(0),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text('updated_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),

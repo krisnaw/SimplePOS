@@ -13,12 +13,19 @@ type ProductSeed = {
 }
 
 const productCategorySeeds = [
-  'Oli & Cairan',
-  'Filter',
-  'Rem',
-  'Kelistrikan',
-  'Ban & Roda',
-  'Aksesoris',
+  'Cuci',
+  'Mesin',
+  'Bengkel',
+  'Minuman',
+]
+
+const legacyCategoryMappings = [
+  { from: 'Oli & Cairan', to: 'Mesin' },
+  { from: 'Filter', to: 'Mesin' },
+  { from: 'Rem', to: 'Bengkel' },
+  { from: 'Kelistrikan', to: 'Bengkel' },
+  { from: 'Ban & Roda', to: 'Bengkel' },
+  { from: 'Aksesoris', to: 'Bengkel' },
 ]
 
 const productSeeds: ProductSeed[] = [
@@ -31,7 +38,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'litre',
     stockQty: 30,
     minStock: 6,
-    categoryName: 'Oli & Cairan',
+    categoryName: 'Mesin',
   },
   {
     sku: 'ID-OIL-YAMALUBE-MATIC-08L',
@@ -42,7 +49,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'litre',
     stockQty: 28,
     minStock: 6,
-    categoryName: 'Oli & Cairan',
+    categoryName: 'Mesin',
   },
   {
     sku: 'ID-OIL-CASTROL-MAG-10W40-1L',
@@ -53,7 +60,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'litre',
     stockQty: 18,
     minStock: 5,
-    categoryName: 'Oli & Cairan',
+    categoryName: 'Mesin',
   },
   {
     sku: 'ID-FLT-ASPIRA-BEAT',
@@ -64,7 +71,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'piece',
     stockQty: 24,
     minStock: 5,
-    categoryName: 'Filter',
+    categoryName: 'Mesin',
   },
   {
     sku: 'ID-FLT-OIL-AVANZA',
@@ -75,7 +82,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'piece',
     stockQty: 20,
     minStock: 4,
-    categoryName: 'Filter',
+    categoryName: 'Mesin',
   },
   {
     sku: 'ID-BRK-KAMPAS-BEAT',
@@ -86,7 +93,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'piece',
     stockQty: 22,
     minStock: 5,
-    categoryName: 'Rem',
+    categoryName: 'Bengkel',
   },
   {
     sku: 'ID-BRK-PAD-AVANZA-FR',
@@ -97,7 +104,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'set',
     stockQty: 12,
     minStock: 3,
-    categoryName: 'Rem',
+    categoryName: 'Bengkel',
   },
   {
     sku: 'ID-SPARK-NGK-CPR9EA',
@@ -108,7 +115,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'piece',
     stockQty: 40,
     minStock: 10,
-    categoryName: 'Kelistrikan',
+    categoryName: 'Bengkel',
   },
   {
     sku: 'ID-BAT-GS-GTZ5S',
@@ -119,7 +126,7 @@ const productSeeds: ProductSeed[] = [
     unitType: 'piece',
     stockQty: 10,
     minStock: 2,
-    categoryName: 'Kelistrikan',
+    categoryName: 'Bengkel',
   },
   {
     sku: 'ID-TIRE-FDR-80-90-14',
@@ -130,7 +137,117 @@ const productSeeds: ProductSeed[] = [
     unitType: 'piece',
     stockQty: 16,
     minStock: 4,
-    categoryName: 'Ban & Roda',
+    categoryName: 'Bengkel',
+  },
+  {
+    sku: 'ID-WASH-SHAMPOO-1L',
+    barcode: '8998765600012',
+    name: 'Shampo Mobil 1L',
+    description: 'Shampo kendaraan untuk pencucian rutin.',
+    unitPrice: 35000,
+    unitType: 'piece',
+    stockQty: 20,
+    minStock: 5,
+    categoryName: 'Cuci',
+  },
+  {
+    sku: 'ID-WASH-MICROFIBER',
+    barcode: '8998765610011',
+    name: 'Kain Microfiber',
+    description: 'Kain lembut untuk mengeringkan dan membersihkan kendaraan.',
+    unitPrice: 18000,
+    unitType: 'piece',
+    stockQty: 30,
+    minStock: 8,
+    categoryName: 'Cuci',
+  },
+  {
+    sku: 'ID-WASH-TIRE-SHINE',
+    barcode: '8998765620010',
+    name: 'Semir Ban 500ml',
+    description: 'Cairan penghitam dan pelindung permukaan ban.',
+    unitPrice: 42000,
+    unitType: 'piece',
+    stockQty: 16,
+    minStock: 4,
+    categoryName: 'Cuci',
+  },
+  {
+    sku: 'ID-WASH-GLASS-CLEANER',
+    barcode: '8998765630019',
+    name: 'Pembersih Kaca 500ml',
+    description: 'Cairan pembersih kaca kendaraan tanpa meninggalkan noda.',
+    unitPrice: 32000,
+    unitType: 'piece',
+    stockQty: 18,
+    minStock: 4,
+    categoryName: 'Cuci',
+  },
+  {
+    sku: 'ID-WASH-SPONGE',
+    barcode: '8998765640018',
+    name: 'Spons Cuci Kendaraan',
+    description: 'Spons tebal untuk mencuci bodi kendaraan.',
+    unitPrice: 15000,
+    unitType: 'piece',
+    stockQty: 25,
+    minStock: 6,
+    categoryName: 'Cuci',
+  },
+  {
+    sku: 'ID-DRINK-AQUA-600',
+    barcode: '8998765700019',
+    name: 'Aqua 600ml',
+    description: 'Air mineral botol dingin.',
+    unitPrice: 6000,
+    unitType: 'piece',
+    stockQty: 48,
+    minStock: 12,
+    categoryName: 'Minuman',
+  },
+  {
+    sku: 'ID-DRINK-TEH-BOTOL',
+    barcode: '8998765710018',
+    name: 'Teh Botol Sosro 450ml',
+    description: 'Minuman teh manis dalam botol.',
+    unitPrice: 8000,
+    unitType: 'piece',
+    stockQty: 36,
+    minStock: 10,
+    categoryName: 'Minuman',
+  },
+  {
+    sku: 'ID-DRINK-POCARI-500',
+    barcode: '8998765720017',
+    name: 'Pocari Sweat 500ml',
+    description: 'Minuman isotonik dalam botol.',
+    unitPrice: 11000,
+    unitType: 'piece',
+    stockQty: 24,
+    minStock: 6,
+    categoryName: 'Minuman',
+  },
+  {
+    sku: 'ID-DRINK-COFFEE-CAN',
+    barcode: '8998765730016',
+    name: 'Kopi Susu Kaleng',
+    description: 'Minuman kopi susu siap minum.',
+    unitPrice: 10000,
+    unitType: 'piece',
+    stockQty: 24,
+    minStock: 6,
+    categoryName: 'Minuman',
+  },
+  {
+    sku: 'ID-DRINK-COLA-390',
+    barcode: '8998765740015',
+    name: 'Coca-Cola 390ml',
+    description: 'Minuman ringan berkarbonasi dalam botol.',
+    unitPrice: 9000,
+    unitType: 'piece',
+    stockQty: 30,
+    minStock: 8,
+    categoryName: 'Minuman',
   },
 ]
 
@@ -139,6 +256,27 @@ export function seedProductCatalog(database: SqlJsDatabase): void {
     database.run(
       'INSERT INTO product_categories (name) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM product_categories WHERE name = ?)',
       [categoryName, categoryName],
+    )
+  }
+
+  for (const mapping of legacyCategoryMappings) {
+    database.run(
+      `
+        UPDATE products
+        SET category_id = (SELECT id FROM product_categories WHERE name = ?)
+        WHERE category_id = (SELECT id FROM product_categories WHERE name = ?)
+      `,
+      [mapping.to, mapping.from],
+    )
+    database.run(
+      `
+        DELETE FROM product_categories
+        WHERE name = ?
+          AND NOT EXISTS (
+            SELECT 1 FROM products WHERE category_id = product_categories.id
+          )
+      `,
+      [mapping.from],
     )
   }
 

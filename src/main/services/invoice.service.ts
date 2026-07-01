@@ -1,5 +1,16 @@
 import { desc, eq } from 'drizzle-orm'
-import { customers, invoices, payments, saleItems, sales, workOrders } from '../db/schema/index'
+import {
+  customers,
+  invoices,
+  payments,
+  productCategories,
+  products,
+  saleItems,
+  sales,
+  services,
+  vehicles,
+  workOrders,
+} from '../db/schema/index'
 import type { InvoiceStatus, PaymentMethod, PaymentStatus, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 
@@ -18,6 +29,11 @@ export type InvoiceSummary = {
   invoiceNumber: string
   status: InvoiceStatus
   customerName: string | null
+  vehiclePlateNumber: string | null
+  vehicleBrand: string | null
+  vehicleModel: string | null
+  vehicleYear: number | null
+  vehicleColor: string | null
   paymentMethod: PaymentMethod | null
   paymentStatus: PaymentStatus | null
   itemCount: number
@@ -33,6 +49,7 @@ export type InvoiceLineItemSummary = {
   serviceId: number | null
   name: string
   sku: string | null
+  category: string | null
   quantity: number
   unitPrice: number
   lineTotal: number
@@ -83,6 +100,11 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
       status: invoices.status,
       customerNameSnapshot: sales.customerNameSnapshot,
       customerName: customers.name,
+      vehiclePlateNumber: vehicles.plateNumber,
+      vehicleBrand: vehicles.brand,
+      vehicleModel: vehicles.model,
+      vehicleYear: vehicles.year,
+      vehicleColor: vehicles.color,
       paymentMethod: payments.method,
       paymentStatus: payments.status,
       subtotal: invoices.subtotal,
@@ -93,6 +115,7 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
     .innerJoin(sales, eq(invoices.saleId, sales.id))
     .leftJoin(workOrders, eq(invoices.workOrderId, workOrders.id))
     .leftJoin(customers, eq(sales.customerId, customers.id))
+    .leftJoin(vehicles, eq(sales.vehicleId, vehicles.id))
     .leftJoin(payments, eq(payments.invoiceId, invoices.id))
     .orderBy(desc(invoices.issuedAt))
 
@@ -123,6 +146,11 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
       invoiceNumber: invoice.invoiceNumber,
       status: invoice.status,
       customerName: invoice.customerNameSnapshot ?? invoice.customerName,
+      vehiclePlateNumber: invoice.vehiclePlateNumber,
+      vehicleBrand: invoice.vehicleBrand,
+      vehicleModel: invoice.vehicleModel,
+      vehicleYear: invoice.vehicleYear,
+      vehicleColor: invoice.vehicleColor,
       paymentMethod: invoice.paymentMethod,
       paymentStatus: invoice.paymentStatus,
       itemCount: itemCountBySaleId.get(invoice.saleId) ?? 0,
@@ -141,6 +169,9 @@ export async function listInvoices(input: InvoiceListInput = {}): Promise<Invoic
         invoice.invoiceNumber,
         invoice.workOrderNumber ?? '',
         invoice.customerName ?? '',
+        invoice.vehiclePlateNumber ?? '',
+        invoice.vehicleBrand ?? '',
+        invoice.vehicleModel ?? '',
         invoice.paymentMethod ?? '',
         invoice.paymentStatus ?? '',
       ].some((value) => value.toLowerCase().includes(search))
@@ -166,6 +197,11 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
       customerPhone: customers.phone,
       customerEmail: customers.email,
       customerAddress: customers.address,
+      vehiclePlateNumber: vehicles.plateNumber,
+      vehicleBrand: vehicles.brand,
+      vehicleModel: vehicles.model,
+      vehicleYear: vehicles.year,
+      vehicleColor: vehicles.color,
       paymentMethod: payments.method,
       paymentStatus: payments.status,
       paymentId: payments.id,
@@ -180,6 +216,7 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
     .innerJoin(sales, eq(invoices.saleId, sales.id))
     .leftJoin(workOrders, eq(invoices.workOrderId, workOrders.id))
     .leftJoin(customers, eq(sales.customerId, customers.id))
+    .leftJoin(vehicles, eq(sales.vehicleId, vehicles.id))
     .leftJoin(payments, eq(payments.invoiceId, invoices.id))
     .where(eq(invoices.id, input.id))
     .limit(1)
@@ -194,12 +231,30 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
       serviceId: saleItems.serviceId,
       name: saleItems.name,
       sku: saleItems.sku,
+      productCategory: productCategories.name,
+      serviceCategory: services.category,
       quantity: saleItems.quantity,
       unitPrice: saleItems.unitPrice,
       lineTotal: saleItems.lineTotal,
     })
     .from(saleItems)
+    .leftJoin(products, eq(saleItems.productId, products.id))
+    .leftJoin(productCategories, eq(products.categoryId, productCategories.id))
+    .leftJoin(services, eq(saleItems.serviceId, services.id))
     .where(eq(saleItems.saleId, invoice.saleId))
+
+  const invoiceItems: InvoiceLineItemSummary[] = items.map((item) => ({
+    id: item.id,
+    itemType: item.itemType,
+    productId: item.productId,
+    serviceId: item.serviceId,
+    name: item.name,
+    sku: item.sku,
+    category: item.itemType === 'product' ? item.productCategory : item.serviceCategory,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    lineTotal: item.lineTotal,
+  }))
 
   return {
     id: invoice.id,
@@ -209,17 +264,22 @@ export async function getInvoiceDetail(input: { id?: unknown }): Promise<Invoice
     invoiceNumber: invoice.invoiceNumber,
     status: invoice.status,
     customerName: invoice.customerNameSnapshot ?? invoice.customerName,
+    vehiclePlateNumber: invoice.vehiclePlateNumber,
+    vehicleBrand: invoice.vehicleBrand,
+    vehicleModel: invoice.vehicleModel,
+    vehicleYear: invoice.vehicleYear,
+    vehicleColor: invoice.vehicleColor,
     customerPhone: invoice.customerPhoneSnapshot ?? invoice.customerPhone,
     customerEmail: invoice.customerEmail,
     customerAddress: invoice.customerAddress,
     paymentMethod: invoice.paymentMethod,
     paymentStatus: invoice.paymentStatus,
-    itemCount: items.length,
+    itemCount: invoiceItems.length,
     subtotal: invoice.subtotal,
     total: invoice.total,
     issuedAt: invoice.issuedAt,
     notes: invoice.notes,
-    items,
+    items: invoiceItems,
     payment:
       invoice.paymentId && invoice.paymentMethod && invoice.paymentStatus
         ? {
