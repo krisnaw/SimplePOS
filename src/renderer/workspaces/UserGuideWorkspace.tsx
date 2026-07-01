@@ -21,7 +21,7 @@ const guideSections: GuideSection[] = [
       'Open Dashboard from the sidebar to see session details and summary cards.',
       'Review the current user, invoice activity, and inventory alerts.',
       'Use the sidebar to move into Sales, Vehicles, or Invoices when you are ready to work.',
-      'Check the System panel at the bottom of the sidebar for database, printer, and scanner status.',
+      'Check the System panel at the bottom of the sidebar for database and printer status.',
     ],
   },
   {

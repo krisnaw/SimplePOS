@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Car, Eye, Loader2, Printer, RefreshCw, Search, X } from 'lucide-react'
+import { CalendarDays, Eye, Loader2, Printer, RefreshCw, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
-import { BaseSelect } from '@/renderer/components/ui/base-select'
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -15,7 +14,7 @@ import {
 } from '@/renderer/components/ui/alert-dialog'
 import { cn } from '@/renderer/lib/utils'
 import { formatCurrency, formatDateTime, formatPaymentMethod } from '@/renderer/lib/formatters'
-import type { InvoiceSummary, InvoiceDetail, InvoiceStatusFilter } from './InvoiceWorkspace.types'
+import type { InvoiceSummary, InvoiceDetail } from './InvoiceWorkspace.types'
 import { ProductCategoryBadge } from './ProductCategoryBadge'
 
 const pressableButtonClass =
@@ -174,8 +173,6 @@ export function InvoiceWorkspace() {
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetail>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<InvoiceStatusFilter>('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [isLoadingList, setIsLoadingList] = useState(false)
@@ -198,8 +195,8 @@ export function InvoiceWorkspace() {
         }
 
         const list = await window.simplepos.invoices.list({
-          search: searchQuery,
-          status: statusFilter === 'all' ? 'all' : statusFilter,
+          search: '',
+          status: 'all',
           dateFrom,
           dateTo,
         })
@@ -228,7 +225,7 @@ export function InvoiceWorkspace() {
     return () => {
       isMounted = false
     }
-  }, [dateFrom, dateTo, refreshCount, searchQuery, statusFilter])
+  }, [dateFrom, dateTo, refreshCount])
 
   useEffect(() => {
     let isMounted = true
@@ -300,10 +297,9 @@ export function InvoiceWorkspace() {
     return invoices.reduce(
       (summary, invoice) => ({
         count: summary.count + 1,
-        paidCount: summary.paidCount + (invoice.status === 'paid' ? 1 : 0),
         total: summary.total + invoice.total,
       }),
-      { count: 0, paidCount: 0, total: 0 },
+      { count: 0, total: 0 },
     )
   }, [invoices])
 
@@ -332,32 +328,6 @@ export function InvoiceWorkspace() {
 
         <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="grid grid-cols-4 gap-2">
-            <div className="col-span-3">
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                {t('common.search')}
-                <Input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder={t('invoices.searchPlaceholder')}
-                />
-              </label>
-            </div>
-            <div>
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                {t('common.status')}
-                <BaseSelect
-                  value={statusFilter}
-                  ariaLabel={t('invoices.invoiceStatus')}
-                  options={[
-                    { value: 'all', label: t('common.all') },
-                    { value: 'paid', label: t('invoices.statuses.paid') },
-                    { value: 'void', label: t('invoices.statuses.void') },
-                  ]}
-                  onValueChange={(value) => setStatusFilter(value as InvoiceStatusFilter)}
-                />
-              </label>
-            </div>
-
             <div className="col-span-2">
               <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                 {t('workOrders.fromDate')}
@@ -377,8 +347,8 @@ export function InvoiceWorkspace() {
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
             <div className="grid shrink-0 grid-cols-2 gap-2">
               <div className="rounded-lg bg-muted px-3 py-2">
-                <p className="text-xs text-muted-foreground">{t('invoices.paid')}</p>
-                <p className="text-lg font-semibold tabular-nums">{totals.paidCount}</p>
+                <p className="text-xs text-muted-foreground">{t('invoices.totalInvoices')}</p>
+                <p className="text-lg font-semibold tabular-nums">{totals.count}</p>
               </div>
               <div className="rounded-lg bg-muted px-3 py-2">
                 <p className="text-xs text-muted-foreground">{t('sales.total')}</p>
@@ -478,12 +448,7 @@ export function InvoiceWorkspace() {
         {selectedInvoice ? (
           <>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Car aria-hidden="true" />
-                <span className="tabular-nums">
-                  {selectedInvoice.vehiclePlateNumber ?? selectedInvoice.invoiceNumber}
-                </span>
-              </CardTitle>
+              <CardTitle>{t('invoices.invoiceDetail')}</CardTitle>
               <CardDescription>
                 {selectedInvoice.invoiceNumber} · {formatDateTime(selectedInvoice.issuedAt)}
               </CardDescription>
@@ -590,42 +555,22 @@ export function InvoiceWorkspace() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-lg border bg-background p-4">
-                      <p className="text-sm font-semibold text-balance">{t('invoices.paymentDetails')}</p>
-                      <div className="mt-3 flex flex-col gap-2 text-sm">
-                        <div className="flex justify-between gap-3">
-                          <span className="text-muted-foreground">{t('common.status')}</span>
-                          <InvoiceStatusBadge
-                            status={selectedInvoice.payment?.status ?? null}
-                            label={t(`invoices.statuses.${selectedInvoice.payment?.status ?? 'unrecorded'}`)}
-                          />
-                        </div>
-                        <div className="flex justify-between gap-3">
-                          <span className="text-muted-foreground">{t('invoices.method')}</span>
-                          <span>{formatPaymentMethod(selectedInvoice.payment?.method ?? null)}</span>
-                        </div>
-                        <div className="flex justify-between gap-3">
-                          <span className="text-muted-foreground">{t('invoices.amount')}</span>
-                          <span className="tabular-nums">
-                            {formatCurrency(selectedInvoice.payment?.amount ?? selectedInvoice.total)}
-                          </span>
-                        </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="w-20 text-muted-foreground">{t('invoices.totalItems')}</span>
+                        <span className="tabular-nums">
+                          {selectedInvoice.items.reduce((count, item) => count + item.quantity, 0)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="w-20 text-muted-foreground">{t('invoices.payment')}</span>
+                        <span>{formatPaymentMethod(selectedInvoice.payment?.method ?? null)}</span>
                       </div>
                     </div>
-
-                    <div className="rounded-lg border bg-background p-4">
-                      <p className="text-sm font-semibold text-balance">{t('invoices.receiptPreview')}</p>
-                      <div className="mt-4 flex flex-col gap-2 text-sm">
-                        <div className="flex justify-between gap-3">
-                          <span className="text-muted-foreground">{t('sales.subtotal')}</span>
-                          <span className="tabular-nums">{formatCurrency(selectedInvoice.subtotal)}</span>
-                        </div>
-                        <div className="mt-2 flex justify-between gap-3 border-t pt-3 text-base font-semibold">
-                          <span>{t('sales.total')}</span>
-                          <span className="tabular-nums">{formatCurrency(selectedInvoice.total)}</span>
-                        </div>
-                      </div>
+                    <div className="flex items-center justify-between gap-6 text-lg font-semibold sm:justify-end">
+                      <span>{t('sales.total')}</span>
+                      <span className="tabular-nums">{formatCurrency(selectedInvoice.total)}</span>
                     </div>
                   </div>
               </div>

@@ -32,6 +32,7 @@ import { formatCurrency } from '@/renderer/lib/formatters'
 import { cn } from '@/renderer/lib/utils'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { VehicleSummary } from '@/shared/types/vehicle'
+import { ProductCategoryBadge } from './ProductCategoryBadge'
 import { SalesCatalogListItem } from './SalesCatalogListItem'
 import {
   normalizePlateNumber,
@@ -976,28 +977,29 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
                 </div>
               </div>
 
-              <div className="mt-5 overflow-hidden rounded-lg border">
-                <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_8rem] bg-muted/40 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  <span className="px-3 py-2">Item</span>
-                  <span className="border-l px-3 py-2 text-right">Qty</span>
-                  <span className="border-l px-3 py-2 text-right">Amount</span>
+              <div className="mt-5 overflow-hidden rounded-lg border bg-background">
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
+                  <span>Item</span>
+                  <span>Category</span>
+                  <span className="text-right">Qty</span>
+                  <span className="text-right">Price</span>
+                  <span className="text-right">Total</span>
                 </div>
-                <div className="flex flex-col divide-y border-t">
+                <div className="divide-y">
                   {lineItems.map((item) => (
                     <div
                       key={item.key}
-                      className="grid grid-cols-[minmax(0,1fr)_4.5rem_8rem] items-stretch"
+                      className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] items-center gap-3 px-3 py-2.5 text-sm"
                     >
-                      <div className="min-w-0 px-3 py-3">
-                        <p className="truncate text-sm font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground tabular-nums">
-                          {formatCurrency(item.price)} each
-                        </p>
-                      </div>
-                      <span className="border-l px-3 py-3 text-right text-sm tabular-nums">
-                        {item.quantity}
-                      </span>
-                      <span className="border-l px-3 py-3 text-right text-sm font-medium tabular-nums">
+                      <p className="truncate font-medium text-balance">{item.name}</p>
+                      {item.category ? (
+                        <ProductCategoryBadge name={item.category} />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                      <span className="text-right tabular-nums">{item.quantity}</span>
+                      <span className="text-right tabular-nums">{formatCurrency(item.price)}</span>
+                      <span className="text-right font-medium tabular-nums">
                         {formatCurrency(item.price * item.quantity)}
                       </span>
                     </div>

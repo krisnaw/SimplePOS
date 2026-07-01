@@ -35,7 +35,6 @@
     "label": "System",
     "database": "Database",
     "printer": "Printer",
-    "barcodeScanner": "Barcode Scanner",
     "standby": "Standby"
   },
   "navigation": {
@@ -185,8 +184,10 @@
   },
   "invoices": {
     "invoiceHistory": "Invoice History",
+    "invoiceDetail": "Invoice Detail",
     "invoiceCount_one": "{{count}} invoice",
     "invoiceCount_other": "{{count}} invoices",
+    "totalInvoices": "Total invoices",
     "refresh": "Refresh invoices",
     "searchPlaceholder": "Search plate, invoice, customer, payment",
     "invoiceStatus": "Invoice status",
@@ -205,6 +206,7 @@
     "export": "Export",
     "contact": "Phone",
     "payment": "Payment",
+    "totalItems": "Total items",
     "vehicle": "Vehicle",
     "plateNumber": "Plate Number",
     "vehicleNotRecorded": "Vehicle not recorded",
@@ -523,19 +525,15 @@
       },
       "printer": {
         "description": "Default receipt output device"
-      },
-      "barcodeScanner": {
-        "description": "Product lookup input device"
       }
     },
     "deviceType": "Device type",
     "connection": "Connection",
     "deviceNotes": "Device Notes",
     "notesPlaceholder": "Configuration placeholders for later integration.",
-    "printerScannerHint": "Printer and barcode scanner actions are UI-only until device discovery is connected.",
+    "printerHint": "Printer actions are UI-only until device discovery is connected.",
     "healthCheckHint": "Connected indicators can be wired to IPC health checks when the hardware layer is added.",
     "greenPulse": "Green pulse means the device is connected.",
-    "mutedDot": "Muted dot means the device is standby or not configured.",
     "softwareUpdates": "Software Updates",
     "updatesHint": "Updates are delivered from GitHub Releases.",
     "updatesNotChecked": "Updates have not been checked yet",

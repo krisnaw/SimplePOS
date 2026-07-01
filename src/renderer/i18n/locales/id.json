@@ -35,7 +35,6 @@
     "label": "Sistem",
     "database": "Database",
     "printer": "Printer",
-    "barcodeScanner": "Pemindai Barcode",
     "standby": "Siaga"
   },
   "navigation": {
@@ -185,8 +184,10 @@
   },
   "invoices": {
     "invoiceHistory": "Riwayat Faktur",
+    "invoiceDetail": "Detail Faktur",
     "invoiceCount_one": "{{count}} faktur",
     "invoiceCount_other": "{{count}} faktur",
+    "totalInvoices": "Total faktur",
     "refresh": "Muat ulang faktur",
     "searchPlaceholder": "Cari plat, faktur, pelanggan, pembayaran",
     "invoiceStatus": "Status faktur",
@@ -205,6 +206,7 @@
     "export": "Ekspor",
     "contact": "Telepon",
     "payment": "Pembayaran",
+    "totalItems": "Total item",
     "vehicle": "Kendaraan",
     "plateNumber": "Nomor Plat",
     "vehicleNotRecorded": "Kendaraan tidak tercatat",
@@ -523,19 +525,15 @@
       },
       "printer": {
         "description": "Perangkat keluaran struk default"
-      },
-      "barcodeScanner": {
-        "description": "Perangkat input pencarian produk"
       }
     },
     "deviceType": "Tipe perangkat",
     "connection": "Koneksi",
     "deviceNotes": "Catatan Perangkat",
     "notesPlaceholder": "Placeholder konfigurasi untuk integrasi nanti.",
-    "printerScannerHint": "Aksi printer dan pemindai barcode hanya UI sampai penemuan perangkat terhubung.",
+    "printerHint": "Aksi printer hanya berupa UI sampai penemuan perangkat terhubung.",
     "healthCheckHint": "Indikator koneksi dapat dihubungkan ke pemeriksaan kesehatan IPC saat lapisan perangkat keras ditambahkan.",
     "greenPulse": "Denyut hijau berarti perangkat terhubung.",
-    "mutedDot": "Titik pudar berarti perangkat standby atau belum dikonfigurasi.",
     "softwareUpdates": "Pembaruan Perangkat Lunak",
     "updatesHint": "Pembaruan dikirim dari GitHub Releases.",
     "updatesNotChecked": "Pembaruan belum diperiksa",

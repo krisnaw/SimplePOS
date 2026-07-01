@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Barcode, Database, FileText, LogOut, Printer } from 'lucide-react'
+import { Database, FileText, LogOut, Printer } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSelect } from '@/renderer/components/LanguageSelect'
 import { Button } from '@/renderer/components/ui/button'
@@ -38,13 +38,6 @@ const systemIndicators = [
     icon: Printer,
     tone: 'bg-green-500',
     connected: true,
-  },
-  {
-    labelKey: 'system.barcodeScanner',
-    statusKey: 'system.standby',
-    icon: Barcode,
-    tone: 'bg-muted-foreground',
-    connected: false,
   },
 ]
 
@@ -105,7 +98,7 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen overflow-hidden bg-muted/40 text-foreground">
-      <div className="grid h-full min-h-0 lg:grid-cols-[224px_1fr]">
+      <div className="grid h-full min-h-0 lg:grid-cols-[208px_1fr]">
         <aside className="min-h-0 border-b bg-background lg:border-b-0 lg:border-r">
           <div className="flex h-full min-h-0 flex-col">
             <div className="flex h-14 shrink-0 items-center gap-2.5 border-b px-3">
@@ -235,6 +228,7 @@ export default function Dashboard() {
                 (activeSection === 'sales' ||
                   activeSection === 'inventory' ||
                   activeSection === 'suppliers' ||
+                  activeSection === 'vehicles' ||
                   activeSection === 'services' ||
                   activeSection === 'invoices') &&
                   'min-h-0 flex-1 overflow-hidden',

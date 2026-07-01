@@ -107,7 +107,7 @@ export function VehicleWorkspace() {
   }
 
   return (
-    <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(280px,0.8fr)_minmax(420px,1.2fr)]">
+    <div className="grid h-full min-h-0 gap-3 overflow-hidden lg:grid-cols-[minmax(280px,0.8fr)_minmax(420px,1.2fr)]">
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <CardTitle>Vehicles</CardTitle>
@@ -119,7 +119,7 @@ export function VehicleWorkspace() {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search plate, model, or customer" className="pl-9" />
@@ -145,9 +145,9 @@ export function VehicleWorkspace() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="min-h-0 overflow-hidden">
         {!selectedId && !isCreating ? (
-          <CardContent className="flex min-h-80 flex-1 items-center justify-center p-6 text-center">
+          <CardContent className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-6 text-center">
             <div className="flex max-w-sm flex-col items-center gap-3">
               <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                 <Car className="size-5" aria-hidden="true" />
@@ -178,7 +178,7 @@ export function VehicleWorkspace() {
                 </CardAction>
               ) : null}
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-h-0 flex-1 overflow-y-auto">
               <form className="flex flex-col gap-4" onSubmit={save}>
             <div className="grid gap-3 sm:grid-cols-2">
               {([

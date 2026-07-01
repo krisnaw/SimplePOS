@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Barcode, Database, Download, Printer, RefreshCw, Settings } from 'lucide-react'
+import { Database, Download, Printer, RefreshCw, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
@@ -25,15 +25,6 @@ const externalDevices = [
     endpoint: 'USB / Auto detect',
     icon: Printer,
     connected: true,
-  },
-  {
-    nameKey: 'system.barcodeScanner',
-    descriptionKey: 'settings.devices.barcodeScanner.description',
-    statusKey: 'common.notConfigured',
-    type: 'HID scanner',
-    endpoint: 'Keyboard wedge / USB',
-    icon: Barcode,
-    connected: false,
   },
 ]
 
@@ -163,16 +154,12 @@ export function SettingsWorkspace() {
           <CardDescription>{t('settings.notesPlaceholder')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
-          <p className="text-pretty">{t('settings.printerScannerHint')}</p>
+          <p className="text-pretty">{t('settings.printerHint')}</p>
           <p className="text-pretty">{t('settings.healthCheckHint')}</p>
           <div className="flex flex-col gap-2 rounded-lg border bg-muted p-3">
             <div className="flex items-start gap-2">
               <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-500 animate-pulse" aria-hidden="true" />
               <span className="text-foreground">{t('settings.greenPulse')}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-muted-foreground" aria-hidden="true" />
-              <span className="text-foreground">{t('settings.mutedDot')}</span>
             </div>
           </div>
         </CardContent>
