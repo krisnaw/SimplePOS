@@ -277,6 +277,65 @@
     "unitType": "Unit Type",
     "openingStock": "Opening Stock",
     "minimumStock": "Minimum Stock",
+    "adjustment": {
+      "action": "Adjust",
+      "title": "Adjust Stock",
+      "description": "Record a counted stock correction for {{name}}.",
+      "currentStock": "Current stock",
+      "editHint": "Use Adjust to change stock without overwriting ledger history.",
+      "newQuantity": "New counted quantity",
+      "changePreview": "Change",
+      "reason": "Reason",
+      "reasonPlaceholder": "Cycle count, damage, correction...",
+      "reasonHint": "Required for the stock audit trail.",
+      "confirm": "Confirm Adjustment",
+      "messages": {
+        "invalidQuantity": "Enter a valid whole-number quantity.",
+        "reasonRequired": "Adjustment reason is required.",
+        "success": "Stock adjusted. New balance: {{count}}."
+      }
+    },
+    "movements": {
+      "title": "Movements",
+      "view": "Movements",
+      "refresh": "Refresh",
+      "productFilter": "Filter movements by product",
+      "typeFilter": "Filter movements by type",
+      "allProducts": "All products",
+      "dateFrom": "From date",
+      "dateTo": "To date",
+      "searchPlaceholder": "Search product, SKU, reference, reason, or user",
+      "stockIn": "Stock In",
+      "stockOut": "Stock Out",
+      "netChange": "Net Change",
+      "loading": "Loading stock movements...",
+      "emptyTitle": "No movements found",
+      "emptyHint": "Movements appear after opening stock, purchases, sales, or manual adjustments.",
+      "noReference": "No reference",
+      "previous": "Previous",
+      "next": "Next",
+      "pagination": "Showing {{start}}-{{end}} of {{total}}",
+      "types": {
+        "opening": "Opening",
+        "purchase": "Purchase",
+        "sale": "Sale",
+        "adjustment": "Adjustment"
+      },
+      "table": {
+        "date": "Date",
+        "product": "Product",
+        "type": "Type",
+        "reference": "Reference / Reason",
+        "in": "In",
+        "out": "Out",
+        "balance": "Balance",
+        "user": "User"
+      },
+      "messages": {
+        "unavailable": "Stock movement service is unavailable.",
+        "loadFailed": "Unable to load stock movements."
+      }
+    },
     "creating": "Creating...",
     "deleteProduct": "Delete Product",
     "noCategory": "— No category —",

@@ -88,6 +88,9 @@ const guideSections: GuideSection[] = [
       'Set minimum stock carefully so low-stock warnings appear before items run out.',
       'Keep product records active when they should appear in the Sales workspace.',
       'Use Purchases when stock arrives from a supplier so latest purchase cost is recorded with the stock increase, even if invoice details arrive later.',
+      'Use Movements to inspect stock in, stock out, manual adjustments, the source reference, user, and running balance for each product.',
+      'Use Adjust on a product only when the counted on-hand quantity differs from the system balance. Enter the new counted quantity and a clear reason.',
+      'Past movements are read-only. Corrections are recorded as new adjustments so the stock audit trail remains intact.',
     ],
   },
   {

@@ -11,6 +11,12 @@ import type {
   PurchasePaymentStatus,
   PurchaseSummary,
 } from './purchase'
+import type {
+  StockAdjustmentInput,
+  StockAdjustmentResult,
+  StockMovementListInput,
+  StockMovementListResult,
+} from './stock-movement'
 
 type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -450,6 +456,10 @@ declare global {
         create: (input: PurchaseCreateInput) => Promise<PurchaseMutationResult>
         markPaid: (input: { id: number }) => Promise<PurchaseMutationResult>
         updateInvoice: (input: PurchaseInvoiceUpdateInput) => Promise<PurchaseMutationResult>
+      }
+      stockMovements: {
+        list: (input?: StockMovementListInput) => Promise<StockMovementListResult>
+        adjust: (input: StockAdjustmentInput) => Promise<StockAdjustmentResult>
       }
       services: {
         list: () => Promise<ServiceSummary[]>

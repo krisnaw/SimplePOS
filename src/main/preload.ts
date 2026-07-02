@@ -46,6 +46,10 @@ contextBridge.exposeInMainWorld('simplepos', {
     markPaid: (input: { id: number }) => ipcRenderer.invoke('purchases:markPaid', input),
     updateInvoice: (input: Record<string, unknown>) => ipcRenderer.invoke('purchases:updateInvoice', input),
   },
+  stockMovements: {
+    list: (input?: Record<string, unknown>) => ipcRenderer.invoke('stockMovements:list', input ?? {}),
+    adjust: (input: Record<string, unknown>) => ipcRenderer.invoke('stockMovements:adjust', input),
+  },
   services: {
     list: () => ipcRenderer.invoke('services:list'),
     create: (input: Record<string, unknown>) => ipcRenderer.invoke('services:create', input),

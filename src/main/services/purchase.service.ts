@@ -10,6 +10,7 @@ import {
 import type { PurchasePaymentStatus } from '../db/schema/index'
 import type { PurchaseInvoiceStatus } from '../db/schema/index'
 import { getPurchaseRepository } from '../repositories/purchase.repository'
+import { recordStockMovement } from './stock-movement.service'
 
 export type PurchaseItemInput = {
   productId?: unknown
@@ -349,7 +350,7 @@ export async function createPurchase(input: PurchaseCreateInput): Promise<Purcha
       }).returning().get()
 
       for (const item of preparedItems) {
-        tx.insert(purchaseItems).values({
+        const savedItem = tx.insert(purchaseItems).values({
           purchaseId: saved.id,
           productId: item.productId,
           skuSnapshot: item.sku,
@@ -357,10 +358,21 @@ export async function createPurchase(input: PurchaseCreateInput): Promise<Purcha
           quantity: item.quantity,
           unitCost: item.unitCost,
           lineTotal: item.lineTotal,
-        }).run()
+        }).returning().get()
+
+        recordStockMovement(tx, {
+          productId: item.productId,
+          movementType: 'purchase',
+          quantityDelta: item.quantity,
+          referenceType: 'purchase_item',
+          referenceId: savedItem.id,
+          referenceNumber: saved.purchaseNumber,
+          createdById: createdBy.id,
+          createdByNameSnapshot: createdBy.name,
+          createdAt: now,
+        })
 
         tx.update(products).set({
-          stockQty: sql`${products.stockQty} + ${item.quantity}`,
           lastPurchaseCost: item.unitCost,
           updatedAt: now,
         }).where(eq(products.id, item.productId)).run()

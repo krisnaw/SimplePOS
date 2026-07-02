@@ -1,8 +1,11 @@
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
+import { and, eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { closeDatabase, initializeDatabase } from '../db/client'
+import { saleItems, stockMovements } from '../db/schema/index'
+import { getProductRepository } from '../repositories/product.repository'
 import { quickCreateVehicle } from './customer.service'
 import { createCheckout } from './checkout.service'
 import { getInvoiceDetail } from './invoice.service'
@@ -95,6 +98,29 @@ describe('persisted sales drafts', () => {
     })
     const updatedProduct = (await listProducts()).find((candidate) => candidate.id === product.id)
     expect(updatedProduct?.stockQty).toBe(product.stockQty - 2)
+    const [savedSaleItem] = await getProductRepository()!
+      .select()
+      .from(saleItems)
+      .where(eq(saleItems.saleId, checkout.checkout!.saleId))
+    const movements = await getProductRepository()!
+      .select()
+      .from(stockMovements)
+      .where(and(
+        eq(stockMovements.referenceType, 'sale_item'),
+        eq(stockMovements.referenceId, savedSaleItem.id),
+      ))
+    expect(movements).toEqual([
+      expect.objectContaining({
+        productId: product.id,
+        movementType: 'sale',
+        quantityDelta: -2,
+        balanceAfter: product.stockQty - 2,
+        referenceType: 'sale_item',
+        referenceNumber: checkout.checkout!.invoiceNumber,
+        createdById: 1,
+        createdByNameSnapshot: 'Administrator',
+      }),
+    ])
     await expect(listSalesDrafts()).resolves.toEqual([])
   })
 
@@ -219,6 +245,11 @@ describe('persisted sales drafts', () => {
       expect.objectContaining({ basePrice: product.unitPrice, unitPrice: productPrice, priceOverriddenById: 1 }),
       expect.objectContaining({ basePrice: service.price, unitPrice: servicePrice, priceOverriddenById: 1 }),
     ]))
+    const productMovementCount = (await getProductRepository()!
+      .select()
+      .from(stockMovements)
+      .where(eq(stockMovements.referenceNumber, checkout.checkout!.invoiceNumber))).length
+    expect(productMovementCount).toBe(1)
   })
 
   it('rejects invalid prices and clears audit metadata when restored to catalog price', async () => {
@@ -301,5 +332,50 @@ describe('persisted sales drafts', () => {
       message: 'Cash payment must equal the sale total',
     })
     expect((await listSalesDrafts()).some((candidate) => candidate.id === draft!.id)).toBe(true)
+  })
+
+  it('rolls back checkout when sale movement recording fails', async () => {
+    const repository = getProductRepository()!
+    const vehicleResult = await quickCreateVehicle({
+      plateNumber: 'DK 48 AB',
+      model: 'Ertiga',
+      customerName: 'Rollback Customer',
+    })
+    const product = (await listProducts())[0]
+    const draft = await createSalesDraft({ vehicleId: vehicleResult.vehicle!.id, createdById: 1 })
+    const movementsBefore = await repository.select().from(stockMovements)
+    await saveSalesDraftItems({
+      saleId: draft!.id,
+      updatedById: 1,
+      items: [{ itemType: 'product', id: product.id, quantity: 1, unitPrice: product.unitPrice }],
+    })
+
+    repository.run(sql.raw(`
+      CREATE TRIGGER fail_sale_movement
+      BEFORE INSERT ON stock_movements
+      WHEN NEW.movement_type = 'sale'
+      BEGIN
+        SELECT RAISE(ABORT, 'forced sale movement failure');
+      END
+    `))
+
+    const result = await createCheckout({
+      saleId: draft!.id,
+      vehicleId: vehicleResult.vehicle!.id,
+      createdById: 1,
+      paymentMethod: 'cash',
+      amountPaid: product.unitPrice,
+      items: [{ itemType: 'product', id: product.id, quantity: 1, unitPrice: product.unitPrice }],
+    })
+    repository.run(sql`DROP TRIGGER fail_sale_movement`)
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Unable to complete sale. No stock was changed.',
+    })
+    const updatedProduct = (await listProducts()).find((candidate) => candidate.id === product.id)
+    expect(updatedProduct?.stockQty).toBe(product.stockQty)
+    expect((await listSalesDrafts()).some((candidate) => candidate.id === draft!.id)).toBe(true)
+    await expect(repository.select().from(stockMovements)).resolves.toHaveLength(movementsBefore.length)
   })
 })

@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
-import { invoices, payments, products, saleItems, sales, services, vehicles } from '../db/schema/index'
+import { invoices, payments, products, saleItems, sales, services, users, vehicles } from '../db/schema/index'
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
+import { recordStockMovement } from './stock-movement.service'
 
 export type CheckoutItemInput = {
   itemType?: unknown
@@ -299,7 +300,14 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
   const now = new Date().toISOString()
   const invoiceNumber = createInvoiceNumber()
 
-  const checkout = repository.transaction((tx) => {
+  let checkout: CheckoutSummary
+
+  try {
+    checkout = repository.transaction((tx) => {
+    const createdBy = input.createdById
+      ? tx.select().from(users).where(eq(users.id, input.createdById)).limit(1).get()
+      : null
+
     const saleValues = {
       workOrderId: input.sourceWorkOrderId,
       vehicleId: input.vehicleId,
@@ -339,11 +347,18 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
         createdAt: now,
       }).returning().get()
 
-      if (item.itemType === 'product' && item.productId !== null && typeof item.stockQty === 'number') {
-        tx.update(products).set({
-          stockQty: item.stockQty - item.quantity,
-          updatedAt: now,
-        }).where(eq(products.id, item.productId)).run()
+      if (item.itemType === 'product' && item.productId !== null) {
+        recordStockMovement(tx, {
+          productId: item.productId,
+          movementType: 'sale',
+          quantityDelta: -item.quantity,
+          referenceType: 'sale_item',
+          referenceId: savedItem.id,
+          referenceNumber: invoiceNumber,
+          createdById: createdBy?.id ?? null,
+          createdByNameSnapshot: createdBy?.name ?? null,
+          createdAt: now,
+        })
       }
 
       return {
@@ -399,7 +414,10 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
       paymentMethod: input.paymentMethod,
       items: savedItems,
     }
-  })
+    })
+  } catch {
+    return { ok: false, message: 'Unable to complete sale. No stock was changed.' }
+  }
 
   await flushDatabase()
 

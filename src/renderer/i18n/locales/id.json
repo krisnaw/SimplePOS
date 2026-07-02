@@ -277,6 +277,65 @@
     "unitType": "Tipe Unit",
     "openingStock": "Stok Awal",
     "minimumStock": "Stok Minimum",
+    "adjustment": {
+      "action": "Sesuaikan",
+      "title": "Sesuaikan Stok",
+      "description": "Catat koreksi stok hasil hitung untuk {{name}}.",
+      "currentStock": "Stok saat ini",
+      "editHint": "Gunakan Sesuaikan untuk mengubah stok tanpa menimpa riwayat ledger.",
+      "newQuantity": "Jumlah hasil hitung",
+      "changePreview": "Perubahan",
+      "reason": "Alasan",
+      "reasonPlaceholder": "Stock opname, rusak, koreksi...",
+      "reasonHint": "Wajib untuk jejak audit stok.",
+      "confirm": "Konfirmasi Penyesuaian",
+      "messages": {
+        "invalidQuantity": "Masukkan jumlah bilangan bulat yang valid.",
+        "reasonRequired": "Alasan penyesuaian wajib diisi.",
+        "success": "Stok disesuaikan. Saldo baru: {{count}}."
+      }
+    },
+    "movements": {
+      "title": "Mutasi",
+      "view": "Mutasi",
+      "refresh": "Muat ulang",
+      "productFilter": "Filter mutasi berdasarkan produk",
+      "typeFilter": "Filter mutasi berdasarkan tipe",
+      "allProducts": "Semua produk",
+      "dateFrom": "Dari tanggal",
+      "dateTo": "Sampai tanggal",
+      "searchPlaceholder": "Cari produk, SKU, referensi, alasan, atau pengguna",
+      "stockIn": "Stok Masuk",
+      "stockOut": "Stok Keluar",
+      "netChange": "Perubahan Bersih",
+      "loading": "Memuat mutasi stok...",
+      "emptyTitle": "Mutasi tidak ditemukan",
+      "emptyHint": "Mutasi muncul setelah stok awal, pembelian, penjualan, atau penyesuaian manual.",
+      "noReference": "Tanpa referensi",
+      "previous": "Sebelumnya",
+      "next": "Berikutnya",
+      "pagination": "Menampilkan {{start}}-{{end}} dari {{total}}",
+      "types": {
+        "opening": "Stok awal",
+        "purchase": "Pembelian",
+        "sale": "Penjualan",
+        "adjustment": "Penyesuaian"
+      },
+      "table": {
+        "date": "Tanggal",
+        "product": "Produk",
+        "type": "Tipe",
+        "reference": "Referensi / Alasan",
+        "in": "Masuk",
+        "out": "Keluar",
+        "balance": "Saldo",
+        "user": "Pengguna"
+      },
+      "messages": {
+        "unavailable": "Layanan mutasi stok tidak tersedia.",
+        "loadFailed": "Tidak dapat memuat mutasi stok."
+      }
+    },
     "creating": "Membuat...",
     "deleteProduct": "Hapus Produk",
     "noCategory": "— Tanpa kategori —",

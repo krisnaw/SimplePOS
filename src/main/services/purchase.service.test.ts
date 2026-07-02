@@ -4,7 +4,7 @@ import path from 'path'
 import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { closeDatabase, initializeDatabase } from '../db/client'
-import { products, purchaseItems, purchases } from '../db/schema/index'
+import { products, purchaseItems, purchases, stockMovements } from '../db/schema/index'
 import { getPurchaseRepository } from '../repositories/purchase.repository'
 import { createSupplier } from './supplier.service'
 import {
@@ -80,6 +80,33 @@ describe('purchase service', () => {
         { productId: catalog[1].id, quantity: 2 },
       ],
     })
+
+    const movements = await repository
+      .select()
+      .from(stockMovements)
+      .where(eq(stockMovements.movementType, 'purchase'))
+    expect(movements).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        productId: catalog[0].id,
+        movementType: 'purchase',
+        quantityDelta: 3,
+        balanceAfter: before.get(catalog[0].id)! + 3,
+        referenceType: 'purchase_item',
+        referenceNumber: 'PUR-202606-0001',
+        createdById: 1,
+        createdByNameSnapshot: 'Administrator',
+      }),
+      expect.objectContaining({
+        productId: catalog[1].id,
+        movementType: 'purchase',
+        quantityDelta: 2,
+        balanceAfter: before.get(catalog[1].id)! + 2,
+        referenceType: 'purchase_item',
+        referenceNumber: 'PUR-202606-0001',
+        createdById: 1,
+        createdByNameSnapshot: 'Administrator',
+      }),
+    ]))
   })
 
   it('rejects a duplicate invoice for the same supplier without adding stock', async () => {
@@ -298,6 +325,7 @@ describe('purchase service', () => {
     const catalog = await repository.select().from(products).limit(2)
     const purchasesBefore = await repository.select().from(purchases)
     const itemsBefore = await repository.select().from(purchaseItems)
+    const movementsBefore = await repository.select().from(stockMovements)
     const stockBefore = await repository.select({
       id: products.id,
       stockQty: products.stockQty,
@@ -331,6 +359,7 @@ describe('purchase service', () => {
     })
     await expect(repository.select().from(purchases)).resolves.toHaveLength(purchasesBefore.length)
     await expect(repository.select().from(purchaseItems)).resolves.toHaveLength(itemsBefore.length)
+    await expect(repository.select().from(stockMovements)).resolves.toHaveLength(movementsBefore.length)
     await expect(repository.select({
       id: products.id,
       stockQty: products.stockQty,

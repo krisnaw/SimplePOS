@@ -4,6 +4,7 @@ import { flushDatabase } from '../db/client'
 import { productCategories, products } from '../db/schema/index'
 import type { Product, ProductCategory, UnitType } from '../db/schema/index'
 import { getProductRepository } from '../repositories/product.repository'
+import { recordStockMovement } from './stock-movement.service'
 
 export type ProductCategorySummary = {
   id: number
@@ -178,6 +179,7 @@ export async function createProduct(input: {
   const sku = requestedSku || `P-${randomUUID().slice(0, 8).toUpperCase()}`
   const name = input.name.trim()
   const unitPrice = input.unitPrice
+  const unitType = input.unitType
   const stockQty = typeof input.stockQty === 'number' ? input.stockQty : 0
   const minStock = typeof input.minStock === 'number' ? input.minStock : 0
   const categoryResult = await resolveCategoryId(input.categoryId)
@@ -198,20 +200,41 @@ export async function createProduct(input: {
   }
 
   const now = new Date().toISOString()
-  const [saved] = await repository.insert(products).values({
-    categoryId,
-    sku,
-    barcode,
-    name,
-    description,
-    unitPrice,
-    unitType: input.unitType,
-    stockQty,
-    minStock,
-    isActive: true,
-    createdAt: now,
-    updatedAt: now,
-  }).returning()
+  const saved = repository.transaction((tx) => {
+    const inserted = tx.insert(products).values({
+      categoryId,
+      sku,
+      barcode,
+      name,
+      description,
+      unitPrice,
+      unitType,
+      stockQty: 0,
+      minStock,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    }).returning().get()
+
+    if (stockQty > 0) {
+      recordStockMovement(tx, {
+        productId: inserted.id,
+        movementType: 'opening',
+        quantityDelta: stockQty,
+        referenceType: 'product',
+        referenceId: inserted.id,
+        referenceNumber: 'Opening balance',
+        reason: 'Initial stock entered when product was created',
+        createdByNameSnapshot: 'System',
+        createdAt: now,
+      })
+    }
+
+    const updated = tx.select().from(products).where(eq(products.id, inserted.id)).limit(1).get()
+    if (!updated) throw new Error('Product was created but could not be reloaded')
+
+    return updated
+  })
 
   await flushDatabase()
 
@@ -268,7 +291,6 @@ export async function updateProduct(input: {
     description: typeof input.description === 'string' && input.description.trim() ? input.description.trim() : null,
     unitPrice: input.unitPrice,
     unitType: input.unitType,
-    stockQty: typeof input.stockQty === 'number' ? input.stockQty : existing.stockQty,
     minStock: typeof input.minStock === 'number' ? input.minStock : existing.minStock,
     isActive: input.isActive,
     updatedAt: new Date().toISOString(),

@@ -55,6 +55,8 @@ import {
   listPurchases,
   markPurchasePaid,
   updatePurchaseInvoice,
+  adjustStock,
+  listStockMovements,
 } from './services'
 import { registerUpdateHandlers } from './services/update.service'
 
@@ -127,6 +129,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('purchases:create', (_event, input: unknown) => createPurchase(input as Record<string, unknown>))
   ipcMain.handle('purchases:markPaid', (_event, input: unknown) => markPurchasePaid(input as { id?: unknown }))
   ipcMain.handle('purchases:updateInvoice', (_event, input: unknown) => updatePurchaseInvoice(input as Record<string, unknown>))
+  ipcMain.handle('stockMovements:list', (_event, input: unknown) => listStockMovements(input as Record<string, unknown>))
+  ipcMain.handle('stockMovements:adjust', (_event, input: unknown) => adjustStock(input as Record<string, unknown>))
   ipcMain.handle('services:list', () => listServices())
   ipcMain.handle('services:create', (_event, input: unknown) => createService(input as Record<string, unknown>))
   ipcMain.handle('services:update', (_event, input: unknown) => updateService(input as Record<string, unknown>))

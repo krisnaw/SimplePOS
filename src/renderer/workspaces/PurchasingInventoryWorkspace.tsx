@@ -3,8 +3,10 @@ import {
   ArrowLeft,
   CalendarClock,
   Check,
+  ClipboardList,
   FileText,
   Loader2,
+  Minus,
   Package,
   PackageCheck,
   PackagePlus,
@@ -16,6 +18,7 @@ import {
   WalletCards,
   X,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -35,6 +38,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/renderer/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/renderer/components/ui/dialog'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/renderer/components/ui/field'
 import { Input } from '@/renderer/components/ui/input'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
@@ -52,11 +63,13 @@ import type {
 import { ProductCategoryBadge } from './ProductCategoryBadge'
 import type { SupplierSummary } from '@/shared/types/supplier'
 import type { AuthenticatedUser } from '@/shared/types/user'
+import type { StockMovementListInput, StockMovementListResult, StockMovementSummary, StockMovementType } from '@/shared/types/stock-movement'
 import type { ProductFormState } from './InventoryWorkspace.types'
 
-type InventoryView = 'products' | 'purchases' | 'pending' | 'unpaid'
+type InventoryView = 'products' | 'purchases' | 'movements' | 'pending' | 'unpaid'
 type WorkspaceScreen = 'list' | 'recordPurchase' | 'purchaseDetail' | 'invoiceForm' | 'productForm'
 type CategoryFilter = 'all' | `${number}`
+type MovementTypeFilter = StockMovementType | 'all'
 
 type PurchaseForm = {
   supplierId: string
@@ -82,6 +95,19 @@ type InvoiceForm = {
   dueDate: string
   paidAt: string
   notes: string
+}
+
+type MovementFilters = {
+  productId: string
+  movementType: MovementTypeFilter
+  dateFrom: string
+  dateTo: string
+  search: string
+}
+
+type AdjustmentForm = {
+  quantity: string
+  reason: string
 }
 
 const emptyProductForm: ProductFormState = {
@@ -121,6 +147,24 @@ const emptyInvoiceForm: InvoiceForm = {
   paidAt: today,
   notes: '',
 }
+const emptyMovementResult: StockMovementListResult = {
+  items: [],
+  total: 0,
+  totalIn: 0,
+  totalOut: 0,
+}
+const emptyMovementFilters: MovementFilters = {
+  productId: '',
+  movementType: 'all',
+  dateFrom: '',
+  dateTo: '',
+  search: '',
+}
+const emptyAdjustmentForm: AdjustmentForm = {
+  quantity: '',
+  reason: '',
+}
+const movementPageSize = 50
 const pressableClass =
   'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]'
 
@@ -131,6 +175,16 @@ function formatDate(value: string | null): string {
     month: 'short',
     year: 'numeric',
   }).format(new Date(`${value}T00:00:00`))
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
 }
 
 function PaymentBadge({ status }: { status: PurchasePaymentStatus }) {
@@ -166,28 +220,58 @@ function toProductForm(product: ProductSummary): ProductFormState {
 }
 
 export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
+  const { t } = useTranslation()
   const [products, setProducts] = useState<ProductSummary[]>([])
   const [categories, setCategories] = useState<ProductCategorySummary[]>([])
   const [suppliers, setSuppliers] = useState<SupplierSummary[]>([])
   const [purchases, setPurchases] = useState<PurchaseSummary[]>([])
+  const [movements, setMovements] = useState<StockMovementListResult>(emptyMovementResult)
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseDetail | null>(null)
   const [view, setView] = useState<InventoryView>('products')
   const [screen, setScreen] = useState<WorkspaceScreen>('list')
   const [search, setSearch] = useState('')
+  const [movementFilters, setMovementFilters] = useState<MovementFilters>(emptyMovementFilters)
+  const [movementPage, setMovementPage] = useState(0)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [form, setForm] = useState<PurchaseForm>(emptyForm)
   const [invoiceForm, setInvoiceForm] = useState<InvoiceForm>(emptyInvoiceForm)
   const [productForm, setProductForm] = useState<ProductFormState>(emptyProductForm)
   const [editingProduct, setEditingProduct] = useState<ProductSummary | null>(null)
+  const [adjustingProduct, setAdjustingProduct] = useState<ProductSummary | null>(null)
+  const [adjustmentForm, setAdjustmentForm] = useState<AdjustmentForm>(emptyAdjustmentForm)
   const [lines, setLines] = useState<PurchaseItemInput[]>([])
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [productFeedback, setProductFeedback] = useState<Feedback | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isMovementsLoading, setIsMovementsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isProductSaving, setIsProductSaving] = useState(false)
+  const [isAdjusting, setIsAdjusting] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
-  async function loadWorkspace() {
+  async function loadMovements(filters = movementFilters, page = movementPage) {
+    const api = window.simplepos?.stockMovements
+    if (!api) {
+      setFeedback({ message: t('inventory.movements.messages.unavailable'), tone: 'error' })
+      return
+    }
+
+    setIsMovementsLoading(true)
+    const input: StockMovementListInput = {
+      productId: filters.productId ? Number(filters.productId) : undefined,
+      movementType: filters.movementType,
+      dateFrom: filters.dateFrom || undefined,
+      dateTo: filters.dateTo || undefined,
+      search: filters.search.trim() || undefined,
+      limit: movementPageSize,
+      offset: page * movementPageSize,
+    }
+    const result = await api.list(input)
+    setMovements(result)
+    setIsMovementsLoading(false)
+  }
+
+  async function loadWorkspace({ includeMovements = true }: { includeMovements?: boolean } = {}) {
     const api = window.simplepos
     if (!api) {
       setFeedback({ message: 'Database service is unavailable.', tone: 'error' })
@@ -215,6 +299,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
       categoryId: current.categoryId || (categoryList[0] ? String(categoryList[0].id) : ''),
     }))
     setIsLoading(false)
+    if (includeMovements) await loadMovements()
   }
 
   useEffect(() => {
@@ -223,6 +308,14 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
       setIsLoading(false)
     })
   }, [])
+
+  useEffect(() => {
+    if (view !== 'movements') return
+    void loadMovements().catch(() => {
+      setFeedback({ message: t('inventory.movements.messages.loadFailed'), tone: 'error' })
+      setIsMovementsLoading(false)
+    })
+  }, [movementFilters, movementPage, view])
 
   useEffect(() => {
     if (feedback?.tone !== 'success') return
@@ -269,6 +362,12 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
   const formattedProductPrice = formatCurrency(
     Number.isFinite(Number(productForm.unitPrice)) ? Number(productForm.unitPrice) : 0,
   )
+  const adjustmentTarget = Number(adjustmentForm.quantity)
+  const adjustmentDelta = adjustingProduct && Number.isFinite(adjustmentTarget)
+    ? adjustmentTarget - adjustingProduct.stockQty
+    : 0
+  const movementNet = movements.totalIn - movements.totalOut
+  const movementLastPage = Math.max(0, Math.ceil(movements.total / movementPageSize) - 1)
 
   function updateForm<K extends keyof PurchaseForm>(field: K, value: PurchaseForm[K]) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -280,6 +379,39 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
 
   function updateProductForm<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) {
     setProductForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateMovementFilters(next: Partial<MovementFilters>) {
+    setMovementFilters((current) => ({ ...current, ...next }))
+    setMovementPage(0)
+  }
+
+  function movementTypeLabel(type: StockMovementType): string {
+    return t(`inventory.movements.types.${type}`)
+  }
+
+  function movementBadgeVariant(type: StockMovementType): 'secondary' | 'outline' | 'destructive' {
+    if (type === 'sale') return 'destructive'
+    if (type === 'opening') return 'outline'
+    return 'secondary'
+  }
+
+  function openProductMovements(product: ProductSummary) {
+    updateMovementFilters({ productId: String(product.id), search: '', movementType: 'all' })
+    setView('movements')
+    setScreen('list')
+  }
+
+  function openAdjustment(product: ProductSummary) {
+    setAdjustingProduct(product)
+    setAdjustmentForm({ quantity: String(product.stockQty), reason: '' })
+    setProductFeedback(null)
+  }
+
+  function closeAdjustment() {
+    setAdjustingProduct(null)
+    setAdjustmentForm(emptyAdjustmentForm)
+    setIsAdjusting(false)
   }
 
   function resetProductForm({ clearFeedback = true }: { clearFeedback?: boolean } = {}) {
@@ -419,6 +551,53 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
     if (productList) setProducts(productList)
   }
 
+  async function saveAdjustment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!adjustingProduct || isAdjusting) return
+
+    const newStockQty = Number(adjustmentForm.quantity)
+    const reason = adjustmentForm.reason.trim()
+    if (!Number.isSafeInteger(newStockQty) || newStockQty < 0) {
+      setProductFeedback({ message: t('inventory.adjustment.messages.invalidQuantity'), tone: 'error' })
+      return
+    }
+    if (!reason) {
+      setProductFeedback({ message: t('inventory.adjustment.messages.reasonRequired'), tone: 'error' })
+      return
+    }
+
+    setIsAdjusting(true)
+    const result = await window.simplepos?.stockMovements.adjust({
+      productId: adjustingProduct.id,
+      newStockQty,
+      reason,
+      createdById: currentUser.id,
+    })
+    setIsAdjusting(false)
+
+    if (!result) {
+      setProductFeedback({ message: t('inventory.movements.messages.unavailable'), tone: 'error' })
+      return
+    }
+
+    setProductFeedback({ message: result.ok ? t('inventory.adjustment.messages.success', { count: result.balanceAfter }) : result.message, tone: result.ok ? 'success' : 'error' })
+    if (!result.ok) return
+
+    closeAdjustment()
+    const productList = await window.simplepos?.products.list()
+    if (productList) {
+      setProducts(productList)
+      if (editingProduct?.id === adjustingProduct.id) {
+        const updated = productList.find((product) => product.id === adjustingProduct.id)
+        if (updated) {
+          setEditingProduct(updated)
+          setProductForm(toProductForm(updated))
+        }
+      }
+    }
+    await loadMovements()
+  }
+
   function selectProduct(value: string) {
     const product = products.find((item) => item.id === Number(value))
     setForm((current) => ({
@@ -495,7 +674,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
     setFeedback({ message: result.message, tone: result.ok ? 'success' : 'error' })
 
     if (result.ok && result.purchase) {
-      await loadWorkspace()
+      await loadWorkspace({ includeMovements: true })
       setSelectedPurchase(result.purchase)
       setScreen('purchaseDetail')
       setLines([])
@@ -525,7 +704,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
     setFeedback({ message: result.message, tone: result.ok ? 'success' : 'error' })
     if (result.ok && result.purchase) {
       setSelectedPurchase(result.purchase)
-      await loadWorkspace()
+      await loadWorkspace({ includeMovements: true })
     }
   }
 
@@ -556,7 +735,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
       setSelectedPurchase(result.purchase)
       setInvoiceForm(invoiceFormFromPurchase(result.purchase))
       setScreen('purchaseDetail')
-      await loadWorkspace()
+      await loadWorkspace({ includeMovements: true })
     }
   }
 
@@ -582,6 +761,17 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                   <PackagePlus data-icon="inline-start" aria-hidden="true" />
                   New Product
                 </Button>
+              ) : view === 'movements' ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className={pressableClass}
+                  onClick={() => void loadMovements()}
+                >
+                  <ClipboardList data-icon="inline-start" aria-hidden="true" />
+                  {t('inventory.movements.refresh')}
+                </Button>
               ) : (
                 <Button type="button" size="sm" className={pressableClass} onClick={startNewPurchase}>
                   <Plus data-icon="inline-start" aria-hidden="true" />
@@ -596,6 +786,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                 {[
                   { id: 'products' as const, label: 'Products', icon: Package },
                   { id: 'purchases' as const, label: 'Purchases', icon: ReceiptText },
+                  { id: 'movements' as const, label: t('inventory.movements.title'), icon: ClipboardList },
                   { id: 'pending' as const, label: 'Needs Invoice', icon: CalendarClock },
                   { id: 'unpaid' as const, label: 'Unpaid', icon: WalletCards },
                 ].map((item) => {
@@ -637,20 +828,65 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                     onValueChange={(value) => setCategoryFilter(value as CategoryFilter)}
                   />
                 </div>
+              ) : view === 'movements' ? (
+                <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_170px_130px_130px]">
+                  <BaseSelect
+                    value={movementFilters.productId}
+                    ariaLabel={t('inventory.movements.productFilter')}
+                    placeholder={t('inventory.movements.allProducts')}
+                    options={[
+                      { value: '', label: t('inventory.movements.allProducts') },
+                      ...products.map((product) => ({ value: String(product.id), label: product.name })),
+                    ]}
+                    onValueChange={(value) => updateMovementFilters({ productId: value })}
+                  />
+                  <BaseSelect
+                    value={movementFilters.movementType}
+                    ariaLabel={t('inventory.movements.typeFilter')}
+                    options={[
+                      { value: 'all', label: t('common.all') },
+                      { value: 'purchase', label: t('inventory.movements.types.purchase') },
+                      { value: 'sale', label: t('inventory.movements.types.sale') },
+                      { value: 'adjustment', label: t('inventory.movements.types.adjustment') },
+                      { value: 'opening', label: t('inventory.movements.types.opening') },
+                    ]}
+                    onValueChange={(value) => updateMovementFilters({ movementType: value as MovementTypeFilter })}
+                  />
+                  <Input
+                    type="date"
+                    aria-label={t('inventory.movements.dateFrom')}
+                    value={movementFilters.dateFrom}
+                    onChange={(event) => updateMovementFilters({ dateFrom: event.target.value })}
+                    className="h-10"
+                  />
+                  <Input
+                    type="date"
+                    aria-label={t('inventory.movements.dateTo')}
+                    value={movementFilters.dateTo}
+                    onChange={(event) => updateMovementFilters({ dateTo: event.target.value })}
+                    className="h-10"
+                  />
+                </div>
               ) : null}
-              <div className="relative min-w-0 flex-1">
+              <div className={cn('relative min-w-0 flex-1', view === 'movements' && 'sm:max-w-80')}>
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={view === 'products' ? 'Search product or category' : 'Search purchase, supplier, or invoice'}
+                  value={view === 'movements' ? movementFilters.search : search}
+                  onChange={(event) => {
+                    if (view === 'movements') updateMovementFilters({ search: event.target.value })
+                    else setSearch(event.target.value)
+                  }}
+                  placeholder={view === 'products' ? 'Search product or category' : view === 'movements' ? t('inventory.movements.searchPlaceholder') : 'Search purchase, supplier, or invoice'}
                   className="h-10 pl-10 pr-10"
                 />
-                {search ? (
+                {(view === 'movements' ? movementFilters.search : search) ? (
                   <button
                     type="button"
                     aria-label="Clear search"
-                    onClick={() => setSearch('')}
+                    onClick={() => {
+                      if (view === 'movements') updateMovementFilters({ search: '' })
+                      else setSearch('')
+                    }}
                     className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
                   >
                     <X className="size-4" aria-hidden="true" />
@@ -669,14 +905,15 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                 filteredProducts.length === 0 ? (
                   <p className="p-6 text-center text-sm text-muted-foreground">No matching products.</p>
                 ) : (
-                  <div className="min-w-[800px]">
-                    <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+                  <div className="min-w-[980px]">
+                    <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px_160px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
                       <span>Product</span>
                       <span>Category</span>
                       <span className="text-right">Sell price</span>
                       <span>Stock</span>
                       <span className="text-right">Last cost</span>
                       <span>Status</span>
+                      <span className="text-right">{t('common.actions')}</span>
                     </div>
                     <div className="divide-y">
                       {filteredProducts.map((product) => {
@@ -685,29 +922,140 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                           ? 'Uncategorized'
                           : categoryNames.get(product.categoryId) ?? 'Uncategorized'
                         return (
-                          <button
+                          <div
                             key={product.id}
-                            type="button"
-                            onClick={() => editProduct(product)}
                             className={cn(
-                              'grid min-h-14 w-full grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color,transform] duration-150 ease-out hover:bg-muted/50 active:scale-[0.99]',
+                              'grid min-h-14 w-full grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px_160px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color] duration-150 ease-out hover:bg-muted/50',
                               editingProduct?.id === product.id && 'bg-muted/60',
                             )}
                           >
-                            <span className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => editProduct(product)}
+                              className="min-w-0 rounded-md text-left outline-none transition-[color,box-shadow,transform] duration-150 ease-out active:scale-[0.99] focus-visible:ring-3 focus-visible:ring-ring/50"
+                            >
                               <span className="block truncate font-medium">{product.name}</span>
-                            </span>
+                              <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
+                            </button>
                             <ProductCategoryBadge name={categoryName} />
                             <span className="text-right tabular-nums">{formatCurrency(product.unitPrice)}</span>
                             <span className="tabular-nums">{product.stockQty} {product.unitType}</span>
                             <span className="text-right tabular-nums">{formatCurrency(product.lastPurchaseCost)}</span>
                             <Badge variant={lowStock ? 'destructive' : 'secondary'}>{lowStock ? 'Low' : 'In stock'}</Badge>
-                          </button>
+                            <span className="flex justify-end gap-1.5">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className={pressableClass}
+                                onClick={() => openProductMovements(product)}
+                              >
+                                <ClipboardList data-icon="inline-start" aria-hidden="true" />
+                                {t('inventory.movements.view')}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className={pressableClass}
+                                onClick={() => openAdjustment(product)}
+                              >
+                                <PencilLine data-icon="inline-start" aria-hidden="true" />
+                                {t('inventory.adjustment.action')}
+                              </Button>
+                            </span>
+                          </div>
                         )
                       })}
                     </div>
                   </div>
                 )
+              ) : view === 'movements' ? (
+                <div className="flex min-h-0 flex-col">
+                  <div className="grid gap-2 border-b bg-background p-3 sm:grid-cols-3">
+                    {[
+                      { label: t('inventory.movements.stockIn'), value: movements.totalIn },
+                      { label: t('inventory.movements.stockOut'), value: movements.totalOut },
+                      { label: t('inventory.movements.netChange'), value: movementNet },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-lg bg-muted/70 px-3 py-2">
+                        <p className="text-xs text-muted-foreground">{item.label}</p>
+                        <p className="mt-1 text-lg font-semibold tabular-nums">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {isMovementsLoading ? (
+                    <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+                      <p className="text-sm">{t('inventory.movements.loading')}</p>
+                    </div>
+                  ) : movements.items.length === 0 ? (
+                    <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
+                      <ClipboardList className="size-7 text-muted-foreground" aria-hidden="true" />
+                      <p className="font-medium">{t('inventory.movements.emptyTitle')}</p>
+                      <p className="text-sm text-muted-foreground text-pretty">{t('inventory.movements.emptyHint')}</p>
+                    </div>
+                  ) : (
+                    <div className="min-w-[980px]">
+                      <div className="sticky top-0 grid grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+                        <span>{t('inventory.movements.table.date')}</span>
+                        <span>{t('inventory.movements.table.product')}</span>
+                        <span>{t('inventory.movements.table.type')}</span>
+                        <span>{t('inventory.movements.table.reference')}</span>
+                        <span className="text-right">{t('inventory.movements.table.in')}</span>
+                        <span className="text-right">{t('inventory.movements.table.out')}</span>
+                        <span className="text-right">{t('inventory.movements.table.balance')}</span>
+                        <span>{t('inventory.movements.table.user')}</span>
+                      </div>
+                      <div className="divide-y">
+                        {movements.items.map((movement) => (
+                          <div
+                            key={movement.id}
+                            className="grid min-h-14 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] items-center gap-3 px-3 py-2 text-sm"
+                          >
+                            <span className="text-xs text-muted-foreground tabular-nums">{formatDateTime(movement.createdAt)}</span>
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium">{movement.productName}</span>
+                              <span className="block truncate text-xs text-muted-foreground">{movement.sku}</span>
+                            </span>
+                            <Badge variant={movementBadgeVariant(movement.movementType)}>
+                              {movementTypeLabel(movement.movementType)}
+                            </Badge>
+                            <span className="min-w-0">
+                              <span className="block truncate">{movement.referenceNumber ?? t('inventory.movements.noReference')}</span>
+                              {movement.reason ? <span className="block truncate text-xs text-muted-foreground">{movement.reason}</span> : null}
+                            </span>
+                            <span className="text-right tabular-nums">
+                              {movement.quantityDelta > 0 ? `${movement.quantityDelta} ${movement.unitType}` : '—'}
+                            </span>
+                            <span className="text-right tabular-nums">
+                              {movement.quantityDelta < 0 ? `${Math.abs(movement.quantityDelta)} ${movement.unitType}` : '—'}
+                            </span>
+                            <span className="text-right font-medium tabular-nums">{movement.balanceAfter} {movement.unitType}</span>
+                            <span className="truncate text-xs text-muted-foreground">{movement.createdByName ?? t('system.label')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-t bg-background px-3 py-2 text-xs text-muted-foreground">
+                    <span className="tabular-nums">
+                      {t('inventory.movements.pagination', {
+                        start: movements.total === 0 ? 0 : movementPage * movementPageSize + 1,
+                        end: Math.min(movements.total, (movementPage + 1) * movementPageSize),
+                        total: movements.total,
+                      })}
+                    </span>
+                    <span className="flex gap-2">
+                      <Button type="button" variant="outline" size="sm" className={pressableClass} disabled={movementPage === 0} onClick={() => setMovementPage((page) => Math.max(0, page - 1))}>
+                        {t('inventory.movements.previous')}
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" className={pressableClass} disabled={movementPage >= movementLastPage} onClick={() => setMovementPage((page) => Math.min(movementLastPage, page + 1))}>
+                        {t('inventory.movements.next')}
+                      </Button>
+                    </span>
+                  </div>
+                </div>
               ) : filteredPurchases.length === 0 ? (
                 <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
                   <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
@@ -836,7 +1184,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field>
-                    <FieldLabel htmlFor="inventory-stock">Opening stock</FieldLabel>
+                    <FieldLabel htmlFor="inventory-stock">{editingProduct ? t('inventory.adjustment.currentStock') : t('inventory.openingStock')}</FieldLabel>
                     <Input
                       id="inventory-stock"
                       type="number"
@@ -845,8 +1193,13 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                       value={productForm.stockQty}
                       onChange={(event) => updateProductForm('stockQty', event.target.value)}
                       placeholder="0"
+                      readOnly={Boolean(editingProduct)}
+                      className={cn(editingProduct && 'bg-muted text-muted-foreground')}
                       required
                     />
+                    {editingProduct ? (
+                      <FieldDescription>{t('inventory.adjustment.editHint')}</FieldDescription>
+                    ) : null}
                   </Field>
 
                   <Field>
@@ -885,6 +1238,12 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                     <PackagePlus data-icon="inline-start" aria-hidden="true" />
                     {isProductSaving ? 'Saving...' : editingProduct ? 'Save Changes' : 'Create'}
                   </Button>
+                  {editingProduct ? (
+                    <Button type="button" variant="outline" className={cn('h-10', pressableClass)} onClick={() => openAdjustment(editingProduct)}>
+                      <PencilLine data-icon="inline-start" aria-hidden="true" />
+                      {t('inventory.adjustment.action')}
+                    </Button>
+                  ) : null}
                   <Button type="button" variant="outline" className={cn('h-10', pressableClass)} onClick={editingProduct ? showList : () => resetProductForm()}>
                     {editingProduct ? 'Cancel' : 'Clear'}
                   </Button>
@@ -1282,6 +1641,86 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
           </CardContent>
         </Card>
       ) : null}
+
+      <Dialog open={Boolean(adjustingProduct)} onOpenChange={(open) => { if (!open) closeAdjustment() }}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={saveAdjustment}>
+            <DialogHeader>
+              <DialogTitle>{t('inventory.adjustment.title')}</DialogTitle>
+              <DialogDescription>
+                {adjustingProduct ? t('inventory.adjustment.description', { name: adjustingProduct.name }) : ''}
+              </DialogDescription>
+            </DialogHeader>
+            {adjustingProduct ? (
+              <div className="mt-4 flex flex-col gap-4">
+                <div className="rounded-lg bg-muted/70 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{adjustingProduct.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{adjustingProduct.sku}</span>
+                    </span>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums">
+                      {adjustingProduct.stockQty} {adjustingProduct.unitType}
+                    </span>
+                  </div>
+                </div>
+
+                <Field>
+                  <FieldLabel htmlFor="stock-adjustment-quantity">{t('inventory.adjustment.newQuantity')}</FieldLabel>
+                  <Input
+                    id="stock-adjustment-quantity"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={adjustmentForm.quantity}
+                    onChange={(event) => setAdjustmentForm((current) => ({ ...current, quantity: event.target.value }))}
+                    required
+                  />
+                </Field>
+
+                <div className="flex items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">{t('inventory.adjustment.changePreview')}</span>
+                  <span className={cn(
+                    'font-semibold tabular-nums',
+                    adjustmentDelta > 0 && 'text-primary',
+                    adjustmentDelta < 0 && 'text-destructive',
+                  )}>
+                    {adjustmentDelta > 0 ? <Plus className="mr-1 inline size-3.5" aria-hidden="true" /> : adjustmentDelta < 0 ? <Minus className="mr-1 inline size-3.5" aria-hidden="true" /> : null}
+                    {adjustmentDelta > 0 ? `+${adjustmentDelta}` : adjustmentDelta} {adjustingProduct.unitType}
+                  </span>
+                </div>
+
+                <Field>
+                  <FieldLabel htmlFor="stock-adjustment-reason">{t('inventory.adjustment.reason')}</FieldLabel>
+                  <Input
+                    id="stock-adjustment-reason"
+                    value={adjustmentForm.reason}
+                    onChange={(event) => setAdjustmentForm((current) => ({ ...current, reason: event.target.value }))}
+                    placeholder={t('inventory.adjustment.reasonPlaceholder')}
+                    required
+                  />
+                  <FieldDescription>{t('inventory.adjustment.reasonHint')}</FieldDescription>
+                </Field>
+
+                {productFeedback ? (
+                  <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', productFeedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={productFeedback.tone === 'error' ? 'alert' : 'status'}>
+                    {productFeedback.message}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            <DialogFooter className="mt-5">
+              <Button type="button" variant="outline" className={pressableClass} onClick={closeAdjustment}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" className={pressableClass} disabled={isAdjusting || adjustmentDelta === 0}>
+                <PackageCheck data-icon="inline-start" aria-hidden="true" />
+                {isAdjusting ? t('common.saving') : t('inventory.adjustment.confirm')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

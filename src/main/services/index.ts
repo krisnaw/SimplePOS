@@ -9,6 +9,13 @@ export {
   listProducts,
   updateProduct,
 } from './product.service'
+export { adjustStock, listStockMovements } from './stock-movement.service'
+export type {
+  StockAdjustmentResult,
+  StockMovementListInput,
+  StockMovementListResult,
+  StockMovementSummary,
+} from './stock-movement.service'
 export type {
   ProductCategoryMutationResult,
   ProductCategorySummary,
