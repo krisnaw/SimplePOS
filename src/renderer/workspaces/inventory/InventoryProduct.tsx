@@ -224,15 +224,15 @@ export function InventoryProduct() {
                 placeholder={t('inventory.searchPlaceholder')}
                 className="shrink-0"
               />
-              <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-background">
-                <Table className="min-w-[720px]">
-                  <TableHeader className="sticky top-0 z-10 bg-muted/95 backdrop-blur">
+              <div className="min-h-0 flex-1 rounded-lg border bg-background">
+                <Table containerClassName="h-full overflow-auto" className="min-w-180">
+                  <TableHeader>
                     <TableRow>
-                      <TableHead>{t('inventory.table.product')}</TableHead>
-                      <TableHead>{t('inventory.table.category')}</TableHead>
-                      <TableHead className="text-right">{t('inventory.table.price')}</TableHead>
-                      <TableHead>{t('inventory.table.stock')}</TableHead>
-                      <TableHead>{t('inventory.table.status')}</TableHead>
+                      <TableHead className="sticky top-0 z-10 rounded-tl-lg bg-muted/95 backdrop-blur">{t('inventory.table.product')}</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">{t('inventory.table.category')}</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/95 text-right backdrop-blur">{t('inventory.table.price')}</TableHead>
+                      <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">{t('inventory.table.stock')}</TableHead>
+                      <TableHead className="sticky top-0 z-10 rounded-tr-lg bg-muted/95 backdrop-blur">{t('inventory.table.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -307,13 +307,13 @@ export function InventoryProduct() {
           </Card>
         </div>
         <div className="col-span-4 min-h-0">
-          <Card>
+          <Card className="h-full min-h-0">
             <CardHeader>
               <CardTitle>
                 {editingProduct ? t('inventory.editProduct') : t('inventory.createProduct')}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-h-0 flex-1 overflow-y-auto">
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="inventory-sku">{t('inventory.sku')}</Label>
