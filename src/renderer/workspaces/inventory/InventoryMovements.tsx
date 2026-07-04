@@ -162,7 +162,6 @@ export function InventoryMovements({
                       <span className="text-xs text-muted-foreground tabular-nums">{formatDateTime(movement.createdAt)}</span>
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{movement.productName}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{movement.sku}</span>
                       </span>
                       <Badge variant={movementBadgeVariant(movement.movementType)}>
                         {movementTypeLabel(movement.movementType)}

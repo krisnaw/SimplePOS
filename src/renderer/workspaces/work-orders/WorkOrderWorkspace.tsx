@@ -30,9 +30,7 @@ import type {
   WorkOrderStatus,
   WorkOrderPriority,
 } from '@/shared/types/work-order'
-import type { CatalogItem } from './WorkOrderWorkspace.types'
-
-type SimplePosApi = NonNullable<Window['simplepos']>
+import type { CatalogItem, SimplePosApi } from './WorkOrderWorkspace.types'
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'

@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { Database, FileText, LogOut, Printer } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { LanguageSelect } from '@/renderer/components/LanguageSelect'
-import { Button } from '@/renderer/components/ui/button'
-import { navigationItems, sectionDetails } from '@/renderer/navigation'
-import type { AppSection } from '@/shared/types/app'
-import type { AuthenticatedUser } from '@/shared/types/user'
-import { CustomerWorkspace } from '@/renderer/workspaces/customer/CustomerWorkspace'
-import { DashboardOverview } from '@/renderer/workspaces/dashboard/DashboardOverview'
-import { InvoiceWorkspace } from '@/renderer/workspaces/invoice/InvoiceWorkspace'
-import { InventoryLayout } from '@/renderer/workspaces/inventory/InventoryLayout'
-import { SupplierManagement } from '@/renderer/workspaces/suppliers/SupplierManagement'
-import { ReportsWorkspace } from '@/renderer/workspaces/reports/ReportsWorkspace'
-import { EmptySalesWorkspace } from '@/renderer/workspaces/sales/EmptySalesWorkspace'
-import { SectionWorkspace } from '@/renderer/workspaces/section/SectionWorkspace'
-import { ServicesWorkspace } from '@/renderer/workspaces/services/ServicesWorkspace'
-import { SettingsWorkspace } from '@/renderer/workspaces/settings/SettingsWorkspace'
-import { UserGuideWorkspace } from '@/renderer/workspaces/user-guide/UserGuideWorkspace'
-import { UserManagement } from '@/renderer/workspaces/users/UserManagement'
-import { WorkOrderWorkspace } from '@/renderer/workspaces/work-orders/WorkOrderWorkspace'
-import { VehicleWorkspace } from '@/renderer/workspaces/vehicles/VehicleWorkspace'
-import { cn } from '@/renderer/lib/utils'
-import type { DashboardLocationState } from './Dashboard.types'
+import {useEffect, useState} from 'react'
+import {useLocation, useNavigate} from 'react-router-dom'
+import {Database, FileText, LogOut, Printer} from 'lucide-react'
+import {useTranslation} from 'react-i18next'
+import {LanguageSelect} from '@/renderer/components/LanguageSelect'
+import {Button} from '@/renderer/components/ui/button'
+import {navigationItems, sectionDetails} from '@/renderer/navigation'
+import type {AppSection} from '@/shared/types/app'
+import {CustomerWorkspace} from '@/renderer/workspaces/customer/CustomerWorkspace'
+import {DashboardOverview} from '@/renderer/workspaces/dashboard/DashboardOverview'
+import {InvoiceWorkspace} from '@/renderer/workspaces/invoice/InvoiceWorkspace'
+import {InventoryLayout, type InventoryLayoutTab} from '@/renderer/workspaces/inventory/InventoryLayout'
+import {InventoryProduct} from '@/renderer/workspaces/inventory/InventoryProduct'
+import {InventoryPurchase} from '@/renderer/workspaces/inventory/InventoryPurchase'
+import {SupplierManagement} from '@/renderer/workspaces/suppliers/SupplierManagement'
+import {ReportsWorkspace} from '@/renderer/workspaces/reports/ReportsWorkspace'
+import {SalesWorkspace} from '../workspaces/sales/SalesWorkspace'
+import {SectionWorkspace} from '@/renderer/workspaces/section/SectionWorkspace'
+import {ServicesWorkspace} from '@/renderer/workspaces/services/ServicesWorkspace'
+import {SettingsWorkspace} from '@/renderer/workspaces/settings/SettingsWorkspace'
+import {UserGuideWorkspace} from '@/renderer/workspaces/user-guide/UserGuideWorkspace'
+import {UserManagement} from '@/renderer/workspaces/users/UserManagement'
+import {WorkOrderWorkspace} from '@/renderer/workspaces/work-orders/WorkOrderWorkspace'
+import {VehicleWorkspace} from '@/renderer/workspaces/vehicles/VehicleWorkspace'
+import {cn} from '@/renderer/lib/utils'
+import type {DashboardLocationState} from './Dashboard.types'
 
 const systemIndicators = [
   {
@@ -63,6 +64,7 @@ export default function Dashboard() {
   const { t } = useTranslation()
   const user = (location.state as DashboardLocationState | null)?.user
   const [activeSection, setActiveSection] = useState<AppSection>('dashboard')
+  const [inventoryTab, setInventoryTab] = useState<InventoryLayoutTab>('product')
   const activeDetails = sectionDetails[activeSection]
   const activeDetailsKey = `${sectionTranslationKeys[activeSection]}.sections.${sectionTranslationKeys[activeSection]}`
 
@@ -236,8 +238,18 @@ export default function Dashboard() {
               )}
             >
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
-              {activeSection === 'sales' ? <EmptySalesWorkspace currentUser={user} /> : null}
-              {activeSection === 'inventory' ? <InventoryLayout /> : null}
+              {activeSection === 'sales' ? <SalesWorkspace currentUser={user} /> : null}
+              {activeSection === 'inventory' ? (
+                <InventoryLayout activeTab={inventoryTab} onTabChange={setInventoryTab}>
+                  {inventoryTab === 'product' ? <InventoryProduct /> : null}
+                  {inventoryTab === 'purchase' ? (
+                    <InventoryPurchase key="purchase" currentUser={user} embedded initialView="purchases" />
+                  ) : null}
+                  {inventoryTab === 'moving' ? (
+                    <InventoryPurchase key="moving" currentUser={user} embedded initialView="movements" />
+                  ) : null}
+                </InventoryLayout>
+              ) : null}
               {activeSection === 'suppliers' ? <SupplierManagement /> : null}
               {activeSection === 'vehicles' ? <VehicleWorkspace /> : null}
               {activeSection === 'services' ? <ServicesWorkspace /> : null}

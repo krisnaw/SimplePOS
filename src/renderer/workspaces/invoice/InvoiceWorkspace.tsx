@@ -171,7 +171,7 @@ export function InvoiceWorkspace() {
   }, [invoices])
 
   return (
-    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden p-1 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
+    <div className="grid h-full min-h-0 min-w-0 gap-3 p-1 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <CardTitle>{t('invoices.invoiceHistory')}</CardTitle>

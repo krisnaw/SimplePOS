@@ -48,7 +48,7 @@ import {
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/renderer/components/ui/field'
 import { Input } from '@/renderer/components/ui/input'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
-import { formatCurrency } from '@/renderer/lib/formatters'
+import { formatCurrency, formatDate } from '@/renderer/lib/formatters'
 import { cn } from '@/renderer/lib/utils'
 import type { ProductCategorySummary, ProductSummary } from '@/shared/types/product'
 import type {
@@ -76,6 +76,12 @@ import type {
 } from './InventoryWorkspace.types'
 import { InventoryLayout, type InventoryLayoutTab } from './InventoryLayout'
 import { InventoryMovements } from './InventoryMovements'
+
+type InventoryPurchaseProps = {
+  currentUser: AuthenticatedUser
+  embedded?: boolean
+  initialView?: InventoryView
+}
 
 const emptyProductForm: ProductFormState = {
   sku: '',
@@ -135,15 +141,6 @@ const movementPageSize = 50
 const pressableClass =
   'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]'
 
-function formatDate(value: string | null): string {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('en', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(`${value}T00:00:00`))
-}
-
 function PaymentBadge({ status }: { status: PurchasePaymentStatus }) {
   return (
     <Badge variant={status === 'paid' ? 'secondary' : 'destructive'}>
@@ -176,7 +173,11 @@ function toProductForm(product: ProductSummary): ProductFormState {
   }
 }
 
-export function InventoryPurchase({ currentUser }: { currentUser: AuthenticatedUser }) {
+export function InventoryPurchase({
+  currentUser,
+  embedded = false,
+  initialView = 'purchases',
+}: InventoryPurchaseProps) {
   const { t } = useTranslation()
   const [products, setProducts] = useState<ProductSummary[]>([])
   const [categories, setCategories] = useState<ProductCategorySummary[]>([])
@@ -184,7 +185,7 @@ export function InventoryPurchase({ currentUser }: { currentUser: AuthenticatedU
   const [purchases, setPurchases] = useState<PurchaseSummary[]>([])
   const [movements, setMovements] = useState<StockMovementListResult>(emptyMovementResult)
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseDetail | null>(null)
-  const [view, setView] = useState<InventoryView>('products')
+  const [view, setView] = useState<InventoryView>(initialView)
   const [screen, setScreen] = useState<WorkspaceScreen>('list')
   const [search, setSearch] = useState('')
   const [movementFilters, setMovementFilters] = useState<MovementFilters>(emptyMovementFilters)
@@ -704,18 +705,7 @@ export function InventoryPurchase({ currentUser }: { currentUser: AuthenticatedU
     }
   }
 
-  return (
-    <div
-      className={cn(
-        'grid h-full min-h-0 min-w-0 gap-3 overflow-hidden p-1',
-        'grid-cols-1',
-      )}
-    >
-      <InventoryLayout
-        activeTab={inventoryLayoutTab}
-        className={cn(screen !== 'list' && 'hidden')}
-        onTabChange={selectInventoryTab}
-      >
+  const listContent = (
         <Card className="min-h-0 flex-1 overflow-hidden">
           <CardHeader className="pb-3">
             <div className="min-w-0">
@@ -932,7 +922,27 @@ export function InventoryPurchase({ currentUser }: { currentUser: AuthenticatedU
             )}
           </CardContent>
         </Card>
-      </InventoryLayout>
+  )
+
+  return (
+    <div
+      className={cn(
+        'grid h-full min-h-0 min-w-0 gap-3 p-1',
+        'grid-cols-1',
+      )}
+    >
+      {screen === 'list' ? (
+        embedded ? (
+          listContent
+        ) : (
+          <InventoryLayout
+            activeTab={inventoryLayoutTab}
+            onTabChange={selectInventoryTab}
+          >
+            {listContent}
+          </InventoryLayout>
+        )
+      ) : null}
 
       {screen === 'productForm' ? (
         <Card className="min-h-0 overflow-hidden">

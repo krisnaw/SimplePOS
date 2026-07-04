@@ -13,19 +13,7 @@ import { Field, FieldGroup, FieldLabel } from '@/renderer/components/ui/field'
 import { Input } from '@/renderer/components/ui/input'
 import { cn } from '@/renderer/lib/utils'
 import type { SupplierSummary } from '@/shared/types/supplier'
-
-type SupplierForm = {
-  name: string
-  contactName: string
-  phone: string
-  address: string
-  notes: string
-}
-
-type SupplierFeedback = {
-  message: string
-  tone: 'success' | 'error'
-}
+import type { SupplierFeedback, SupplierForm } from './SupplierManagement.types'
 
 const emptyForm: SupplierForm = {
   name: '',
@@ -140,7 +128,7 @@ export function SupplierManagement() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-3 overflow-hidden p-1 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid h-full min-h-0 gap-3 p-1 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <div className="min-w-0">

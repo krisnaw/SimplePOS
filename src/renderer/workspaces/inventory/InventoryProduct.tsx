@@ -8,8 +8,9 @@ import {Label} from '@/renderer/components/ui/label'
 import {BaseSelect} from '@/renderer/components/ui/base-select'
 import {cn} from '@/renderer/lib/utils'
 import {formatCurrency} from '@/renderer/lib/formatters'
-import type {ProductSummary, ProductCategorySummary} from '@/shared/types/product'
+import type {ProductCategorySummary, ProductSummary} from '@/shared/types/product'
 import type {ProductFormState} from './InventoryWorkspace.types'
+import {ProductCategoryBadge} from './ProductCategoryBadge'
 
 const emptyForm: ProductFormState = {
   sku: '',
@@ -26,7 +27,6 @@ const emptyForm: ProductFormState = {
 const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
 const productTableGrid =
   'grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)_104px_88px_84px]'
-const inventoryTabs = ['Product', 'Purchase', 'Moving'] as const
 
 function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock
@@ -177,41 +177,9 @@ export function InventoryProduct() {
   }
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-hidden p-1">
-
-
-      <div
-        role="tablist"
-        aria-label="Inventory sections"
-        className="flex shrink-0 items-center gap-1 rounded-xl bg-muted p-1 shadow-border"
-      >
-        {inventoryTabs.map((tab, index) => {
-          const isActive = index === 0
-
-          return (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-label={tab}
-              disabled={!isActive}
-              className={cn(
-                'flex h-9 min-w-0 flex-1 items-center justify-center rounded-lg px-3 text-sm font-medium transition-[background-color,color,transform,box-shadow] duration-150 ease-out',
-                'disabled:cursor-default disabled:opacity-100',
-                isActive
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {tab}
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="grid min-h-0 min-w-0 flex-1 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 p-1">
+      <div className="grid min-h-0 min-w-0 flex-1 gap-3  xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3 ">
           <div className="grid shrink-0 gap-3 md:grid-cols-3">
             <Card>
               <CardHeader>
@@ -309,7 +277,7 @@ export function InventoryProduct() {
                         <span className="block truncate font-medium">{product.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
                       </span>
-                        <span className="min-w-0 truncate">{categoryName}</span>
+                        <ProductCategoryBadge name={categoryName} />
                         <span className="truncate text-right tabular-nums">{formatCurrency(product.unitPrice)}</span>
                         <span className="truncate tabular-nums">
                         {product.stockQty} {product.unitType}
@@ -338,11 +306,6 @@ export function InventoryProduct() {
             <CardTitle>
               {editingProduct ? t('inventory.editProduct') : t('inventory.createProduct')}
             </CardTitle>
-            <CardDescription>
-              {editingProduct
-                ? t('inventory.editHint', {name: editingProduct.name})
-                : t('inventory.createHint')}
-            </CardDescription>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-y-auto">
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">

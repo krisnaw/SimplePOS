@@ -8,14 +8,7 @@ import { Label } from '@/renderer/components/ui/label'
 import { cn } from '@/renderer/lib/utils'
 import { formatCurrency } from '@/renderer/lib/formatters'
 import type { ServiceSummary } from '@/shared/types/service'
-
-type ServiceFormState = {
-  code: string
-  name: string
-  description: string
-  category: string
-  price: string
-}
+import type { ServiceFormState } from './ServicesWorkspace.types'
 
 const emptyForm: ServiceFormState = {
   code: '',
@@ -160,8 +153,8 @@ export function ServicesWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden p-1 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
+    <div className="grid h-full min-h-0 min-w-0 gap-3 p-1 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="flex min-h-0 min-w-0 flex-col gap-3">
         <div className="grid shrink-0 gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>

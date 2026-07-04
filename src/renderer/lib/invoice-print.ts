@@ -1,4 +1,5 @@
 import type { InvoiceDetail } from '@/renderer/workspaces/invoice/InvoiceWorkspace.types'
+import { formatDateTime } from './formatters'
 
 type PrintableInvoice = NonNullable<InvoiceDetail>
 
@@ -18,11 +19,7 @@ function formatReceiptCurrency(amount: number): string {
 }
 
 function formatReceiptDate(value: string | null): string {
-  if (!value) return '-'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+  return value ? formatDateTime(value) : '-'
 }
 
 export function generateReceiptHTML(invoice: PrintableInvoice): string {

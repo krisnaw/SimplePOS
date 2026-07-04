@@ -107,7 +107,7 @@ export function VehicleWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-3 overflow-hidden p-1 lg:grid-cols-[minmax(280px,0.8fr)_minmax(420px,1.2fr)]">
+    <div className="grid h-full min-h-0 gap-3 p-1 lg:grid-cols-[minmax(280px,0.8fr)_minmax(420px,1.2fr)]">
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <CardTitle>Vehicles</CardTitle>

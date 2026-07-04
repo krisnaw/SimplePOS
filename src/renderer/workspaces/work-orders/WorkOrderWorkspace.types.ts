@@ -1,3 +1,5 @@
+export type SimplePosApi = NonNullable<Window['simplepos']>
+
 export type CatalogItem = {
   id: number
   itemType: 'product' | 'service'
