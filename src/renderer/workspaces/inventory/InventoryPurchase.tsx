@@ -1,9 +1,8 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import {type FormEvent, useEffect, useMemo, useState} from 'react'
 import {
   ArrowLeft,
   CalendarClock,
   Check,
-  ClipboardList,
   FileText,
   Loader2,
   Minus,
@@ -17,7 +16,7 @@ import {
   WalletCards,
   X,
 } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+import {useTranslation} from 'react-i18next'
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -27,16 +26,9 @@ import {
   AlertDialogPortal,
   AlertDialogTitle,
 } from '@/renderer/components/ui/alert-dialog'
-import { Badge } from '@/renderer/components/ui/badge'
-import { Button } from '@/renderer/components/ui/button'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/renderer/components/ui/card'
+import {Badge} from '@/renderer/components/ui/badge'
+import {Button} from '@/renderer/components/ui/button'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle,} from '@/renderer/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -45,12 +37,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/renderer/components/ui/dialog'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/renderer/components/ui/field'
-import { Input } from '@/renderer/components/ui/input'
-import { BaseSelect } from '@/renderer/components/ui/base-select'
-import { formatCurrency, formatDate } from '@/renderer/lib/formatters'
-import { cn } from '@/renderer/lib/utils'
-import type { ProductCategorySummary, ProductSummary } from '@/shared/types/product'
+import {Field, FieldDescription, FieldGroup, FieldLabel} from '@/renderer/components/ui/field'
+import {Input} from '@/renderer/components/ui/input'
+import {BaseSelect} from '@/renderer/components/ui/base-select'
+import {formatCurrency, formatDate} from '@/renderer/lib/formatters'
+import {cn} from '@/renderer/lib/utils'
+import type {ProductCategorySummary, ProductSummary} from '@/shared/types/product'
 import type {
   PurchaseDetail,
   PurchaseInvoiceStatus,
@@ -59,10 +51,9 @@ import type {
   PurchasePaymentStatus,
   PurchaseSummary,
 } from '@/shared/types/purchase'
-import { ProductCategoryBadge } from './ProductCategoryBadge'
-import type { SupplierSummary } from '@/shared/types/supplier'
-import type { AuthenticatedUser } from '@/shared/types/user'
-import type { StockMovementListInput, StockMovementListResult } from '@/shared/types/stock-movement'
+import type {SupplierSummary} from '@/shared/types/supplier'
+import type {AuthenticatedUser} from '@/shared/types/user'
+import type {StockMovementListInput, StockMovementListResult} from '@/shared/types/stock-movement'
 import type {
   AdjustmentForm,
   CategoryFilter,
@@ -74,8 +65,8 @@ import type {
   PurchaseForm,
   WorkspaceScreen,
 } from './InventoryWorkspace.types'
-import { InventoryLayout, type InventoryLayoutTab } from './InventoryLayout'
-import { InventoryMovements } from './InventoryMovements'
+import {InventoryLayout, type InventoryLayoutTab} from './InventoryLayout'
+import {InventoryMovements} from './InventoryMovements'
 
 type InventoryPurchaseProps = {
   currentUser: AuthenticatedUser
@@ -705,224 +696,114 @@ export function InventoryPurchase({
     }
   }
 
-  const listContent = (
-        <Card className="min-h-0 flex-1 overflow-hidden">
-          <CardHeader className="pb-3">
-            <div className="min-w-0">
-              <CardTitle className="text-balance">
-                {view === 'products' ? 'Product' : view === 'movements' ? t('inventory.movements.title') : 'Purchase'}
-              </CardTitle>
-              <CardDescription className="text-pretty">
-                {view === 'products'
-                  ? 'Manage product catalog, pricing, and stock levels.'
-                  : view === 'movements'
-                  ? 'Review stock changes across purchases, sales, adjustments, and opening balances.'
-                  : 'Receive supplier stock and track paid or unpaid invoices.'}
-              </CardDescription>
-            </div>
-            <CardAction>
-              {view === 'products' ? (
-                <Button type="button" size="sm" className={pressableClass} onClick={startNewProduct}>
-                  <PackagePlus data-icon="inline-start" aria-hidden="true" />
-                  New Product
-                </Button>
-              ) : view === 'movements' ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className={pressableClass}
-                  onClick={() => void loadMovements()}
-                >
-                  <ClipboardList data-icon="inline-start" aria-hidden="true" />
-                  {t('inventory.movements.refresh')}
-                </Button>
-              ) : (
-                <Button type="button" size="sm" className={pressableClass} onClick={startNewPurchase}>
-                  <Plus data-icon="inline-start" aria-hidden="true" />
-                  Record Purchase
-                </Button>
-              )}
-            </CardAction>
-          </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-            {view === 'movements' ? (
-              <InventoryMovements
-                filters={movementFilters}
-                isLoading={isLoading}
-                isMovementsLoading={isMovementsLoading}
-                movementPage={movementPage}
-                movementPageSize={movementPageSize}
-                movements={movements}
-                pressableClass={pressableClass}
-                products={products}
-                onFiltersChange={updateMovementFilters}
-                onPageChange={setMovementPage}
-              />
-            ) : (
-              <>
-            <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
-              {view === 'products' ? (
-                <div className="w-full shrink-0 sm:w-52">
-                  <BaseSelect
-                    value={categoryFilter}
-                    ariaLabel="Filter products by category"
-                    options={[
-                      { value: 'all', label: 'All categories' },
-                      ...categories.map((category) => ({
-                        value: String(category.id),
-                        label: category.name,
-                      })),
-                    ]}
-                    onValueChange={(value) => setCategoryFilter(value as CategoryFilter)}
-                  />
-                </div>
-              ) : null}
-              <div className="relative min-w-0 flex-1">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                <Input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={view === 'products' ? 'Search product or category' : 'Search purchase, supplier, or invoice'}
-                  className="h-10 pl-10 pr-10"
-                />
-                {search ? (
-                  <button
-                    type="button"
-                    aria-label="Clear search"
-                    onClick={() => setSearch('')}
-                    className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
-                  >
-                    <X className="size-4" aria-hidden="true" />
-                  </button>
-                ) : null}
-              </div>
-            </div>
+  const movementCard = (
+    <InventoryMovements
+      filters={movementFilters}
+      isLoading={isLoading}
+      isMovementsLoading={isMovementsLoading}
+      movementPage={movementPage}
+      movementPageSize={movementPageSize}
+      movements={movements}
+      pressableClass={pressableClass}
+      products={products}
+      onFiltersChange={updateMovementFilters}
+      onPageChange={setMovementPage}
+      onRefresh={() => void loadMovements()}
+    />
+  )
 
-            <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
-              {isLoading ? (
-                <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
-                  <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-                  <p className="text-sm">Loading purchasing data...</p>
+  const purchaseCard = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Purchase</CardTitle>
+        <CardDescription>
+          Receive supplier stock and track paid or unpaid invoices.
+        </CardDescription>
+        <CardAction>
+          <Button type="button" size="sm" className={pressableClass} onClick={startNewPurchase}>
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            Record Purchase
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="relative min-w-0 shrink-0">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search purchase, supplier, or invoice"
+              className="h-10 pl-10 pr-10"
+            />
+            {search ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setSearch('')}
+                className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
+            {isLoading ? (
+              <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+                <p className="text-sm">Loading purchasing data...</p>
+              </div>
+            ) : filteredPurchases.length === 0 ? (
+              <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
+                <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
+                <p className="font-medium">{view === 'pending' ? 'No pending invoices' : view === 'unpaid' ? 'No unpaid invoices' : 'No purchases yet'}</p>
+                <p className="text-sm text-muted-foreground text-pretty">
+                  {view === 'pending' ? 'All received goods have supplier invoice details.' : view === 'unpaid' ? 'All supplier invoices are paid.' : 'Record a purchase to receive inventory.'}
+                </p>
+              </div>
+            ) : (
+              <div className="min-w-[720px]">
+                <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+                  <span>Purchase</span>
+                  <span>Supplier invoice</span>
+                  <span className="text-right">Total</span>
+                  <span>Invoice</span>
+                  <span>Payment</span>
+                  <span>Date</span>
                 </div>
-              ) : view === 'products' ? (
-                filteredProducts.length === 0 ? (
-                  <p className="p-6 text-center text-sm text-muted-foreground">No matching products.</p>
-                ) : (
-                  <div className="min-w-[980px]">
-                    <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px_160px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
-                      <span>Product</span>
-                      <span>Category</span>
-                      <span className="text-right">Sell price</span>
-                      <span>Stock</span>
-                      <span className="text-right">Last cost</span>
-                      <span>Status</span>
-                      <span className="text-right">{t('common.actions')}</span>
-                    </div>
-                    <div className="divide-y">
-                      {filteredProducts.map((product) => {
-                        const lowStock = product.stockQty <= product.minStock
-                        const categoryName = product.categoryId === null
-                          ? 'Uncategorized'
-                          : categoryNames.get(product.categoryId) ?? 'Uncategorized'
-                        return (
-                          <div
-                            key={product.id}
-                            className={cn(
-                              'grid min-h-14 w-full grid-cols-[minmax(0,1fr)_130px_110px_100px_120px_90px_160px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color] duration-150 ease-out hover:bg-muted/50',
-                              editingProduct?.id === product.id && 'bg-muted/60',
-                            )}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => editProduct(product)}
-                              className="min-w-0 rounded-md text-left outline-none transition-[color,box-shadow,transform] duration-150 ease-out active:scale-[0.99] focus-visible:ring-3 focus-visible:ring-ring/50"
-                            >
-                              <span className="block truncate font-medium">{product.name}</span>
-                              <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
-                            </button>
-                            <ProductCategoryBadge name={categoryName} />
-                            <span className="text-right tabular-nums">{formatCurrency(product.unitPrice)}</span>
-                            <span className="tabular-nums">{product.stockQty} {product.unitType}</span>
-                            <span className="text-right tabular-nums">{formatCurrency(product.lastPurchaseCost)}</span>
-                            <Badge variant={lowStock ? 'destructive' : 'secondary'}>{lowStock ? 'Low' : 'In stock'}</Badge>
-                            <span className="flex justify-end gap-1.5">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className={pressableClass}
-                                onClick={() => openProductMovements(product)}
-                              >
-                                <ClipboardList data-icon="inline-start" aria-hidden="true" />
-                                {t('inventory.movements.view')}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className={pressableClass}
-                                onClick={() => openAdjustment(product)}
-                              >
-                                <PencilLine data-icon="inline-start" aria-hidden="true" />
-                                {t('inventory.adjustment.action')}
-                              </Button>
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              ) : filteredPurchases.length === 0 ? (
-                <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
-                  <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
-                  <p className="font-medium">{view === 'pending' ? 'No pending invoices' : view === 'unpaid' ? 'No unpaid invoices' : 'No purchases yet'}</p>
-                  <p className="text-sm text-muted-foreground text-pretty">
-                    {view === 'pending' ? 'All received goods have supplier invoice details.' : view === 'unpaid' ? 'All supplier invoices are paid.' : 'Record a purchase to receive inventory.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="min-w-[720px]">
-                  <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
-                    <span>Purchase</span>
-                    <span>Supplier invoice</span>
-                    <span className="text-right">Total</span>
-                    <span>Invoice</span>
-                    <span>Payment</span>
-                    <span>Date</span>
-                  </div>
-                  <div className="divide-y">
-                    {filteredPurchases.map((purchase) => (
-                      <button
-                        key={purchase.id}
-                        type="button"
-                        onClick={() => void showPurchase(purchase.id)}
-                        className="grid min-h-16 w-full grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color,transform] duration-150 ease-out hover:bg-muted/50 active:scale-[0.99]"
-                      >
+                <div className="divide-y">
+                  {filteredPurchases.map((purchase) => (
+                    <button
+                      key={purchase.id}
+                      type="button"
+                      onClick={() => void showPurchase(purchase.id)}
+                      className="grid min-h-16 w-full grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color,transform] duration-150 ease-out hover:bg-muted/50 active:scale-[0.99]"
+                    >
                         <span className="min-w-0">
                           <span className="block truncate font-medium">{purchase.purchaseNumber}</span>
                           <span className="block truncate text-xs text-muted-foreground">{purchase.supplierName}</span>
                         </span>
-                        <span className="min-w-0">
+                      <span className="min-w-0">
                           <span className="block truncate">{purchase.supplierInvoiceNumber ?? 'Pending invoice'}</span>
                           <span className="block text-xs text-muted-foreground">{purchase.itemCount} product{purchase.itemCount === 1 ? '' : 's'}</span>
                         </span>
-                        <span className="text-right font-medium tabular-nums">{formatCurrency(purchase.total)}</span>
-                        <InvoiceBadge status={purchase.invoiceStatus} />
-                        <PaymentBadge status={purchase.paymentStatus} />
-                        <span className="text-xs text-muted-foreground tabular-nums">{formatDate(purchase.invoiceDate)}</span>
-                      </button>
-                    ))}
-                  </div>
+                      <span className="text-right font-medium tabular-nums">{formatCurrency(purchase.total)}</span>
+                      <InvoiceBadge status={purchase.invoiceStatus} />
+                      <PaymentBadge status={purchase.paymentStatus} />
+                      <span className="text-xs text-muted-foreground tabular-nums">{formatDate(purchase.invoiceDate)}</span>
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
-              </>
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
+
+  const listContent = view === 'movements' ? movementCard : purchaseCard
 
   return (
     <div
@@ -947,14 +828,12 @@ export function InventoryPurchase({
       {screen === 'productForm' ? (
         <Card className="min-h-0 overflow-hidden">
           <CardHeader>
-            <div className="min-w-0">
-              <CardTitle>{editingProduct ? 'Edit Product' : 'Create Product'}</CardTitle>
-              <CardDescription className="text-pretty">
-                {editingProduct
-                  ? `Update ${editingProduct.name} for sales and purchasing.`
-                  : 'Add products here before receiving them in Record Purchase.'}
-              </CardDescription>
-            </div>
+            <CardTitle>{editingProduct ? 'Edit Product' : 'Create Product'}</CardTitle>
+            <CardDescription>
+              {editingProduct
+                ? `Update ${editingProduct.name} for sales and purchasing.`
+                : 'Add products here before receiving them in Record Purchase.'}
+            </CardDescription>
             <CardAction>
               <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
                 <ArrowLeft data-icon="inline-start" aria-hidden="true" />
@@ -1108,10 +987,8 @@ export function InventoryPurchase({
       ) : screen === 'purchaseDetail' && selectedPurchase ? (
         <Card className="min-h-0 overflow-hidden">
           <CardHeader>
-            <div className="min-w-0">
-              <CardTitle className="truncate">{selectedPurchase.purchaseNumber}</CardTitle>
-              <CardDescription className="truncate">{selectedPurchase.supplierName}</CardDescription>
-            </div>
+            <CardTitle className="truncate">{selectedPurchase.purchaseNumber}</CardTitle>
+            <CardDescription className="truncate">{selectedPurchase.supplierName}</CardDescription>
             <CardAction>
               <div className="flex items-center gap-2">
                 <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
@@ -1189,10 +1066,8 @@ export function InventoryPurchase({
       ) : screen === 'invoiceForm' && selectedPurchase ? (
         <Card className="min-h-0 overflow-hidden">
           <CardHeader>
-            <div className="min-w-0">
-              <CardTitle className="truncate">Invoice Details</CardTitle>
-              <CardDescription className="truncate">{selectedPurchase.purchaseNumber} · {selectedPurchase.supplierName}</CardDescription>
-            </div>
+            <CardTitle className="truncate">Invoice Details</CardTitle>
+            <CardDescription className="truncate">{selectedPurchase.purchaseNumber} · {selectedPurchase.supplierName}</CardDescription>
             <CardAction>
               <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={() => setScreen('purchaseDetail')}>
                 <ArrowLeft data-icon="inline-start" aria-hidden="true" />
@@ -1298,12 +1173,10 @@ export function InventoryPurchase({
       ) : screen === 'recordPurchase' ? (
         <Card className="min-h-0 overflow-hidden">
           <CardHeader>
-            <div className="min-w-0">
-              <CardTitle>Record Purchase</CardTitle>
-              <CardDescription className="text-pretty">
-                Saving receives stock immediately. Supplier invoice details can be completed later.
-              </CardDescription>
-            </div>
+            <CardTitle>Record Purchase</CardTitle>
+            <CardDescription>
+              Saving receives stock immediately. Supplier invoice details can be completed later.
+            </CardDescription>
             <CardAction>
               <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
                 <ArrowLeft data-icon="inline-start" aria-hidden="true" />

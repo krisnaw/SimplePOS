@@ -1,13 +1,14 @@
-import {ClipboardList, Loader2, Search, X} from 'lucide-react'
+import {ClipboardList, Loader2} from 'lucide-react'
 import {useTranslation} from 'react-i18next'
 import {Badge} from '@/renderer/components/ui/badge'
 import {Button} from '@/renderer/components/ui/button'
 import {BaseSelect} from '@/renderer/components/ui/base-select'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import {Input} from '@/renderer/components/ui/input'
 import {formatDateTime} from '@/renderer/lib/formatters'
 import type {ProductSummary} from '@/shared/types/product'
 import type {StockMovementListResult, StockMovementType} from '@/shared/types/stock-movement'
-import type {MovementFilters, MovementTypeFilter} from './InventoryWorkspace.types'
+import type {MovementFilters} from './InventoryWorkspace.types'
 
 type InventoryMovementsViewProps = {
   filters: MovementFilters
@@ -20,6 +21,7 @@ type InventoryMovementsViewProps = {
   products: ProductSummary[]
   onFiltersChange: (next: Partial<MovementFilters>) => void
   onPageChange: (nextPage: number | ((page: number) => number)) => void
+  onRefresh: () => void
 }
 
 function movementBadgeVariant(type: StockMovementType): 'secondary' | 'outline' | 'destructive' {
@@ -39,6 +41,7 @@ export function InventoryMovements({
   products,
   onFiltersChange,
   onPageChange,
+  onRefresh,
 }: InventoryMovementsViewProps) {
   const { t } = useTranslation()
   const movementNet = movements.totalIn - movements.totalOut
@@ -49,9 +52,27 @@ export function InventoryMovements({
   }
 
   return (
-    <>
-      <div className="grid shrink-0 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,320px)]">
-        <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_170px_130px_130px]">
+    <Card className="min-h-0 flex-1 overflow-hidden">
+      <CardHeader>
+        <CardTitle>{t('inventory.movements.title')}</CardTitle>
+        <CardDescription>
+          Review stock changes across purchases, sales, adjustments, and opening balances.
+        </CardDescription>
+        <CardAction>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className={pressableClass}
+            onClick={onRefresh}
+          >
+            <ClipboardList data-icon="inline-start" aria-hidden="true" />
+            {t('inventory.movements.refresh')}
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <div className="w-full shrink-0 sm:max-w-xs">
           <BaseSelect
             value={filters.productId}
             ariaLabel={t('inventory.movements.productFilter')}
@@ -62,55 +83,9 @@ export function InventoryMovements({
             ]}
             onValueChange={(value) => onFiltersChange({ productId: value })}
           />
-          <BaseSelect
-            value={filters.movementType}
-            ariaLabel={t('inventory.movements.typeFilter')}
-            options={[
-              { value: 'all', label: t('common.all') },
-              { value: 'purchase', label: t('inventory.movements.types.purchase') },
-              { value: 'sale', label: t('inventory.movements.types.sale') },
-              { value: 'adjustment', label: t('inventory.movements.types.adjustment') },
-              { value: 'opening', label: t('inventory.movements.types.opening') },
-            ]}
-            onValueChange={(value) => onFiltersChange({ movementType: value as MovementTypeFilter })}
-          />
-          <Input
-            type="date"
-            aria-label={t('inventory.movements.dateFrom')}
-            value={filters.dateFrom}
-            onChange={(event) => onFiltersChange({ dateFrom: event.target.value })}
-            className="h-10"
-          />
-          <Input
-            type="date"
-            aria-label={t('inventory.movements.dateTo')}
-            value={filters.dateTo}
-            onChange={(event) => onFiltersChange({ dateTo: event.target.value })}
-            className="h-10"
-          />
         </div>
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input
-            value={filters.search}
-            onChange={(event) => onFiltersChange({ search: event.target.value })}
-            placeholder={t('inventory.movements.searchPlaceholder')}
-            className="h-10 pl-10 pr-10"
-          />
-          {filters.search ? (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => onFiltersChange({ search: '' })}
-              className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </button>
-          ) : null}
-        </div>
-      </div>
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
+        <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
         {isLoading ? (
           <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="size-6 animate-spin" aria-hidden="true" />
@@ -202,7 +177,8 @@ export function InventoryMovements({
             </div>
           </div>
         )}
-      </div>
-    </>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

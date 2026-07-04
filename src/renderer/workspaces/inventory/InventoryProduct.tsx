@@ -177,42 +177,43 @@ export function InventoryProduct() {
   }
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 p-1">
-      <div className="grid min-h-0 min-w-0 flex-1 gap-3  xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-h-0 min-w-0 flex-col gap-3 ">
-          <div className="grid shrink-0 gap-3 md:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('inventory.totalItems')}</CardTitle>
-                <CardDescription>{t('inventory.activeSkus')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-semibold tabular-nums">{products.length}</p>
-              </CardContent>
-            </Card>
+    <div className="space-y-2">
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('inventory.stockUnits')}</CardTitle>
-                <CardDescription>{t('inventory.availableQty')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-semibold tabular-nums">{totalUnits}</p>
-              </CardContent>
-            </Card>
+      <div className="grid grid-cols-3 gap-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('inventory.totalItems')}</CardTitle>
+            <CardDescription>{t('inventory.activeSkus')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold tabular-nums">{products.length}</p>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('inventory.lowStock')}</CardTitle>
-                <CardDescription>{t('inventory.atMinimum')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-semibold tabular-nums">{lowStockCount}</p>
-              </CardContent>
-            </Card>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('inventory.stockUnits')}</CardTitle>
+            <CardDescription>{t('inventory.availableQty')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold tabular-nums">{totalUnits}</p>
+          </CardContent>
+        </Card>
 
-          <Card className="min-h-0 flex-1 overflow-hidden">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('inventory.lowStock')}</CardTitle>
+            <CardDescription>{t('inventory.atMinimum')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold tabular-nums">{lowStockCount}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-12 gap-2">
+        <div className="col-span-8">
+          <Card>
             <CardHeader>
               <CardTitle>{t('inventory.productList')}</CardTitle>
               <CardDescription>{t('inventory.stockValueHint', {value: formatCurrency(inventoryValue)})}</CardDescription>
@@ -300,155 +301,158 @@ export function InventoryProduct() {
             </CardContent>
           </Card>
         </div>
-
-        <Card className="min-h-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle>
-              {editingProduct ? t('inventory.editProduct') : t('inventory.createProduct')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="min-h-0 flex-1 overflow-y-auto">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-sku">{t('inventory.sku')}</Label>
-                <Input
-                  id="inventory-sku"
-                  value={form.sku}
-                  onChange={(e) => updateForm('sku', e.target.value)}
-                  placeholder="BRK-PAD-FRONT"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-name">{t('inventory.productName')}</Label>
-                <Input
-                  id="inventory-name"
-                  value={form.name}
-                  onChange={(e) => updateForm('name', e.target.value)}
-                  placeholder="Brake Pad Front"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-barcode">{t('inventory.barcode')} <span
-                  className="text-muted-foreground">{t('inventory.optional')}</span></Label>
-                <Input
-                  id="inventory-barcode"
-                  value={form.barcode}
-                  onChange={(e) => updateForm('barcode', e.target.value)}
-                  placeholder="8991234567890"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="inventory-category">{t('inventory.table.category')}</Label>
-                <BaseSelect
-                  id="inventory-category"
-                  value={form.categoryId}
-                  ariaLabel={t('inventory.table.category')}
-                  placeholder={t('inventory.noCategory')}
-                  options={[
-                    {value: '', label: t('inventory.noCategory')},
-                    ...categories.map((category) => ({
-                      value: String(category.id),
-                      label: category.name,
-                    })),
-                  ]}
-                  onValueChange={(value) => updateForm('categoryId', value)}
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
+        <div className="col-span-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {editingProduct ? t('inventory.editProduct') : t('inventory.createProduct')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="inventory-price">{t('inventory.unitPrice')}</Label>
+                  <Label htmlFor="inventory-sku">{t('inventory.sku')}</Label>
                   <Input
-                    id="inventory-price"
-                    type="number"
-                    min="0"
-                    value={form.unitPrice}
-                    onChange={(e) => updateForm('unitPrice', e.target.value)}
-                    placeholder="120000"
+                    id="inventory-sku"
+                    value={form.sku}
+                    onChange={(e) => updateForm('sku', e.target.value)}
+                    placeholder="BRK-PAD-FRONT"
                     required
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="inventory-unit">{t('inventory.unitType')}</Label>
+                  <Label htmlFor="inventory-name">{t('inventory.productName')}</Label>
+                  <Input
+                    id="inventory-name"
+                    value={form.name}
+                    onChange={(e) => updateForm('name', e.target.value)}
+                    placeholder="Brake Pad Front"
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="inventory-barcode">{t('inventory.barcode')} <span
+                    className="text-muted-foreground">{t('inventory.optional')}</span></Label>
+                  <Input
+                    id="inventory-barcode"
+                    value={form.barcode}
+                    onChange={(e) => updateForm('barcode', e.target.value)}
+                    placeholder="8991234567890"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="inventory-category">{t('inventory.table.category')}</Label>
                   <BaseSelect
-                    id="inventory-unit"
-                    value={form.unitType}
-                    ariaLabel={t('inventory.unitType')}
-                    options={unitTypes.map((unitType) => ({
-                      value: unitType,
-                      label: t(`inventory.units.${unitType}`),
-                    }))}
-                    onValueChange={(value) => updateForm('unitType', value as ProductFormState['unitType'])}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="inventory-stock">{t('inventory.openingStock')}</Label>
-                  <Input
-                    id="inventory-stock"
-                    type="number"
-                    min="0"
-                    value={form.stockQty}
-                    onChange={(e) => updateForm('stockQty', e.target.value)}
-                    placeholder="12"
-                    required
+                    id="inventory-category"
+                    value={form.categoryId}
+                    ariaLabel={t('inventory.table.category')}
+                    placeholder={t('inventory.noCategory')}
+                    options={[
+                      {value: '', label: t('inventory.noCategory')},
+                      ...categories.map((category) => ({
+                        value: String(category.id),
+                        label: category.name,
+                      })),
+                    ]}
+                    onValueChange={(value) => updateForm('categoryId', value)}
                   />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="inventory-min-stock">{t('inventory.minimumStock')}</Label>
-                  <Input
-                    id="inventory-min-stock"
-                    type="number"
-                    min="0"
-                    value={form.minStock}
-                    onChange={(e) => updateForm('minStock', e.target.value)}
-                    placeholder="4"
-                    required
-                  />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="inventory-price">{t('inventory.unitPrice')}</Label>
+                    <Input
+                      id="inventory-price"
+                      type="number"
+                      min="0"
+                      value={form.unitPrice}
+                      onChange={(e) => updateForm('unitPrice', e.target.value)}
+                      placeholder="120000"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="inventory-unit">{t('inventory.unitType')}</Label>
+                    <BaseSelect
+                      id="inventory-unit"
+                      value={form.unitType}
+                      ariaLabel={t('inventory.unitType')}
+                      options={unitTypes.map((unitType) => ({
+                        value: unitType,
+                        label: t(`inventory.units.${unitType}`),
+                      }))}
+                      onValueChange={(value) => updateForm('unitType', value as ProductFormState['unitType'])}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {message ? (
-                <p className="text-sm text-muted-foreground" role="status">
-                  {message}
-                </p>
-              ) : null}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="inventory-stock">{t('inventory.openingStock')}</Label>
+                    <Input
+                      id="inventory-stock"
+                      type="number"
+                      min="0"
+                      value={form.stockQty}
+                      onChange={(e) => updateForm('stockQty', e.target.value)}
+                      placeholder="12"
+                      required
+                    />
+                  </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1" disabled={isSubmitting}>
-                  <PackagePlus data-icon="inline-start" aria-hidden="true"/>
-                  {isSubmitting ? (editingProduct ? t('common.saving') : t('inventory.creating')) : editingProduct ? t('common.saveChanges') : t('common.create')}
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="inventory-min-stock">{t('inventory.minimumStock')}</Label>
+                    <Input
+                      id="inventory-min-stock"
+                      type="number"
+                      min="0"
+                      value={form.minStock}
+                      onChange={(e) => updateForm('minStock', e.target.value)}
+                      placeholder="4"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {message ? (
+                  <p className="text-sm text-muted-foreground" role="status">
+                    {message}
+                  </p>
+                ) : null}
+
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                    <PackagePlus data-icon="inline-start" aria-hidden="true"/>
+                    {isSubmitting ? (editingProduct ? t('common.saving') : t('inventory.creating')) : editingProduct ? t('common.saveChanges') : t('common.create')}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    {editingProduct ? t('common.cancel') : t('common.clear')}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+            {editingProduct ? (
+              <CardFooter className="border-t">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => void handleDeactivate(editingProduct)}
+                >
+                  <Trash2 data-icon="inline-start" aria-hidden="true"/>
+                  {t('inventory.deleteProduct')}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  {editingProduct ? t('common.cancel') : t('common.clear')}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-          {editingProduct ? (
-            <CardFooter className="border-t">
-              <Button
-                type="button"
-                variant="destructive"
-                className="w-full"
-                onClick={() => void handleDeactivate(editingProduct)}
-              >
-                <Trash2 data-icon="inline-start" aria-hidden="true"/>
-                {t('inventory.deleteProduct')}
-              </Button>
-            </CardFooter>
-          ) : null}
-        </Card>
+              </CardFooter>
+            ) : null}
+          </Card>
+        </div>
       </div>
+
+
     </div>
   )
 }

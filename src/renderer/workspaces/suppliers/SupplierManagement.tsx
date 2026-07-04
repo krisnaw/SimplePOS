@@ -131,12 +131,10 @@ export function SupplierManagement() {
     <div className="grid h-full min-h-0 gap-3 p-1 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
-          <div className="min-w-0">
-            <CardTitle className="text-balance">Suppliers</CardTitle>
-            <CardDescription className="text-pretty">
-              Reusable supplier records for inventory purchases.
-            </CardDescription>
-          </div>
+          <CardTitle>Suppliers</CardTitle>
+          <CardDescription>
+            Reusable supplier records for inventory purchases.
+          </CardDescription>
           <CardAction>
             <Button type="button" size="sm" className={pressableClass} onClick={startCreating}>
               <Plus data-icon="inline-start" aria-hidden="true" />
@@ -227,7 +225,7 @@ export function SupplierManagement() {
           <>
             <CardHeader>
               <CardTitle>{editing ? 'Edit Supplier' : 'New Supplier'}</CardTitle>
-              <CardDescription className="text-pretty">
+              <CardDescription>
                 {editing ? `Update ${editing.name} or change its contact details.` : 'Create a supplier for future purchase records.'}
               </CardDescription>
             </CardHeader>
