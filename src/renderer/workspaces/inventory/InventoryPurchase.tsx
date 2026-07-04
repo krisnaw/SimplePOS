@@ -63,43 +63,19 @@ import { ProductCategoryBadge } from './ProductCategoryBadge'
 import type { SupplierSummary } from '@/shared/types/supplier'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { StockMovementListInput, StockMovementListResult } from '@/shared/types/stock-movement'
-import type { ProductFormState } from './InventoryWorkspace.types'
+import type {
+  AdjustmentForm,
+  CategoryFilter,
+  Feedback,
+  InventoryView,
+  InvoiceForm,
+  MovementFilters,
+  ProductFormState,
+  PurchaseForm,
+  WorkspaceScreen,
+} from './InventoryWorkspace.types'
 import { InventoryLayout, type InventoryLayoutTab } from './InventoryLayout'
-import { InventoryMovements, type MovementFilters } from './InventoryMovements'
-
-type InventoryView = 'products' | 'purchases' | 'movements' | 'pending' | 'unpaid'
-type WorkspaceScreen = 'list' | 'recordPurchase' | 'purchaseDetail' | 'invoiceForm' | 'productForm'
-type CategoryFilter = 'all' | `${number}`
-type PurchaseForm = {
-  supplierId: string
-  supplierInvoiceNumber: string
-  invoiceDate: string
-  paymentStatus: PurchasePaymentStatus
-  dueDate: string
-  notes: string
-  productId: string
-  quantity: string
-  unitCost: string
-}
-
-type Feedback = {
-  message: string
-  tone: 'success' | 'error'
-}
-
-type InvoiceForm = {
-  supplierInvoiceNumber: string
-  invoiceDate: string
-  paymentStatus: PurchasePaymentStatus
-  dueDate: string
-  paidAt: string
-  notes: string
-}
-
-type AdjustmentForm = {
-  quantity: string
-  reason: string
-}
+import { InventoryMovements } from './InventoryMovements'
 
 const emptyProductForm: ProductFormState = {
   sku: '',

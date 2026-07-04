@@ -1,22 +1,13 @@
-import { ClipboardList, Loader2, Search, X } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { Badge } from '@/renderer/components/ui/badge'
-import { Button } from '@/renderer/components/ui/button'
-import { BaseSelect } from '@/renderer/components/ui/base-select'
-import { Input } from '@/renderer/components/ui/input'
-import { cn } from '@/renderer/lib/utils'
-import type { ProductSummary } from '@/shared/types/product'
-import type { StockMovementListResult, StockMovementType } from '@/shared/types/stock-movement'
-
-export type MovementTypeFilter = StockMovementType | 'all'
-
-export type MovementFilters = {
-  productId: string
-  movementType: MovementTypeFilter
-  dateFrom: string
-  dateTo: string
-  search: string
-}
+import {ClipboardList, Loader2, Search, X} from 'lucide-react'
+import {useTranslation} from 'react-i18next'
+import {Badge} from '@/renderer/components/ui/badge'
+import {Button} from '@/renderer/components/ui/button'
+import {BaseSelect} from '@/renderer/components/ui/base-select'
+import {Input} from '@/renderer/components/ui/input'
+import {formatDateTime} from '@/renderer/lib/formatters'
+import type {ProductSummary} from '@/shared/types/product'
+import type {StockMovementListResult, StockMovementType} from '@/shared/types/stock-movement'
+import type {MovementFilters, MovementTypeFilter} from './InventoryWorkspace.types'
 
 type InventoryMovementsViewProps = {
   filters: MovementFilters
@@ -29,16 +20,6 @@ type InventoryMovementsViewProps = {
   products: ProductSummary[]
   onFiltersChange: (next: Partial<MovementFilters>) => void
   onPageChange: (nextPage: number | ((page: number) => number)) => void
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('en', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
 }
 
 function movementBadgeVariant(type: StockMovementType): 'secondary' | 'outline' | 'destructive' {
@@ -161,7 +142,7 @@ export function InventoryMovements({
                 <p className="text-sm text-muted-foreground text-pretty">{t('inventory.movements.emptyHint')}</p>
               </div>
             ) : (
-              <div className="min-w-[980px]">
+              <div className="min-w-245">
                 <div className="sticky top-0 grid grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
                   <span>{t('inventory.movements.table.date')}</span>
                   <span>{t('inventory.movements.table.product')}</span>
