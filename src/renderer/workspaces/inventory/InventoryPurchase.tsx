@@ -62,15 +62,14 @@ import type {
 import { ProductCategoryBadge } from './ProductCategoryBadge'
 import type { SupplierSummary } from '@/shared/types/supplier'
 import type { AuthenticatedUser } from '@/shared/types/user'
-import type { StockMovementListInput, StockMovementListResult, StockMovementSummary, StockMovementType } from '@/shared/types/stock-movement'
+import type { StockMovementListInput, StockMovementListResult } from '@/shared/types/stock-movement'
 import type { ProductFormState } from './InventoryWorkspace.types'
 import { InventoryLayout, type InventoryLayoutTab } from './InventoryLayout'
+import { InventoryMovements, type MovementFilters } from './InventoryMovements'
 
 type InventoryView = 'products' | 'purchases' | 'movements' | 'pending' | 'unpaid'
 type WorkspaceScreen = 'list' | 'recordPurchase' | 'purchaseDetail' | 'invoiceForm' | 'productForm'
 type CategoryFilter = 'all' | `${number}`
-type MovementTypeFilter = StockMovementType | 'all'
-
 type PurchaseForm = {
   supplierId: string
   supplierInvoiceNumber: string
@@ -95,14 +94,6 @@ type InvoiceForm = {
   dueDate: string
   paidAt: string
   notes: string
-}
-
-type MovementFilters = {
-  productId: string
-  movementType: MovementTypeFilter
-  dateFrom: string
-  dateTo: string
-  search: string
 }
 
 type AdjustmentForm = {
@@ -177,16 +168,6 @@ function formatDate(value: string | null): string {
   }).format(new Date(`${value}T00:00:00`))
 }
 
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('en', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
-
 function PaymentBadge({ status }: { status: PurchasePaymentStatus }) {
   return (
     <Badge variant={status === 'paid' ? 'secondary' : 'destructive'}>
@@ -219,7 +200,7 @@ function toProductForm(product: ProductSummary): ProductFormState {
   }
 }
 
-export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
+export function InventoryPurchase({ currentUser }: { currentUser: AuthenticatedUser }) {
   const { t } = useTranslation()
   const [products, setProducts] = useState<ProductSummary[]>([])
   const [categories, setCategories] = useState<ProductCategorySummary[]>([])
@@ -366,8 +347,6 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
   const adjustmentDelta = adjustingProduct && Number.isFinite(adjustmentTarget)
     ? adjustmentTarget - adjustingProduct.stockQty
     : 0
-  const movementNet = movements.totalIn - movements.totalOut
-  const movementLastPage = Math.max(0, Math.ceil(movements.total / movementPageSize) - 1)
   const inventoryLayoutTab: InventoryLayoutTab = view === 'products'
     ? 'product'
     : view === 'movements'
@@ -389,16 +368,6 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
   function updateMovementFilters(next: Partial<MovementFilters>) {
     setMovementFilters((current) => ({ ...current, ...next }))
     setMovementPage(0)
-  }
-
-  function movementTypeLabel(type: StockMovementType): string {
-    return t(`inventory.movements.types.${type}`)
-  }
-
-  function movementBadgeVariant(type: StockMovementType): 'secondary' | 'outline' | 'destructive' {
-    if (type === 'sale') return 'destructive'
-    if (type === 'opening') return 'outline'
-    return 'secondary'
   }
 
   function selectInventoryTab(tab: InventoryLayoutTab) {
@@ -811,6 +780,21 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
             </CardAction>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+            {view === 'movements' ? (
+              <InventoryMovements
+                filters={movementFilters}
+                isLoading={isLoading}
+                isMovementsLoading={isMovementsLoading}
+                movementPage={movementPage}
+                movementPageSize={movementPageSize}
+                movements={movements}
+                pressableClass={pressableClass}
+                products={products}
+                onFiltersChange={updateMovementFilters}
+                onPageChange={setMovementPage}
+              />
+            ) : (
+              <>
             <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
               {view === 'products' ? (
                 <div className="w-full shrink-0 sm:w-52">
@@ -827,65 +811,20 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                     onValueChange={(value) => setCategoryFilter(value as CategoryFilter)}
                   />
                 </div>
-              ) : view === 'movements' ? (
-                <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_170px_130px_130px]">
-                  <BaseSelect
-                    value={movementFilters.productId}
-                    ariaLabel={t('inventory.movements.productFilter')}
-                    placeholder={t('inventory.movements.allProducts')}
-                    options={[
-                      { value: '', label: t('inventory.movements.allProducts') },
-                      ...products.map((product) => ({ value: String(product.id), label: product.name })),
-                    ]}
-                    onValueChange={(value) => updateMovementFilters({ productId: value })}
-                  />
-                  <BaseSelect
-                    value={movementFilters.movementType}
-                    ariaLabel={t('inventory.movements.typeFilter')}
-                    options={[
-                      { value: 'all', label: t('common.all') },
-                      { value: 'purchase', label: t('inventory.movements.types.purchase') },
-                      { value: 'sale', label: t('inventory.movements.types.sale') },
-                      { value: 'adjustment', label: t('inventory.movements.types.adjustment') },
-                      { value: 'opening', label: t('inventory.movements.types.opening') },
-                    ]}
-                    onValueChange={(value) => updateMovementFilters({ movementType: value as MovementTypeFilter })}
-                  />
-                  <Input
-                    type="date"
-                    aria-label={t('inventory.movements.dateFrom')}
-                    value={movementFilters.dateFrom}
-                    onChange={(event) => updateMovementFilters({ dateFrom: event.target.value })}
-                    className="h-10"
-                  />
-                  <Input
-                    type="date"
-                    aria-label={t('inventory.movements.dateTo')}
-                    value={movementFilters.dateTo}
-                    onChange={(event) => updateMovementFilters({ dateTo: event.target.value })}
-                    className="h-10"
-                  />
-                </div>
               ) : null}
-              <div className={cn('relative min-w-0 flex-1', view === 'movements' && 'sm:max-w-80')}>
+              <div className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
-                  value={view === 'movements' ? movementFilters.search : search}
-                  onChange={(event) => {
-                    if (view === 'movements') updateMovementFilters({ search: event.target.value })
-                    else setSearch(event.target.value)
-                  }}
-                  placeholder={view === 'products' ? 'Search product or category' : view === 'movements' ? t('inventory.movements.searchPlaceholder') : 'Search purchase, supplier, or invoice'}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder={view === 'products' ? 'Search product or category' : 'Search purchase, supplier, or invoice'}
                   className="h-10 pl-10 pr-10"
                 />
-                {(view === 'movements' ? movementFilters.search : search) ? (
+                {search ? (
                   <button
                     type="button"
                     aria-label="Clear search"
-                    onClick={() => {
-                      if (view === 'movements') updateMovementFilters({ search: '' })
-                      else setSearch('')
-                    }}
+                    onClick={() => setSearch('')}
                     className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
                   >
                     <X className="size-4" aria-hidden="true" />
@@ -969,92 +908,6 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                     </div>
                   </div>
                 )
-              ) : view === 'movements' ? (
-                <div className="flex min-h-0 flex-col">
-                  <div className="grid gap-2 border-b bg-background p-3 sm:grid-cols-3">
-                    {[
-                      { label: t('inventory.movements.stockIn'), value: movements.totalIn },
-                      { label: t('inventory.movements.stockOut'), value: movements.totalOut },
-                      { label: t('inventory.movements.netChange'), value: movementNet },
-                    ].map((item) => (
-                      <div key={item.label} className="rounded-lg bg-muted/70 px-3 py-2">
-                        <p className="text-xs text-muted-foreground">{item.label}</p>
-                        <p className="mt-1 text-lg font-semibold tabular-nums">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {isMovementsLoading ? (
-                    <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-                      <p className="text-sm">{t('inventory.movements.loading')}</p>
-                    </div>
-                  ) : movements.items.length === 0 ? (
-                    <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
-                      <ClipboardList className="size-7 text-muted-foreground" aria-hidden="true" />
-                      <p className="font-medium">{t('inventory.movements.emptyTitle')}</p>
-                      <p className="text-sm text-muted-foreground text-pretty">{t('inventory.movements.emptyHint')}</p>
-                    </div>
-                  ) : (
-                    <div className="min-w-[980px]">
-                      <div className="sticky top-0 grid grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
-                        <span>{t('inventory.movements.table.date')}</span>
-                        <span>{t('inventory.movements.table.product')}</span>
-                        <span>{t('inventory.movements.table.type')}</span>
-                        <span>{t('inventory.movements.table.reference')}</span>
-                        <span className="text-right">{t('inventory.movements.table.in')}</span>
-                        <span className="text-right">{t('inventory.movements.table.out')}</span>
-                        <span className="text-right">{t('inventory.movements.table.balance')}</span>
-                        <span>{t('inventory.movements.table.user')}</span>
-                      </div>
-                      <div className="divide-y">
-                        {movements.items.map((movement) => (
-                          <div
-                            key={movement.id}
-                            className="grid min-h-14 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] items-center gap-3 px-3 py-2 text-sm"
-                          >
-                            <span className="text-xs text-muted-foreground tabular-nums">{formatDateTime(movement.createdAt)}</span>
-                            <span className="min-w-0">
-                              <span className="block truncate font-medium">{movement.productName}</span>
-                              <span className="block truncate text-xs text-muted-foreground">{movement.sku}</span>
-                            </span>
-                            <Badge variant={movementBadgeVariant(movement.movementType)}>
-                              {movementTypeLabel(movement.movementType)}
-                            </Badge>
-                            <span className="min-w-0">
-                              <span className="block truncate">{movement.referenceNumber ?? t('inventory.movements.noReference')}</span>
-                              {movement.reason ? <span className="block truncate text-xs text-muted-foreground">{movement.reason}</span> : null}
-                            </span>
-                            <span className="text-right tabular-nums">
-                              {movement.quantityDelta > 0 ? `${movement.quantityDelta} ${movement.unitType}` : '—'}
-                            </span>
-                            <span className="text-right tabular-nums">
-                              {movement.quantityDelta < 0 ? `${Math.abs(movement.quantityDelta)} ${movement.unitType}` : '—'}
-                            </span>
-                            <span className="text-right font-medium tabular-nums">{movement.balanceAfter} {movement.unitType}</span>
-                            <span className="truncate text-xs text-muted-foreground">{movement.createdByName ?? t('system.label')}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex shrink-0 items-center justify-between gap-3 border-t bg-background px-3 py-2 text-xs text-muted-foreground">
-                    <span className="tabular-nums">
-                      {t('inventory.movements.pagination', {
-                        start: movements.total === 0 ? 0 : movementPage * movementPageSize + 1,
-                        end: Math.min(movements.total, (movementPage + 1) * movementPageSize),
-                        total: movements.total,
-                      })}
-                    </span>
-                    <span className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" className={pressableClass} disabled={movementPage === 0} onClick={() => setMovementPage((page) => Math.max(0, page - 1))}>
-                        {t('inventory.movements.previous')}
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" className={pressableClass} disabled={movementPage >= movementLastPage} onClick={() => setMovementPage((page) => Math.min(movementLastPage, page + 1))}>
-                        {t('inventory.movements.next')}
-                      </Button>
-                    </span>
-                  </div>
-                </div>
               ) : filteredPurchases.length === 0 ? (
                 <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
                   <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
@@ -1099,6 +952,8 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
                 </div>
               )}
             </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </InventoryLayout>

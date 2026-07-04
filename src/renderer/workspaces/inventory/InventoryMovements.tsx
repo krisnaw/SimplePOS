@@ -1,0 +1,228 @@
+import { ClipboardList, Loader2, Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Badge } from '@/renderer/components/ui/badge'
+import { Button } from '@/renderer/components/ui/button'
+import { BaseSelect } from '@/renderer/components/ui/base-select'
+import { Input } from '@/renderer/components/ui/input'
+import { cn } from '@/renderer/lib/utils'
+import type { ProductSummary } from '@/shared/types/product'
+import type { StockMovementListResult, StockMovementType } from '@/shared/types/stock-movement'
+
+export type MovementTypeFilter = StockMovementType | 'all'
+
+export type MovementFilters = {
+  productId: string
+  movementType: MovementTypeFilter
+  dateFrom: string
+  dateTo: string
+  search: string
+}
+
+type InventoryMovementsViewProps = {
+  filters: MovementFilters
+  isLoading: boolean
+  isMovementsLoading: boolean
+  movementPage: number
+  movementPageSize: number
+  movements: StockMovementListResult
+  pressableClass: string
+  products: ProductSummary[]
+  onFiltersChange: (next: Partial<MovementFilters>) => void
+  onPageChange: (nextPage: number | ((page: number) => number)) => void
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function movementBadgeVariant(type: StockMovementType): 'secondary' | 'outline' | 'destructive' {
+  if (type === 'sale') return 'destructive'
+  if (type === 'opening') return 'outline'
+  return 'secondary'
+}
+
+export function InventoryMovements({
+  filters,
+  isLoading,
+  isMovementsLoading,
+  movementPage,
+  movementPageSize,
+  movements,
+  pressableClass,
+  products,
+  onFiltersChange,
+  onPageChange,
+}: InventoryMovementsViewProps) {
+  const { t } = useTranslation()
+  const movementNet = movements.totalIn - movements.totalOut
+  const movementLastPage = Math.max(0, Math.ceil(movements.total / movementPageSize) - 1)
+
+  function movementTypeLabel(type: StockMovementType): string {
+    return t(`inventory.movements.types.${type}`)
+  }
+
+  return (
+    <>
+      <div className="grid shrink-0 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,320px)]">
+        <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_170px_130px_130px]">
+          <BaseSelect
+            value={filters.productId}
+            ariaLabel={t('inventory.movements.productFilter')}
+            placeholder={t('inventory.movements.allProducts')}
+            options={[
+              { value: '', label: t('inventory.movements.allProducts') },
+              ...products.map((product) => ({ value: String(product.id), label: product.name })),
+            ]}
+            onValueChange={(value) => onFiltersChange({ productId: value })}
+          />
+          <BaseSelect
+            value={filters.movementType}
+            ariaLabel={t('inventory.movements.typeFilter')}
+            options={[
+              { value: 'all', label: t('common.all') },
+              { value: 'purchase', label: t('inventory.movements.types.purchase') },
+              { value: 'sale', label: t('inventory.movements.types.sale') },
+              { value: 'adjustment', label: t('inventory.movements.types.adjustment') },
+              { value: 'opening', label: t('inventory.movements.types.opening') },
+            ]}
+            onValueChange={(value) => onFiltersChange({ movementType: value as MovementTypeFilter })}
+          />
+          <Input
+            type="date"
+            aria-label={t('inventory.movements.dateFrom')}
+            value={filters.dateFrom}
+            onChange={(event) => onFiltersChange({ dateFrom: event.target.value })}
+            className="h-10"
+          />
+          <Input
+            type="date"
+            aria-label={t('inventory.movements.dateTo')}
+            value={filters.dateTo}
+            onChange={(event) => onFiltersChange({ dateTo: event.target.value })}
+            className="h-10"
+          />
+        </div>
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            value={filters.search}
+            onChange={(event) => onFiltersChange({ search: event.target.value })}
+            placeholder={t('inventory.movements.searchPlaceholder')}
+            className="h-10 pl-10 pr-10"
+          />
+          {filters.search ? (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => onFiltersChange({ search: '' })}
+              className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
+        {isLoading ? (
+          <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+            <p className="text-sm">Loading purchasing data...</p>
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-col">
+            <div className="grid gap-2 border-b bg-background p-3 sm:grid-cols-3">
+              {[
+                { label: t('inventory.movements.stockIn'), value: movements.totalIn },
+                { label: t('inventory.movements.stockOut'), value: movements.totalOut },
+                { label: t('inventory.movements.netChange'), value: movementNet },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg bg-muted/70 px-3 py-2">
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{item.value}</p>
+                </div>
+              ))}
+            </div>
+            {isMovementsLoading ? (
+              <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+                <p className="text-sm">{t('inventory.movements.loading')}</p>
+              </div>
+            ) : movements.items.length === 0 ? (
+              <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
+                <ClipboardList className="size-7 text-muted-foreground" aria-hidden="true" />
+                <p className="font-medium">{t('inventory.movements.emptyTitle')}</p>
+                <p className="text-sm text-muted-foreground text-pretty">{t('inventory.movements.emptyHint')}</p>
+              </div>
+            ) : (
+              <div className="min-w-[980px]">
+                <div className="sticky top-0 grid grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+                  <span>{t('inventory.movements.table.date')}</span>
+                  <span>{t('inventory.movements.table.product')}</span>
+                  <span>{t('inventory.movements.table.type')}</span>
+                  <span>{t('inventory.movements.table.reference')}</span>
+                  <span className="text-right">{t('inventory.movements.table.in')}</span>
+                  <span className="text-right">{t('inventory.movements.table.out')}</span>
+                  <span className="text-right">{t('inventory.movements.table.balance')}</span>
+                  <span>{t('inventory.movements.table.user')}</span>
+                </div>
+                <div className="divide-y">
+                  {movements.items.map((movement) => (
+                    <div
+                      key={movement.id}
+                      className="grid min-h-14 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] items-center gap-3 px-3 py-2 text-sm"
+                    >
+                      <span className="text-xs text-muted-foreground tabular-nums">{formatDateTime(movement.createdAt)}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{movement.productName}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{movement.sku}</span>
+                      </span>
+                      <Badge variant={movementBadgeVariant(movement.movementType)}>
+                        {movementTypeLabel(movement.movementType)}
+                      </Badge>
+                      <span className="min-w-0">
+                        <span className="block truncate">{movement.referenceNumber ?? t('inventory.movements.noReference')}</span>
+                        {movement.reason ? <span className="block truncate text-xs text-muted-foreground">{movement.reason}</span> : null}
+                      </span>
+                      <span className="text-right tabular-nums">
+                        {movement.quantityDelta > 0 ? `${movement.quantityDelta} ${movement.unitType}` : '—'}
+                      </span>
+                      <span className="text-right tabular-nums">
+                        {movement.quantityDelta < 0 ? `${Math.abs(movement.quantityDelta)} ${movement.unitType}` : '—'}
+                      </span>
+                      <span className="text-right font-medium tabular-nums">{movement.balanceAfter} {movement.unitType}</span>
+                      <span className="truncate text-xs text-muted-foreground">{movement.createdByName ?? t('system.label')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex shrink-0 items-center justify-between gap-3 border-t bg-background px-3 py-2 text-xs text-muted-foreground">
+              <span className="tabular-nums">
+                {t('inventory.movements.pagination', {
+                  start: movements.total === 0 ? 0 : movementPage * movementPageSize + 1,
+                  end: Math.min(movements.total, (movementPage + 1) * movementPageSize),
+                  total: movements.total,
+                })}
+              </span>
+              <span className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" className={pressableClass} disabled={movementPage === 0} onClick={() => onPageChange((page) => Math.max(0, page - 1))}>
+                  {t('inventory.movements.previous')}
+                </Button>
+                <Button type="button" variant="outline" size="sm" className={pressableClass} disabled={movementPage >= movementLastPage} onClick={() => onPageChange((page) => Math.min(movementLastPage, page + 1))}>
+                  {t('inventory.movements.next')}
+                </Button>
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}

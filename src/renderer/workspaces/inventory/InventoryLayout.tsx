@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { ClipboardList, Package, ReceiptText } from 'lucide-react'
 import { cn } from '@/renderer/lib/utils'
 
@@ -11,22 +11,30 @@ const inventorySectionTabs = [
 ] as const
 
 type InventoryLayoutProps = {
-  activeTab: InventoryLayoutTab
-  children: ReactNode
+  activeTab?: InventoryLayoutTab
+  children?: ReactNode
   className?: string
-  onTabChange: (tab: InventoryLayoutTab) => void
+  onTabChange?: (tab: InventoryLayoutTab) => void
 }
 
 export function InventoryLayout({ activeTab, children, className, onTabChange }: InventoryLayoutProps) {
+  const [internalTab, setInternalTab] = useState<InventoryLayoutTab>('product')
+  const selectedTab = activeTab ?? internalTab
+
+  function selectTab(tab: InventoryLayoutTab) {
+    setInternalTab(tab)
+    onTabChange?.(tab)
+  }
+
   return (
-    <div className={cn('flex min-h-0 min-w-0 flex-col gap-3', className)}>
+    <div className={cn('flex min-h-0 min-w-0 flex-col gap-3 p-1', className)}>
       <div
         role="tablist"
         aria-label="Inventory sections"
         className="flex shrink-0 items-center gap-1 rounded-lg bg-muted p-1"
       >
         {inventorySectionTabs.map((tab) => {
-          const isActive = activeTab === tab.id
+          const isActive = selectedTab === tab.id
           const Icon = tab.icon
 
           return (
@@ -35,7 +43,7 @@ export function InventoryLayout({ activeTab, children, className, onTabChange }:
               type="button"
               role="tab"
               aria-selected={isActive}
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => selectTab(tab.id)}
               className={cn(
                 'flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
                 isActive ? 'bg-background text-foreground shadow-border' : 'text-muted-foreground hover:text-foreground',
@@ -47,7 +55,16 @@ export function InventoryLayout({ activeTab, children, className, onTabChange }:
           )
         })}
       </div>
-      {children}
+      {children ?? (
+        <div className="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center">
+          <div className="max-w-sm">
+            <p className="font-medium">{inventorySectionTabs.find((tab) => tab.id === selectedTab)?.label}</p>
+            <p className="mt-1 text-sm text-muted-foreground text-pretty">
+              Inventory content will be attached here as each tab is migrated into the layout.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

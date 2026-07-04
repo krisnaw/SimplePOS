@@ -10,7 +10,7 @@ import type { AuthenticatedUser } from '@/shared/types/user'
 import { CustomerWorkspace } from '@/renderer/workspaces/customer/CustomerWorkspace'
 import { DashboardOverview } from '@/renderer/workspaces/dashboard/DashboardOverview'
 import { InvoiceWorkspace } from '@/renderer/workspaces/invoice/InvoiceWorkspace'
-import { PurchasingInventoryWorkspace } from '@/renderer/workspaces/inventory/PurchasingInventoryWorkspace'
+import { InventoryLayout } from '@/renderer/workspaces/inventory/InventoryLayout'
 import { SupplierManagement } from '@/renderer/workspaces/suppliers/SupplierManagement'
 import { ReportsWorkspace } from '@/renderer/workspaces/reports/ReportsWorkspace'
 import { EmptySalesWorkspace } from '@/renderer/workspaces/sales/EmptySalesWorkspace'
@@ -237,7 +237,7 @@ export default function Dashboard() {
             >
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
               {activeSection === 'sales' ? <EmptySalesWorkspace currentUser={user} /> : null}
-              {activeSection === 'inventory' ? <PurchasingInventoryWorkspace currentUser={user} /> : null}
+              {activeSection === 'inventory' ? <InventoryLayout /> : null}
               {activeSection === 'suppliers' ? <SupplierManagement /> : null}
               {activeSection === 'vehicles' ? <VehicleWorkspace /> : null}
               {activeSection === 'services' ? <ServicesWorkspace /> : null}
