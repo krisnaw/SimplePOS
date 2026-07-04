@@ -6,6 +6,7 @@ import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} f
 import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
 import {BaseSelect} from '@/renderer/components/ui/base-select'
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/renderer/components/ui/table'
 import {cn} from '@/renderer/lib/utils'
 import {formatCurrency} from '@/renderer/lib/formatters'
 import type {ProductCategorySummary, ProductSummary} from '@/shared/types/product'
@@ -25,8 +26,6 @@ const emptyForm: ProductFormState = {
 }
 
 const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
-const productTableGrid =
-  'grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)_104px_88px_84px]'
 
 function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock
@@ -177,9 +176,9 @@ export function InventoryProduct() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid shrink-0 grid-cols-3 gap-2">
         <Card>
           <CardHeader>
             <CardTitle>{t('inventory.totalItems')}</CardTitle>
@@ -211,9 +210,9 @@ export function InventoryProduct() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-12 gap-2">
-        <div className="col-span-8">
-          <Card>
+      <div className="grid min-h-0 flex-1 grid-cols-12 gap-2">
+        <div className="col-span-8 min-h-0">
+          <Card className="h-full min-h-0">
             <CardHeader>
               <CardTitle>{t('inventory.productList')}</CardTitle>
               <CardDescription>{t('inventory.stockValueHint', {value: formatCurrency(inventoryValue)})}</CardDescription>
@@ -226,30 +225,32 @@ export function InventoryProduct() {
                 className="shrink-0"
               />
               <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border bg-background">
-                <div
-                  className={cn(
-                    'sticky top-0 z-10 grid shrink-0 items-center gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur',
-                    'rounded-t-[calc(var(--radius-lg)-1px)]',
-                    productTableGrid,
-                  )}
-                >
-                  <span>{t('inventory.table.product')}</span>
-                  <span>{t('inventory.table.category')}</span>
-                  <span className="text-right">{t('inventory.table.price')}</span>
-                  <span>{t('inventory.table.stock')}</span>
-                  <span>{t('inventory.table.status')}</span>
-                </div>
-
-                <div className="divide-y">
+                <Table className="min-w-[720px]">
+                  <TableHeader className="sticky top-0 z-10 bg-muted/95 backdrop-blur">
+                    <TableRow>
+                      <TableHead>{t('inventory.table.product')}</TableHead>
+                      <TableHead>{t('inventory.table.category')}</TableHead>
+                      <TableHead className="text-right">{t('inventory.table.price')}</TableHead>
+                      <TableHead>{t('inventory.table.stock')}</TableHead>
+                      <TableHead>{t('inventory.table.status')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {isLoading ? (
-                    <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-                      <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true"/>
-                      <p className="text-sm text-muted-foreground">{t('inventory.loading')}</p>
-                    </div>
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                          <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true"/>
+                          <p className="text-sm text-muted-foreground">{t('inventory.loading')}</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   ) : filteredProducts.length === 0 ? (
-                    <div className="px-3 py-6 text-sm text-muted-foreground">
-                      {products.length === 0 ? t('inventory.noProducts') : t('inventory.noMatchingProducts')}
-                    </div>
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-muted-foreground">
+                        {products.length === 0 ? t('inventory.noProducts') : t('inventory.noMatchingProducts')}
+                      </TableCell>
+                    </TableRow>
                   ) : null}
 
                   {!isLoading && filteredProducts.map((product) => {
@@ -257,7 +258,7 @@ export function InventoryProduct() {
                     const lowStock = isLowStock(product)
 
                     return (
-                      <div
+                      <TableRow
                         key={product.id}
                         role="button"
                         tabIndex={0}
@@ -269,39 +270,43 @@ export function InventoryProduct() {
                           }
                         }}
                         className={cn(
-                          'grid min-h-12 w-full cursor-pointer items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                          productTableGrid,
+                          'cursor-pointer focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
                           editingProduct?.id === product.id && 'bg-muted/60',
                         )}
                       >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{product.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
-                      </span>
-                        <ProductCategoryBadge name={categoryName} />
-                        <span className="truncate text-right tabular-nums">{formatCurrency(product.unitPrice)}</span>
-                        <span className="truncate tabular-nums">
-                        {product.stockQty} {product.unitType}
-                      </span>
-                        <span
-                          className={cn(
-                            'w-fit rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums',
-                            lowStock
-                              ? 'bg-destructive/10 text-destructive'
-                              : 'bg-emerald-500/15 text-emerald-700',
-                          )}
-                        >
-                        {lowStock ? t('inventory.lowStockStatus') : t('inventory.inStock')}
-                      </span>
-                      </div>
+                        <TableCell>
+                          <span className="block truncate font-medium">{product.name}</span>
+                          <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
+                        </TableCell>
+                        <TableCell>
+                          <ProductCategoryBadge name={categoryName} />
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{formatCurrency(product.unitPrice)}</TableCell>
+                        <TableCell className="tabular-nums">
+                          {product.stockQty} {product.unitType}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={cn(
+                              'w-fit rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums',
+                              lowStock
+                                ? 'bg-destructive/10 text-destructive'
+                                : 'bg-emerald-500/15 text-emerald-700',
+                            )}
+                          >
+                            {lowStock ? t('inventory.lowStockStatus') : t('inventory.inStock')}
+                          </span>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                </div>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
         </div>
-        <div className="col-span-4">
+        <div className="col-span-4 min-h-0">
           <Card>
             <CardHeader>
               <CardTitle>
