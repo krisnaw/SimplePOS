@@ -85,15 +85,15 @@ export function InventoryMovements({
           />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-lg border bg-background">
         {isLoading ? (
           <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="size-6 animate-spin" aria-hidden="true" />
             <p className="text-sm">Loading purchasing data...</p>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-col">
-            <div className="grid gap-2 border-b bg-background p-3 sm:grid-cols-3">
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="grid shrink-0 gap-2 border-b bg-background p-3 sm:grid-cols-3">
               {[
                 { label: t('inventory.movements.stockIn'), value: movements.totalIn },
                 { label: t('inventory.movements.stockOut'), value: movements.totalOut },
@@ -106,19 +106,19 @@ export function InventoryMovements({
               ))}
             </div>
             {isMovementsLoading ? (
-              <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
                 <Loader2 className="size-6 animate-spin" aria-hidden="true" />
                 <p className="text-sm">{t('inventory.movements.loading')}</p>
               </div>
             ) : movements.items.length === 0 ? (
-              <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
                 <ClipboardList className="size-7 text-muted-foreground" aria-hidden="true" />
                 <p className="font-medium">{t('inventory.movements.emptyTitle')}</p>
                 <p className="text-sm text-muted-foreground text-pretty">{t('inventory.movements.emptyHint')}</p>
               </div>
             ) : (
-              <div className="min-w-245">
-                <div className="sticky top-0 grid grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="grid min-w-245 shrink-0 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
                   <span>{t('inventory.movements.table.date')}</span>
                   <span>{t('inventory.movements.table.product')}</span>
                   <span>{t('inventory.movements.table.type')}</span>
@@ -128,33 +128,35 @@ export function InventoryMovements({
                   <span className="text-right">{t('inventory.movements.table.balance')}</span>
                   <span>{t('inventory.movements.table.user')}</span>
                 </div>
-                <div className="divide-y">
-                  {movements.items.map((movement) => (
-                    <div
-                      key={movement.id}
-                      className="grid min-h-14 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] items-center gap-3 px-3 py-2 text-sm"
-                    >
-                      <span className="text-xs text-muted-foreground tabular-nums">{formatDateTime(movement.createdAt)}</span>
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{movement.productName}</span>
-                      </span>
-                      <Badge variant={movementBadgeVariant(movement.movementType)}>
-                        {movementTypeLabel(movement.movementType)}
-                      </Badge>
-                      <span className="min-w-0">
-                        <span className="block truncate">{movement.referenceNumber ?? t('inventory.movements.noReference')}</span>
-                        {movement.reason ? <span className="block truncate text-xs text-muted-foreground">{movement.reason}</span> : null}
-                      </span>
-                      <span className="text-right tabular-nums">
-                        {movement.quantityDelta > 0 ? `${movement.quantityDelta} ${movement.unitType}` : '—'}
-                      </span>
-                      <span className="text-right tabular-nums">
-                        {movement.quantityDelta < 0 ? `${Math.abs(movement.quantityDelta)} ${movement.unitType}` : '—'}
-                      </span>
-                      <span className="text-right font-medium tabular-nums">{movement.balanceAfter} {movement.unitType}</span>
-                      <span className="truncate text-xs text-muted-foreground">{movement.createdByName ?? t('system.label')}</span>
-                    </div>
-                  ))}
+                <div className="min-h-0 flex-1 overflow-auto">
+                  <div className="min-w-245 divide-y">
+                    {movements.items.map((movement) => (
+                      <div
+                        key={movement.id}
+                        className="grid min-h-14 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] items-center gap-3 px-3 py-2 text-sm"
+                      >
+                        <span className="text-xs text-muted-foreground tabular-nums">{formatDateTime(movement.createdAt)}</span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{movement.productName}</span>
+                        </span>
+                        <Badge variant={movementBadgeVariant(movement.movementType)}>
+                          {movementTypeLabel(movement.movementType)}
+                        </Badge>
+                        <span className="min-w-0">
+                          <span className="block truncate">{movement.referenceNumber ?? t('inventory.movements.noReference')}</span>
+                          {movement.reason ? <span className="block truncate text-xs text-muted-foreground">{movement.reason}</span> : null}
+                        </span>
+                        <span className="text-right tabular-nums">
+                          {movement.quantityDelta > 0 ? `${movement.quantityDelta} ${movement.unitType}` : '—'}
+                        </span>
+                        <span className="text-right tabular-nums">
+                          {movement.quantityDelta < 0 ? `${Math.abs(movement.quantityDelta)} ${movement.unitType}` : '—'}
+                        </span>
+                        <span className="text-right font-medium tabular-nums">{movement.balanceAfter} {movement.unitType}</span>
+                        <span className="truncate text-xs text-muted-foreground">{movement.createdByName ?? t('system.label')}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

@@ -40,6 +40,7 @@ import {
 import {Field, FieldDescription, FieldGroup, FieldLabel} from '@/renderer/components/ui/field'
 import {Input} from '@/renderer/components/ui/input'
 import {BaseSelect} from '@/renderer/components/ui/base-select'
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/renderer/components/ui/table'
 import {formatCurrency, formatDate} from '@/renderer/lib/formatters'
 import {cn} from '@/renderer/lib/utils'
 import type {ProductCategorySummary, ProductSummary} from '@/shared/types/product'
@@ -713,7 +714,7 @@ export function InventoryPurchase({
   )
 
   const purchaseCard = (
-    <Card>
+    <Card className="h-full min-h-0">
       <CardHeader>
         <CardTitle>Purchase</CardTitle>
         <CardDescription>
@@ -726,8 +727,7 @@ export function InventoryPurchase({
           </Button>
         </CardAction>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
           <div className="relative min-w-0 shrink-0">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -748,57 +748,77 @@ export function InventoryPurchase({
             ) : null}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background">
-            {isLoading ? (
-              <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-                <p className="text-sm">Loading purchasing data...</p>
-              </div>
-            ) : filteredPurchases.length === 0 ? (
-              <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
-                <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
-                <p className="font-medium">{view === 'pending' ? 'No pending invoices' : view === 'unpaid' ? 'No unpaid invoices' : 'No purchases yet'}</p>
-                <p className="text-sm text-muted-foreground text-pretty">
-                  {view === 'pending' ? 'All received goods have supplier invoice details.' : view === 'unpaid' ? 'All supplier invoices are paid.' : 'Record a purchase to receive inventory.'}
-                </p>
-              </div>
-            ) : (
-              <div className="min-w-[720px]">
-                <div className="sticky top-0 grid grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
-                  <span>Purchase</span>
-                  <span>Supplier invoice</span>
-                  <span className="text-right">Total</span>
-                  <span>Invoice</span>
-                  <span>Payment</span>
-                  <span>Date</span>
-                </div>
-                <div className="divide-y">
-                  {filteredPurchases.map((purchase) => (
-                    <button
-                      key={purchase.id}
-                      type="button"
-                      onClick={() => void showPurchase(purchase.id)}
-                      className="grid min-h-16 w-full grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_110px_120px_90px_110px] items-center gap-3 px-3 py-2 text-left text-sm transition-[background-color,transform] duration-150 ease-out hover:bg-muted/50 active:scale-[0.99]"
-                    >
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium">{purchase.purchaseNumber}</span>
-                          <span className="block truncate text-xs text-muted-foreground">{purchase.supplierName}</span>
-                        </span>
-                      <span className="min-w-0">
-                          <span className="block truncate">{purchase.supplierInvoiceNumber ?? 'Pending invoice'}</span>
-                          <span className="block text-xs text-muted-foreground">{purchase.itemCount} product{purchase.itemCount === 1 ? '' : 's'}</span>
-                        </span>
-                      <span className="text-right font-medium tabular-nums">{formatCurrency(purchase.total)}</span>
+          <div className="min-h-0 flex-1 rounded-lg border bg-background">
+            <Table containerClassName="h-full overflow-auto" className="min-w-[720px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky top-0 z-10 rounded-tl-lg bg-muted/95 backdrop-blur">Purchase</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">Supplier invoice</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted/95 text-right backdrop-blur">Total</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">Invoice</TableHead>
+                  <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">Payment</TableHead>
+                  <TableHead className="sticky top-0 z-10 rounded-tr-lg bg-muted/95 backdrop-blur">Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+                        <p className="text-sm">Loading purchasing data...</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredPurchases.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
+                        <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
+                        <p className="font-medium">{view === 'pending' ? 'No pending invoices' : view === 'unpaid' ? 'No unpaid invoices' : 'No purchases yet'}</p>
+                        <p className="text-sm text-muted-foreground text-pretty">
+                          {view === 'pending' ? 'All received goods have supplier invoice details.' : view === 'unpaid' ? 'All supplier invoices are paid.' : 'Record a purchase to receive inventory.'}
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+
+                {!isLoading && filteredPurchases.map((purchase) => (
+                  <TableRow
+                    key={purchase.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => void showPurchase(purchase.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        void showPurchase(purchase.id)
+                      }
+                    }}
+                    className="cursor-pointer focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    <TableCell>
+                      <span className="block truncate font-medium">{purchase.purchaseNumber}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{purchase.supplierName}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="block truncate">{purchase.supplierInvoiceNumber ?? 'Pending invoice'}</span>
+                      <span className="block text-xs text-muted-foreground">{purchase.itemCount} product{purchase.itemCount === 1 ? '' : 's'}</span>
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">{formatCurrency(purchase.total)}</TableCell>
+                    <TableCell>
                       <InvoiceBadge status={purchase.invoiceStatus} />
+                    </TableCell>
+                    <TableCell>
                       <PaymentBadge status={purchase.paymentStatus} />
-                      <span className="text-xs text-muted-foreground tabular-nums">{formatDate(purchase.invoiceDate)}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground tabular-nums">{formatDate(purchase.invoiceDate)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </div>
       </CardContent>
     </Card>
   )
