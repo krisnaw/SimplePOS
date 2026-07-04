@@ -140,7 +140,7 @@ export function SupplierManagement() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid h-full min-h-0 gap-3 overflow-hidden p-1 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
           <div className="min-w-0">

@@ -898,7 +898,7 @@ export function CustomerWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid h-full min-h-0 gap-3 p-1 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex min-h-0 flex-col gap-3">
         <div className="grid gap-3 md:grid-cols-3">
           <Card>

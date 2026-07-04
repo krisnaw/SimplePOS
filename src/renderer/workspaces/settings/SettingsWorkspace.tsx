@@ -86,7 +86,7 @@ export function SettingsWorkspace() {
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid gap-4 p-1 xl:grid-cols-[minmax(0,1fr)_320px]">
       <Card>
         <CardHeader>
           <CardTitle>{t('settings.externalDevices')}</CardTitle>

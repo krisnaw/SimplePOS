@@ -762,7 +762,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
   return (
     <div
       className={cn(
-        'grid h-full min-h-0 min-w-0 gap-3 overflow-hidden',
+        'grid h-full min-h-0 min-w-0 gap-3 overflow-hidden p-1',
         'grid-cols-1',
       )}
     >

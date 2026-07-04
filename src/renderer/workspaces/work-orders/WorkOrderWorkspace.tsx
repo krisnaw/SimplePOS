@@ -334,7 +334,7 @@ export function WorkOrderWorkspace({ currentUser }: { currentUser: Authenticated
   }
 
   return (
-    <div className="grid min-h-0 min-w-0 gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="grid min-h-0 min-w-0 gap-3 p-1 xl:grid-cols-[360px_minmax(0,1fr)]">
       <Card>
         <CardHeader>
           <CardTitle>{t('workOrders.title')}</CardTitle>

@@ -160,7 +160,7 @@ export function ServicesWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden p-1 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
         <div className="grid shrink-0 gap-3 md:grid-cols-3">
           <Card>

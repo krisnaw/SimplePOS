@@ -359,7 +359,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   }
 
   return (
-    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden p-1 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card className="min-h-0 overflow-hidden">
         <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
           <div className="flex flex-col gap-2">

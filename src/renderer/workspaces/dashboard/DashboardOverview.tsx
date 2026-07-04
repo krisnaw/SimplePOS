@@ -45,7 +45,7 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
   }, [])
 
   return (
-    <div className="stagger-children grid gap-4">
+    <div className="stagger-children grid gap-4 p-1">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card>
           <CardHeader>

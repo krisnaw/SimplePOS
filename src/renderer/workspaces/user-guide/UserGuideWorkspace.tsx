@@ -142,7 +142,7 @@ const guideSections: GuideSection[] = [
 
 export function UserGuideWorkspace() {
   return (
-    <div className="flex min-h-0 flex-col gap-4">
+    <div className="flex min-h-0 flex-col gap-4 p-1">
 
       <div className="stagger-children grid gap-4 xl:grid-cols-2">
         {guideSections.map((section) => (

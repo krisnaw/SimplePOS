@@ -117,7 +117,7 @@ export function UserManagement({ currentUser }: { currentUser: AuthenticatedUser
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid gap-4 p-1 xl:grid-cols-[minmax(0,1fr)_360px]">
       <Card>
         <CardHeader>
           <CardTitle>User Accounts</CardTitle>

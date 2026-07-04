@@ -499,7 +499,7 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 p-1">
       <Card className="overflow-visible">
         <CardContent className="overflow-visible">
           <div className="relative flex max-w-2xl flex-col gap-2">
