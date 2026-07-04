@@ -83,6 +83,7 @@ type ProductSummary = {
   stockQty: number
   minStock: number
   lastPurchaseCost: number
+  hasPurchaseHistory: boolean
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -200,6 +201,8 @@ type CheckoutLineItemSummary = {
   priceOverriddenById: number | null
   priceOverriddenAt: string | null
   lineTotal: number
+  unitCostSnapshot: number
+  costTotalSnapshot: number
 }
 
 type CheckoutSummary = {
@@ -387,6 +390,9 @@ type TopSellingItemSummary = {
   category: string | null
   quantity: number
   total: number
+  cogsTotal: number
+  grossProfit: number
+  grossMarginPercent: number
 }
 
 type LowStockItemSummary = {
@@ -405,6 +411,13 @@ type ReportSummary = {
   invoiceCount: number
   averageInvoiceTotal: number
   inventoryValue: number
+  inventoryRetailValue: number
+  inventoryEstimatedCostValue: number
+  cogsTotal: number
+  grossProfit: number
+  grossMarginPercent: number
+  legacyCostMissingCount: number
+  hasLegacyCostGaps: boolean
   lowStockCount: number
   workOrderCount: number
   completedWorkOrderCount: number

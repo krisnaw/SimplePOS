@@ -52,6 +52,8 @@ export const saleItems = sqliteTable('sale_items', {
   priceOverriddenById: integer('price_overridden_by_id').references(() => users.id),
   priceOverriddenAt: text('price_overridden_at'),
   lineTotal: integer('line_total').notNull(),
+  unitCostSnapshot: integer('unit_cost_snapshot'),
+  costTotalSnapshot: integer('cost_total_snapshot'),
   createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
 })
 

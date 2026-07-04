@@ -71,6 +71,8 @@ function migrateSaleItemsForPriceOverrides(database: SqlJsDatabase): void {
     'price_overridden_by_id integer REFERENCES users(id)',
   )
   addColumnIfMissing(database, 'sale_items', 'price_overridden_at', 'price_overridden_at text')
+  addColumnIfMissing(database, 'sale_items', 'unit_cost_snapshot', 'unit_cost_snapshot integer')
+  addColumnIfMissing(database, 'sale_items', 'cost_total_snapshot', 'cost_total_snapshot integer')
 }
 
 function normalizeExistingVehiclePlates(database: SqlJsDatabase): void {
@@ -623,6 +625,8 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       price_overridden_by_id integer REFERENCES users(id),
       price_overridden_at text,
       line_total integer NOT NULL,
+      unit_cost_snapshot integer,
+      cost_total_snapshot integer,
       created_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
     )
   `)

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
-import { invoices, payments, products, saleItems, sales, services, users, vehicles } from '../db/schema/index'
+import { invoices, payments, products, purchaseItems, saleItems, sales, services, users, vehicles } from '../db/schema/index'
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 import { recordStockMovement } from './stock-movement.service'
@@ -37,6 +37,8 @@ export type CheckoutLineItemSummary = {
   priceOverriddenById: number | null
   priceOverriddenAt: string | null
   lineTotal: number
+  unitCostSnapshot: number
+  costTotalSnapshot: number
 }
 
 export type CheckoutSummary = {
@@ -70,6 +72,8 @@ export type PreparedCheckoutLineItem = {
   priceOverriddenById: number | null
   priceOverriddenAt: string | null
   lineTotal: number
+  unitCostSnapshot?: number
+  costTotalSnapshot?: number
   stockQty?: number
 }
 
@@ -113,6 +117,78 @@ function createInvoiceNumber(date = new Date()): string {
   return `INV-${timestamp}-${suffix}`
 }
 
+async function hasPurchaseHistory(productId: number): Promise<boolean> {
+  const repository = getCheckoutRepository()
+
+  if (!repository) return false
+
+  const [purchaseHistory] = await repository
+    .select({ id: purchaseItems.id })
+    .from(purchaseItems)
+    .where(eq(purchaseItems.productId, productId))
+    .limit(1)
+
+  return Boolean(purchaseHistory)
+}
+
+async function costSnapshotForProduct(product: typeof products.$inferSelect, quantity: number) {
+  const isCostTracked = product.lastPurchaseCost > 0 || await hasPurchaseHistory(product.id)
+  const unitCostSnapshot = isCostTracked ? product.lastPurchaseCost : 0
+
+  return {
+    unitCostSnapshot,
+    costTotalSnapshot: unitCostSnapshot * quantity,
+  }
+}
+
+function zeroCostSnapshot() {
+  return {
+    unitCostSnapshot: 0,
+    costTotalSnapshot: 0,
+  }
+}
+
+async function normalizePreparedCostSnapshots(
+  items: PreparedCheckoutLineItem[],
+): Promise<PreparedCheckoutLineItem[]> {
+  const repository = getCheckoutRepository()
+
+  if (!repository) throw new Error('Database unavailable')
+
+  const normalized: PreparedCheckoutLineItem[] = []
+
+  for (const item of items) {
+    const unitCostSnapshot = item.unitCostSnapshot
+    const costTotalSnapshot = item.costTotalSnapshot
+
+    if (
+      typeof unitCostSnapshot === 'number' &&
+      Number.isInteger(unitCostSnapshot) &&
+      unitCostSnapshot >= 0 &&
+      typeof costTotalSnapshot === 'number' &&
+      Number.isInteger(costTotalSnapshot) &&
+      costTotalSnapshot >= 0
+    ) {
+      normalized.push({ ...item, unitCostSnapshot, costTotalSnapshot })
+      continue
+    }
+
+    if (item.itemType === 'service') {
+      normalized.push({ ...item, ...zeroCostSnapshot() })
+      continue
+    }
+
+    if (item.productId === null) throw new Error('Product line is missing product id')
+
+    const [product] = await repository.select().from(products).where(eq(products.id, item.productId)).limit(1)
+    if (!product) throw new Error('Product is no longer available')
+
+    normalized.push({ ...item, ...(await costSnapshotForProduct(product, item.quantity)) })
+  }
+
+  return normalized
+}
+
 async function prepareCheckoutItems(
   inputItems: unknown,
   overriddenById: number | null,
@@ -154,6 +230,7 @@ async function prepareCheckoutItems(
       const isOverride = unitPrice !== basePrice
       if (isOverride && !overriddenById) return 'A user is required to override a price'
       const unchangedOverride = isOverride && existing?.unitPrice === unitPrice
+      const costSnapshot = await costSnapshotForProduct(product, quantity)
 
       prepared.push({
         itemType,
@@ -171,6 +248,7 @@ async function prepareCheckoutItems(
           ? unchangedOverride ? existing.priceOverriddenAt ?? new Date().toISOString() : new Date().toISOString()
           : null,
         lineTotal: unitPrice * quantity,
+        ...costSnapshot,
         stockQty: product.stockQty,
       })
     } else {
@@ -199,6 +277,7 @@ async function prepareCheckoutItems(
           ? unchangedOverride ? existing.priceOverriddenAt ?? new Date().toISOString() : new Date().toISOString()
           : null,
         lineTotal: unitPrice * quantity,
+        ...zeroCostSnapshot(),
       })
     }
   }
@@ -286,7 +365,17 @@ export async function createCheckoutFromPreparedItems(input: PersistCheckoutInpu
     return { ok: false, message: 'Amount paid cannot be less than total' }
   }
 
-  return persistCheckout(input)
+  try {
+    return persistCheckout({
+      ...input,
+      items: await normalizePreparedCostSnapshots(input.items),
+    })
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : 'Unable to prepare sale item costs',
+    }
+  }
 }
 
 async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutResult> {
@@ -331,6 +420,20 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
     if (input.saleId) tx.delete(saleItems).where(eq(saleItems.saleId, input.saleId)).run()
 
     const savedItems = input.items.map((item) => {
+      const unitCostSnapshot = item.unitCostSnapshot
+      const costTotalSnapshot = item.costTotalSnapshot
+
+      if (
+        typeof unitCostSnapshot !== 'number' ||
+        !Number.isInteger(unitCostSnapshot) ||
+        unitCostSnapshot < 0 ||
+        typeof costTotalSnapshot !== 'number' ||
+        !Number.isInteger(costTotalSnapshot) ||
+        costTotalSnapshot < 0
+      ) {
+        throw new Error('Missing cost snapshot')
+      }
+
       const savedItem = tx.insert(saleItems).values({
         saleId: savedSale.id,
         itemType: item.itemType,
@@ -344,6 +447,8 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
         priceOverriddenById: item.priceOverriddenById,
         priceOverriddenAt: item.priceOverriddenAt,
         lineTotal: item.lineTotal,
+        unitCostSnapshot,
+        costTotalSnapshot,
         createdAt: now,
       }).returning().get()
 
@@ -374,6 +479,8 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
         priceOverriddenById: savedItem.priceOverriddenById,
         priceOverriddenAt: savedItem.priceOverriddenAt,
         lineTotal: savedItem.lineTotal,
+        unitCostSnapshot: savedItem.unitCostSnapshot ?? 0,
+        costTotalSnapshot: savedItem.costTotalSnapshot ?? 0,
       }
     })
 

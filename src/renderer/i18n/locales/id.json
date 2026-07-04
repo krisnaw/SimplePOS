@@ -22,6 +22,8 @@
     "notes": "Catatan",
     "all": "Semua",
     "today": "Hari Ini",
+    "yes": "Ya",
+    "no": "Tidak",
     "noRecords": "Data tidak ditemukan.",
     "actions": "Aksi",
     "remove": "Hapus",
@@ -258,11 +260,18 @@
     "atMinimum": "Di atau di bawah minimum",
     "productList": "Daftar Produk",
     "stockValueHint": "Nilai stok saat ini {{value}}.",
+    "stockValueHintWithCost": "{{retailValue}} nilai jual · {{costValue}} estimasi biaya.",
+    "estimatedCostValue": "Estimasi Nilai Biaya",
+    "latestCostEstimate": "Berdasarkan biaya pembelian terakhir",
+    "estimatedMargin": "Margin estimasi {{value}}%",
+    "lastPurchaseCost": "Biaya pembelian terakhir",
+    "purchaseHistory": "Riwayat pembelian",
     "searchPlaceholder": "Cari inventaris",
     "table": {
       "product": "Produk",
       "category": "Kategori",
       "price": "Harga",
+      "lastCost": "Biaya Terakhir",
       "stock": "Stok",
       "status": "Status",
       "remove": "Hapus"
@@ -557,6 +566,21 @@
         "helper_one": "{{count}} item stok rendah",
         "helper_other": "{{count}} item stok rendah"
       },
+      "cogs": {
+        "title": "HPP",
+        "description": "Biaya produk yang dicatat saat checkout.",
+        "helper": "Snapshot biaya"
+      },
+      "grossProfit": {
+        "title": "Laba Kotor",
+        "description": "Penjualan dikurangi HPP.",
+        "helper": "Periode terpilih"
+      },
+      "grossMargin": {
+        "title": "Margin Kotor",
+        "description": "Laba kotor sebagai persentase penjualan.",
+        "helper": "Periode terpilih"
+      },
       "workOrders": {
         "title": "Perintah Kerja",
         "description": "Pekerjaan perbaikan yang dibuka pada periode ini.",
@@ -571,9 +595,17 @@
         "productName": "Nama Produk",
         "category": "Kategori",
         "totalUnit": "Total Unit",
-        "total": "Total"
+        "total": "Total",
+        "sales": "Penjualan",
+        "cogs": "HPP",
+        "profit": "Laba",
+        "margin": "Margin"
       }
     },
+    "legacyCostWarning": "{{count}} baris penjualan produk belum memiliki biaya historis. Laba kotor dan margin belum lengkap untuk periode ini.",
+    "legacyCostWarning_one": "{{count}} baris penjualan produk belum memiliki biaya historis. Laba kotor dan margin belum lengkap untuk periode ini.",
+    "legacyCostWarning_other": "{{count}} baris penjualan produk belum memiliki biaya historis. Laba kotor dan margin belum lengkap untuk periode ini.",
+    "incompleteProfit": "Biaya historis belum lengkap",
     "paymentMethods": {
       "title": "Metode Pembayaran",
       "description": "Faktur dibayar berdasarkan metode.",

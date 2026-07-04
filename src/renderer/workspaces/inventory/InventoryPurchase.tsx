@@ -1,34 +1,11 @@
 import {type FormEvent, useEffect, useMemo, useState} from 'react'
 import {
-  ArrowLeft,
-  CalendarClock,
-  Check,
-  FileText,
-  Loader2,
   Minus,
   PackageCheck,
-  PackagePlus,
-  PencilLine,
   Plus,
-  ReceiptText,
-  Search,
-  Trash2,
-  WalletCards,
-  X,
 } from 'lucide-react'
 import {useTranslation} from 'react-i18next'
-import {
-  AlertDialog,
-  AlertDialogBackdrop,
-  AlertDialogClose,
-  AlertDialogDescription,
-  AlertDialogPopup,
-  AlertDialogPortal,
-  AlertDialogTitle,
-} from '@/renderer/components/ui/alert-dialog'
-import {Badge} from '@/renderer/components/ui/badge'
 import {Button} from '@/renderer/components/ui/button'
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle,} from '@/renderer/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -37,20 +14,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/renderer/components/ui/dialog'
-import {Field, FieldDescription, FieldGroup, FieldLabel} from '@/renderer/components/ui/field'
+import {Field, FieldDescription, FieldLabel} from '@/renderer/components/ui/field'
 import {Input} from '@/renderer/components/ui/input'
-import {BaseSelect} from '@/renderer/components/ui/base-select'
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/renderer/components/ui/table'
-import {formatCurrency, formatDate} from '@/renderer/lib/formatters'
+import {formatCurrency} from '@/renderer/lib/formatters'
 import {cn} from '@/renderer/lib/utils'
 import type {ProductCategorySummary, ProductSummary} from '@/shared/types/product'
 import type {
   PurchaseDetail,
-  PurchaseInvoiceStatus,
   PurchaseInvoiceUpdateInput,
   PurchaseItemInput,
-  PurchasePaymentStatus,
-  PurchaseSummary,
 } from '@/shared/types/purchase'
 import type {SupplierSummary} from '@/shared/types/supplier'
 import type {AuthenticatedUser} from '@/shared/types/user'
@@ -67,7 +39,12 @@ import type {
   WorkspaceScreen,
 } from './InventoryWorkspace.types'
 import {InventoryLayout, type InventoryLayoutTab} from './InventoryLayout'
+import {InventoryInvoiceFormScreen} from './InventoryInvoiceFormScreen'
 import {InventoryMovements} from './InventoryMovements'
+import {InventoryProductFormScreen} from './InventoryProductFormScreen'
+import {InventoryPurchaseDetailScreen} from './InventoryPurchaseDetailScreen'
+import {InventoryPurchaseList} from './InventoryPurchaseList'
+import {InventoryRecordPurchase} from './InventoryRecordPurchase'
 
 type InventoryPurchaseProps = {
   currentUser: AuthenticatedUser
@@ -129,27 +106,10 @@ const emptyAdjustmentForm: AdjustmentForm = {
   quantity: '',
   reason: '',
 }
+
 const movementPageSize = 50
 const pressableClass =
   'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]'
-
-function PaymentBadge({ status }: { status: PurchasePaymentStatus }) {
-  return (
-    <Badge variant={status === 'paid' ? 'secondary' : 'destructive'}>
-      {status === 'paid' ? <Check data-icon="inline-start" aria-hidden="true" /> : <CalendarClock data-icon="inline-start" aria-hidden="true" />}
-      {status === 'paid' ? 'Paid' : 'Unpaid'}
-    </Badge>
-  )
-}
-
-function InvoiceBadge({ status }: { status: PurchaseInvoiceStatus }) {
-  return (
-    <Badge variant={status === 'received' ? 'secondary' : 'outline'}>
-      {status === 'received' ? <ReceiptText data-icon="inline-start" aria-hidden="true" /> : <CalendarClock data-icon="inline-start" aria-hidden="true" />}
-      {status === 'received' ? 'Invoice received' : 'Needs invoice'}
-    </Badge>
-  )
-}
 
 function toProductForm(product: ProductSummary): ProductFormState {
   return {
@@ -307,8 +267,6 @@ export function InventoryPurchase({
     )
   }, [purchases, query, view])
 
-  const purchaseTotal = lines.reduce((sum, line) => sum + line.quantity * line.unitCost, 0)
-  const receivedUnits = lines.reduce((sum, line) => sum + line.quantity, 0)
   const formattedProductPrice = formatCurrency(
     Number.isFinite(Number(productForm.unitPrice)) ? Number(productForm.unitPrice) : 0,
   )
@@ -589,16 +547,6 @@ export function InventoryPurchase({
     setLines((current) => current.filter((line) => line.productId !== productId))
   }
 
-  function updateLine(productId: number, field: 'quantity' | 'unitCost', value: string) {
-    const nextValue = Number(value)
-    if (!Number.isInteger(nextValue) || nextValue < 0) return
-    setLines((current) => current.map((line) => {
-      if (line.productId !== productId) return line
-      if (field === 'quantity' && nextValue === 0) return line
-      return { ...line, [field]: nextValue }
-    }))
-  }
-
   function requestSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!form.supplierId || lines.length === 0) {
@@ -714,113 +662,17 @@ export function InventoryPurchase({
   )
 
   const purchaseCard = (
-    <Card className="h-full min-h-0">
-      <CardHeader>
-        <CardTitle>Purchase</CardTitle>
-        <CardDescription>
-          Receive supplier stock and track paid or unpaid invoices.
-        </CardDescription>
-        <CardAction>
-          <Button type="button" size="sm" className={pressableClass} onClick={startNewPurchase}>
-            <Plus data-icon="inline-start" aria-hidden="true" />
-            Record Purchase
-          </Button>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-          <div className="relative min-w-0 shrink-0">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search purchase, supplier, or invoice"
-              className="h-10 pl-10 pr-10"
-            />
-            {search ? (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => setSearch('')}
-                className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            ) : null}
-          </div>
-
-          <div className="min-h-0 flex-1 rounded-lg border bg-background">
-            <Table containerClassName="h-full overflow-auto" className="min-w-[720px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="sticky top-0 z-10 rounded-tl-lg bg-muted/95 backdrop-blur">Purchase</TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">Supplier invoice</TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-muted/95 text-right backdrop-blur">Total</TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">Invoice</TableHead>
-                  <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">Payment</TableHead>
-                  <TableHead className="sticky top-0 z-10 rounded-tr-lg bg-muted/95 backdrop-blur">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-                        <p className="text-sm">Loading purchasing data...</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : filteredPurchases.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <div className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
-                        <ReceiptText className="size-7 text-muted-foreground" aria-hidden="true" />
-                        <p className="font-medium">{view === 'pending' ? 'No pending invoices' : view === 'unpaid' ? 'No unpaid invoices' : 'No purchases yet'}</p>
-                        <p className="text-sm text-muted-foreground text-pretty">
-                          {view === 'pending' ? 'All received goods have supplier invoice details.' : view === 'unpaid' ? 'All supplier invoices are paid.' : 'Record a purchase to receive inventory.'}
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-
-                {!isLoading && filteredPurchases.map((purchase) => (
-                  <TableRow
-                    key={purchase.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => void showPurchase(purchase.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        void showPurchase(purchase.id)
-                      }
-                    }}
-                    className="cursor-pointer focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <TableCell>
-                      <span className="block truncate font-medium">{purchase.purchaseNumber}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{purchase.supplierName}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="block truncate">{purchase.supplierInvoiceNumber ?? 'Pending invoice'}</span>
-                      <span className="block text-xs text-muted-foreground">{purchase.itemCount} product{purchase.itemCount === 1 ? '' : 's'}</span>
-                    </TableCell>
-                    <TableCell className="text-right font-medium tabular-nums">{formatCurrency(purchase.total)}</TableCell>
-                    <TableCell>
-                      <InvoiceBadge status={purchase.invoiceStatus} />
-                    </TableCell>
-                    <TableCell>
-                      <PaymentBadge status={purchase.paymentStatus} />
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground tabular-nums">{formatDate(purchase.invoiceDate)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-      </CardContent>
-    </Card>
+    <InventoryPurchaseList
+      filteredPurchases={filteredPurchases}
+      isLoading={isLoading}
+      pressableClass={pressableClass}
+      search={search}
+      view={view}
+      onClearSearch={() => setSearch('')}
+      onSearchChange={setSearch}
+      onShowPurchase={(id) => void showPurchase(id)}
+      onStartNewPurchase={startNewPurchase}
+    />
   )
 
   const listContent = view === 'movements' ? movementCard : purchaseCard
@@ -846,533 +698,61 @@ export function InventoryPurchase({
       ) : null}
 
       {screen === 'productForm' ? (
-        <Card className="min-h-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle>{editingProduct ? 'Edit Product' : 'Create Product'}</CardTitle>
-            <CardDescription>
-              {editingProduct
-                ? `Update ${editingProduct.name} for sales and purchasing.`
-                : 'Add products here before receiving them in Record Purchase.'}
-            </CardDescription>
-            <CardAction>
-              <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
-                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-                Products
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="min-h-0 flex-1 overflow-y-auto">
-            <form onSubmit={saveProduct}>
-              <FieldGroup className="mx-auto max-w-3xl">
-                <Field>
-                  <FieldLabel htmlFor="inventory-name">Product name</FieldLabel>
-                  <Input
-                    id="inventory-name"
-                    value={productForm.name}
-                    onChange={(event) => updateProductForm('name', event.target.value)}
-                    placeholder="Brake Pad Front"
-                    required
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="inventory-category">Category</FieldLabel>
-                  <BaseSelect
-                    id="inventory-category"
-                    value={productForm.categoryId}
-                    placeholder="Select category"
-                    options={categories.map((category) => ({
-                      value: String(category.id),
-                      label: category.name,
-                    }))}
-                    onValueChange={(value) => updateProductForm('categoryId', value)}
-                  />
-                </Field>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="inventory-price">Sell price</FieldLabel>
-                    <Input
-                      id="inventory-price"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={productForm.unitPrice}
-                      onChange={(event) => updateProductForm('unitPrice', event.target.value)}
-                      placeholder="120000"
-                      required
-                    />
-                    <FieldDescription className="tabular-nums" aria-live="polite">
-                      {formattedProductPrice}
-                    </FieldDescription>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="inventory-unit">Unit type</FieldLabel>
-                    <BaseSelect
-                      id="inventory-unit"
-                      value={productForm.unitType}
-                      options={unitTypes.map((unitType) => ({
-                        value: unitType,
-                        label: unitType,
-                      }))}
-                      onValueChange={(value) => updateProductForm('unitType', value as ProductFormState['unitType'])}
-                    />
-                  </Field>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="inventory-stock">{editingProduct ? t('inventory.adjustment.currentStock') : t('inventory.openingStock')}</FieldLabel>
-                    <Input
-                      id="inventory-stock"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={productForm.stockQty}
-                      onChange={(event) => updateProductForm('stockQty', event.target.value)}
-                      placeholder="0"
-                      readOnly={Boolean(editingProduct)}
-                      className={cn(editingProduct && 'bg-muted text-muted-foreground')}
-                      required
-                    />
-                    {editingProduct ? (
-                      <FieldDescription>{t('inventory.adjustment.editHint')}</FieldDescription>
-                    ) : null}
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="inventory-min-stock">Minimum stock</FieldLabel>
-                    <Input
-                      id="inventory-min-stock"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={productForm.minStock}
-                      onChange={(event) => updateProductForm('minStock', event.target.value)}
-                      placeholder="4"
-                      required
-                    />
-                  </Field>
-                </div>
-
-                <Field>
-                  <FieldLabel htmlFor="inventory-description">Description <span className="text-muted-foreground">Optional</span></FieldLabel>
-                  <Input
-                    id="inventory-description"
-                    value={productForm.description}
-                    onChange={(event) => updateProductForm('description', event.target.value)}
-                    placeholder="Short product note"
-                  />
-                </Field>
-
-                {productFeedback ? (
-                  <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', productFeedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={productFeedback.tone === 'error' ? 'alert' : 'status'}>
-                    {productFeedback.message}
-                  </p>
-                ) : null}
-
-                <div className="flex gap-2">
-                  <Button type="submit" className={cn('h-10 flex-1', pressableClass)} disabled={isProductSaving}>
-                    <PackagePlus data-icon="inline-start" aria-hidden="true" />
-                    {isProductSaving ? 'Saving...' : editingProduct ? 'Save Changes' : 'Create'}
-                  </Button>
-                  {editingProduct ? (
-                    <Button type="button" variant="outline" className={cn('h-10', pressableClass)} onClick={() => openAdjustment(editingProduct)}>
-                      <PencilLine data-icon="inline-start" aria-hidden="true" />
-                      {t('inventory.adjustment.action')}
-                    </Button>
-                  ) : null}
-                  <Button type="button" variant="outline" className={cn('h-10', pressableClass)} onClick={editingProduct ? showList : () => resetProductForm()}>
-                    {editingProduct ? 'Cancel' : 'Clear'}
-                  </Button>
-                </div>
-
-                {editingProduct ? (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    className={cn('h-10 w-full', pressableClass)}
-                    onClick={() => void deactivateProduct(editingProduct)}
-                    disabled={isProductSaving}
-                  >
-                    <Trash2 data-icon="inline-start" aria-hidden="true" />
-                    Delete Product
-                  </Button>
-                ) : null}
-              </FieldGroup>
-            </form>
-          </CardContent>
-        </Card>
+        <InventoryProductFormScreen
+          categories={categories}
+          editingProduct={editingProduct}
+          formattedProductPrice={formattedProductPrice}
+          isProductSaving={isProductSaving}
+          pressableClass={pressableClass}
+          productFeedback={productFeedback}
+          productForm={productForm}
+          unitTypes={unitTypes}
+          onDeactivateProduct={(product) => void deactivateProduct(product)}
+          onOpenAdjustment={openAdjustment}
+          onResetProductForm={() => resetProductForm()}
+          onSaveProduct={saveProduct}
+          onShowList={showList}
+          onUpdateProductForm={updateProductForm}
+        />
       ) : screen === 'purchaseDetail' && selectedPurchase ? (
-        <Card className="min-h-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="truncate">{selectedPurchase.purchaseNumber}</CardTitle>
-            <CardDescription className="truncate">{selectedPurchase.supplierName}</CardDescription>
-            <CardAction>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
-                  <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-                  Purchases
-                </Button>
-                <InvoiceBadge status={selectedPurchase.invoiceStatus} />
-                <PaymentBadge status={selectedPurchase.paymentStatus} />
-              </div>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-md bg-muted p-3">
-                <p className="text-xs text-muted-foreground">Supplier invoice</p>
-                <p className="mt-1 truncate font-medium">{selectedPurchase.supplierInvoiceNumber ?? 'Pending invoice'}</p>
-              </div>
-              <div className="rounded-md bg-muted p-3">
-                <p className="text-xs text-muted-foreground">Invoice date</p>
-                <p className="mt-1 font-medium tabular-nums">{formatDate(selectedPurchase.invoiceDate)}</p>
-              </div>
-              <div className="rounded-md bg-muted p-3">
-                <p className="text-xs text-muted-foreground">Due date</p>
-                <p className="mt-1 font-medium tabular-nums">{formatDate(selectedPurchase.dueDate)}</p>
-              </div>
-              <div className="rounded-md bg-muted p-3">
-                <p className="text-xs text-muted-foreground">Total</p>
-                <p className="mt-1 font-medium tabular-nums">{formatCurrency(selectedPurchase.total)}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-semibold">Received products</p>
-              {selectedPurchase.items.map((item) => (
-                <div key={item.id} className="rounded-md bg-muted/70 p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">{item.productName}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{item.sku}</span>
-                    </span>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums">{formatCurrency(item.lineTotal)}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground tabular-nums">{item.quantity} × {formatCurrency(item.unitCost)}</p>
-                </div>
-              ))}
-            </div>
-
-            {selectedPurchase.notes ? (
-              <div>
-                <p className="text-sm font-semibold">Notes</p>
-                <p className="mt-1 text-sm text-muted-foreground text-pretty">{selectedPurchase.notes}</p>
-              </div>
-            ) : null}
-
-            {feedback ? (
-              <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', feedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={feedback.tone === 'error' ? 'alert' : 'status'}>
-                {feedback.message}
-              </p>
-            ) : null}
-
-            <div className="mt-auto flex gap-2">
-              <Button type="button" variant="outline" className={cn('flex-1', pressableClass)} onClick={editInvoiceDetails}>
-                <PencilLine data-icon="inline-start" aria-hidden="true" />
-                Edit Invoice
-              </Button>
-              {selectedPurchase.paymentStatus === 'unpaid' ? (
-                <Button type="button" className={cn('flex-1', pressableClass)} onClick={() => void markPaid()}>
-                  <WalletCards data-icon="inline-start" aria-hidden="true" />
-                  Mark Paid
-                </Button>
-              ) : null}
-            </div>
-          </CardContent>
-        </Card>
+        <InventoryPurchaseDetailScreen
+          feedback={feedback}
+          pressableClass={pressableClass}
+          purchase={selectedPurchase}
+          onEditInvoiceDetails={editInvoiceDetails}
+          onMarkPaid={() => void markPaid()}
+          onShowList={showList}
+        />
       ) : screen === 'invoiceForm' && selectedPurchase ? (
-        <Card className="min-h-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="truncate">Invoice Details</CardTitle>
-            <CardDescription className="truncate">{selectedPurchase.purchaseNumber} · {selectedPurchase.supplierName}</CardDescription>
-            <CardAction>
-              <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={() => setScreen('purchaseDetail')}>
-                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-                Detail
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="min-h-0 flex-1 overflow-y-auto">
-            <form onSubmit={saveInvoiceDetails}>
-              <FieldGroup className="mx-auto max-w-3xl">
-                <div className="rounded-lg bg-muted p-3">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-muted-foreground">Locked stock total</span>
-                    <span className="font-semibold tabular-nums">{formatCurrency(selectedPurchase.total)}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground text-pretty">
-                    Supplier, products, quantities, costs, and stock movement are locked after posting.
-                  </p>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="invoice-edit-number">Supplier invoice number</FieldLabel>
-                    <Input
-                      id="invoice-edit-number"
-                      value={invoiceForm.supplierInvoiceNumber}
-                      onChange={(event) => updateInvoiceForm('supplierInvoiceNumber', event.target.value)}
-                      placeholder="SUP-INV-001"
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="invoice-edit-date">Invoice date</FieldLabel>
-                    <Input
-                      id="invoice-edit-date"
-                      type="date"
-                      value={invoiceForm.invoiceDate}
-                      onChange={(event) => updateInvoiceForm('invoiceDate', event.target.value)}
-                    />
-                  </Field>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-3">
-                  <Field>
-                    <FieldLabel htmlFor="invoice-edit-payment">Payment</FieldLabel>
-                    <BaseSelect
-                      id="invoice-edit-payment"
-                      value={invoiceForm.paymentStatus}
-                      onValueChange={(value) => updateInvoiceForm('paymentStatus', value as PurchasePaymentStatus)}
-                      options={[
-                        { value: 'unpaid', label: 'Unpaid' },
-                        { value: 'paid', label: 'Paid' },
-                      ]}
-                    />
-                  </Field>
-                  {invoiceForm.paymentStatus === 'unpaid' ? (
-                    <Field>
-                      <FieldLabel htmlFor="invoice-edit-due">Due date</FieldLabel>
-                      <Input
-                        id="invoice-edit-due"
-                        type="date"
-                        min={invoiceForm.invoiceDate}
-                        value={invoiceForm.dueDate}
-                        onChange={(event) => updateInvoiceForm('dueDate', event.target.value)}
-                      />
-                    </Field>
-                  ) : (
-                    <Field>
-                      <FieldLabel htmlFor="invoice-edit-paid">Paid date</FieldLabel>
-                      <Input
-                        id="invoice-edit-paid"
-                        type="date"
-                        value={invoiceForm.paidAt}
-                        onChange={(event) => updateInvoiceForm('paidAt', event.target.value)}
-                      />
-                    </Field>
-                  )}
-                </div>
-
-                <Field>
-                  <FieldLabel htmlFor="invoice-edit-notes">Notes</FieldLabel>
-                  <Input
-                    id="invoice-edit-notes"
-                    value={invoiceForm.notes}
-                    onChange={(event) => updateInvoiceForm('notes', event.target.value)}
-                    placeholder="Optional payment or supplier note"
-                  />
-                </Field>
-
-                {feedback ? (
-                  <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', feedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={feedback.tone === 'error' ? 'alert' : 'status'}>
-                    {feedback.message}
-                  </p>
-                ) : null}
-
-                <Button type="submit" className={cn('h-10 w-full', pressableClass)} disabled={isSaving}>
-                  <PencilLine data-icon="inline-start" aria-hidden="true" />
-                  {isSaving ? 'Saving...' : selectedPurchase.invoiceStatus === 'pending' ? 'Complete Invoice Details' : 'Save Invoice Details'}
-                </Button>
-              </FieldGroup>
-            </form>
-          </CardContent>
-        </Card>
+        <InventoryInvoiceFormScreen
+          feedback={feedback}
+          invoiceForm={invoiceForm}
+          isSaving={isSaving}
+          pressableClass={pressableClass}
+          purchase={selectedPurchase}
+          onBackToDetail={() => setScreen('purchaseDetail')}
+          onSaveInvoiceDetails={saveInvoiceDetails}
+          onUpdateInvoiceForm={updateInvoiceForm}
+        />
       ) : screen === 'recordPurchase' ? (
-        <Card className="min-h-0 overflow-hidden">
-          <CardHeader>
-            <CardTitle>Record Purchase</CardTitle>
-            <CardDescription>
-              Saving receives stock immediately. Supplier invoice details can be completed later.
-            </CardDescription>
-            <CardAction>
-              <Button type="button" variant="outline" size="sm" className={pressableClass} onClick={showList}>
-                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-                Purchases
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="min-h-0 flex-1 overflow-y-auto">
-            <form onSubmit={requestSave}>
-              <FieldGroup className="mx-auto max-w-3xl">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="purchase-supplier">Supplier</FieldLabel>
-                    <BaseSelect
-                      id="purchase-supplier"
-                      value={form.supplierId}
-                      onValueChange={(value) => updateForm('supplierId', value)}
-                      placeholder={suppliers.length ? 'Choose supplier' : 'Add a supplier first'}
-                      disabled={suppliers.length === 0}
-                      options={suppliers.map((supplier) => ({ value: String(supplier.id), label: supplier.name }))}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="purchase-invoice">Supplier invoice number <span className="text-muted-foreground">Optional</span></FieldLabel>
-                    <Input id="purchase-invoice" value={form.supplierInvoiceNumber} onChange={(event) => updateForm('supplierInvoiceNumber', event.target.value)} placeholder="SUP-INV-001" />
-                  </Field>
-                </div>
-                <div className="grid gap-3 md:grid-cols-3">
-                  <Field>
-                    <FieldLabel htmlFor="purchase-date">Invoice date <span className="text-muted-foreground">Optional</span></FieldLabel>
-                    <Input id="purchase-date" type="date" value={form.invoiceDate} onChange={(event) => updateForm('invoiceDate', event.target.value)} />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="purchase-status">Payment</FieldLabel>
-                    <BaseSelect
-                      id="purchase-status"
-                      value={form.paymentStatus}
-                      onValueChange={(value) => updateForm('paymentStatus', value as PurchasePaymentStatus)}
-                      options={[
-                        { value: 'unpaid', label: 'Unpaid' },
-                        { value: 'paid', label: 'Paid' },
-                      ]}
-                    />
-                  </Field>
-                  {form.paymentStatus === 'unpaid' ? (
-                    <Field>
-                      <FieldLabel htmlFor="purchase-due">Due date</FieldLabel>
-                      <Input id="purchase-due" type="date" min={form.invoiceDate || undefined} value={form.dueDate} onChange={(event) => updateForm('dueDate', event.target.value)} />
-                    </Field>
-                  ) : null}
-                </div>
-
-                <div className="rounded-lg border bg-background p-3">
-                  <p className="text-sm font-semibold">Products received</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground text-pretty">Add existing products with the received quantity and purchase cost.</p>
-                  <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_140px_auto] md:items-end">
-                    <Field>
-                      <FieldLabel htmlFor="purchase-product">Product</FieldLabel>
-                      <BaseSelect
-                        id="purchase-product"
-                        value={form.productId}
-                        onValueChange={selectProduct}
-                        placeholder="Choose product"
-                        options={products.map((product) => ({
-                          value: String(product.id),
-                          label: product.name,
-                          disabled: lines.some((line) => line.productId === product.id),
-                        }))}
-                      />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="purchase-quantity">Quantity</FieldLabel>
-                      <Input id="purchase-quantity" type="number" min="1" step="1" value={form.quantity} onChange={(event) => updateForm('quantity', event.target.value)} />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="purchase-cost">Unit cost</FieldLabel>
-                      <Input id="purchase-cost" type="number" min="0" step="1" value={form.unitCost} onChange={(event) => updateForm('unitCost', event.target.value)} placeholder="0" />
-                    </Field>
-                    <Button type="button" variant="outline" className={cn('h-10', pressableClass)} onClick={addLine}>
-                      <Plus data-icon="inline-start" aria-hidden="true" />
-                      Add
-                    </Button>
-                  </div>
-
-                  <div className="mt-3 flex flex-col gap-2">
-                    {lines.length === 0 ? (
-                      <p className="rounded-md border border-dashed p-3 text-center text-sm text-muted-foreground">No products added.</p>
-                    ) : lines.map((line) => {
-                      const product = products.find((item) => item.id === line.productId)
-                      return (
-                        <div key={line.productId} className="grid gap-2 rounded-md bg-muted/70 p-2.5 md:grid-cols-[minmax(0,1fr)_100px_130px_120px_auto] md:items-end">
-                          <span className="min-w-0 md:pb-2">
-                            <span className="block truncate text-sm font-medium">{product?.name}</span>
-                          </span>
-                          <Field>
-                            <FieldLabel htmlFor={`purchase-line-qty-${line.productId}`} className="text-xs">Qty</FieldLabel>
-                            <Input
-                              id={`purchase-line-qty-${line.productId}`}
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={line.quantity}
-                              onChange={(event) => updateLine(line.productId, 'quantity', event.target.value)}
-                              className="h-9"
-                            />
-                          </Field>
-                          <Field>
-                            <FieldLabel htmlFor={`purchase-line-cost-${line.productId}`} className="text-xs">Unit cost</FieldLabel>
-                            <Input
-                              id={`purchase-line-cost-${line.productId}`}
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={line.unitCost}
-                              onChange={(event) => updateLine(line.productId, 'unitCost', event.target.value)}
-                              className="h-9"
-                            />
-                          </Field>
-                          <span className="text-sm font-semibold tabular-nums md:pb-2">{formatCurrency(line.quantity * line.unitCost)}</span>
-                          <Button type="button" variant="ghost" size="icon-sm" className={cn('md:mb-0.5', pressableClass)} onClick={() => removeLine(line.productId)} aria-label={`Remove ${product?.name}`}>
-                            <Trash2 aria-hidden="true" />
-                          </Button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <Field>
-                  <FieldLabel htmlFor="purchase-notes">Notes</FieldLabel>
-                  <Input id="purchase-notes" value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} placeholder="Optional payment or delivery notes" />
-                </Field>
-
-                <div className="rounded-lg bg-muted p-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Products received</span>
-                    <span className="tabular-nums">{receivedUnits}</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-base font-semibold">
-                    <span>Invoice total</span>
-                    <span className="tabular-nums">{formatCurrency(purchaseTotal)}</span>
-                  </div>
-                </div>
-
-                {feedback ? (
-                  <p className={cn('rounded-md px-3 py-2 text-sm text-pretty', feedback.tone === 'success' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive')} role={feedback.tone === 'error' ? 'alert' : 'status'}>
-                    {feedback.message}
-                  </p>
-                ) : null}
-
-                <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-                  <Button type="submit" className={cn('h-10 w-full', pressableClass)} disabled={isSaving || suppliers.length === 0}>
-                    <FileText data-icon="inline-start" aria-hidden="true" />
-                    {isSaving ? 'Saving...' : 'Review and Save'}
-                  </Button>
-                  <AlertDialogPortal>
-                    <AlertDialogBackdrop />
-                    <AlertDialogPopup>
-                      <AlertDialogTitle>Receive this purchase into inventory?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will add {receivedUnits} unit{receivedUnits === 1 ? '' : 's'} to stock and record a {formatCurrency(purchaseTotal)} purchase. Invoice details can be completed later, but posted products, quantities, and costs cannot be changed.
-                      </AlertDialogDescription>
-                      <div className="mt-5 flex justify-end gap-2">
-                        <AlertDialogClose render={<Button type="button" variant="outline" className={pressableClass}>Cancel</Button>} />
-                        <Button type="button" className={pressableClass} onClick={() => void savePurchase()} disabled={isSaving}>
-                          <PackageCheck data-icon="inline-start" aria-hidden="true" />
-                          {isSaving ? 'Receiving...' : 'Receive Stock'}
-                        </Button>
-                      </div>
-                    </AlertDialogPopup>
-                  </AlertDialogPortal>
-                </AlertDialog>
-              </FieldGroup>
-            </form>
-          </CardContent>
-        </Card>
+        <InventoryRecordPurchase
+          feedback={feedback}
+          form={form}
+          isConfirmOpen={isConfirmOpen}
+          isSaving={isSaving}
+          lines={lines}
+          pressableClass={pressableClass}
+          products={products}
+          suppliers={suppliers}
+          onAddLine={addLine}
+          onConfirmOpenChange={setIsConfirmOpen}
+          onRemoveLine={removeLine}
+          onRequestSave={requestSave}
+          onSavePurchase={() => void savePurchase()}
+          onSelectProduct={selectProduct}
+          onShowList={showList}
+          onUpdateForm={updateForm}
+        />
       ) : null}
 
       <Dialog open={Boolean(adjustingProduct)} onOpenChange={(open) => { if (!open) closeAdjustment() }}>

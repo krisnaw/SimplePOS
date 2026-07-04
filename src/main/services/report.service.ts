@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm'
-import { invoices, payments, productCategories, products, saleItems, workOrders } from '../db/schema/index'
+import { invoices, payments, productCategories, products, purchaseItems, saleItems, workOrders } from '../db/schema/index'
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 
@@ -36,6 +36,9 @@ export type TopSellingItemSummary = {
   category: string | null
   quantity: number
   total: number
+  cogsTotal: number
+  grossProfit: number
+  grossMarginPercent: number
 }
 
 export type LowStockItemSummary = {
@@ -54,6 +57,13 @@ export type ReportSummary = {
   invoiceCount: number
   averageInvoiceTotal: number
   inventoryValue: number
+  inventoryRetailValue: number
+  inventoryEstimatedCostValue: number
+  cogsTotal: number
+  grossProfit: number
+  grossMarginPercent: number
+  legacyCostMissingCount: number
+  hasLegacyCostGaps: boolean
   lowStockCount: number
   workOrderCount: number
   completedWorkOrderCount: number
@@ -106,6 +116,10 @@ function periodRange(period: ReportPeriod, now = new Date()): { dateFrom: Date; 
 function isWithinRange(value: string, dateFrom: Date, dateTo: Date): boolean {
   const time = new Date(value).getTime()
   return Number.isFinite(time) && time >= dateFrom.getTime() && time <= dateTo.getTime()
+}
+
+function marginPercent(total: number, profit: number): number {
+  return total > 0 ? Math.round((profit / total) * 1000) / 10 : 0
 }
 
 async function listLowStockItems(): Promise<LowStockItemSummary[]> {
@@ -182,6 +196,13 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     invoiceCount: 0,
     averageInvoiceTotal: 0,
     inventoryValue: 0,
+    inventoryRetailValue: 0,
+    inventoryEstimatedCostValue: 0,
+    cogsTotal: 0,
+    grossProfit: 0,
+    grossMarginPercent: 0,
+    legacyCostMissingCount: 0,
+    hasLegacyCostGaps: false,
     lowStockCount: 0,
     workOrderCount: 0,
     completedWorkOrderCount: 0,
@@ -194,12 +215,13 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
 
   if (!repository) return emptySummary
 
-  const [invoiceRows, paymentRows, itemRows, productRows, categoryRows, workOrderRows, lowStockItems] = await Promise.all([
+  const [invoiceRows, paymentRows, itemRows, productRows, categoryRows, purchaseItemRows, workOrderRows, lowStockItems] = await Promise.all([
     repository.select().from(invoices).where(eq(invoices.status, 'paid')),
     repository.select().from(payments).where(eq(payments.status, 'paid')),
     repository.select().from(saleItems),
-    repository.select().from(products).where(eq(products.isActive, true)),
+    repository.select().from(products),
     repository.select().from(productCategories),
+    repository.select({ productId: purchaseItems.productId }).from(purchaseItems),
     repository.select().from(workOrders),
     listLowStockItems(),
   ])
@@ -210,7 +232,12 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
   const periodPayments = paymentRows.filter((payment) => invoiceIds.has(payment.invoiceId))
   const periodItems = itemRows.filter((item) => saleIds.has(item.saleId))
   const salesTotal = periodInvoices.reduce((total, invoice) => total + invoice.total, 0)
-  const inventoryValue = productRows.reduce((total, product) => total + product.stockQty * product.unitPrice, 0)
+  const activeProductRows = productRows.filter((product) => product.isActive)
+  const inventoryRetailValue = activeProductRows.reduce((total, product) => total + product.stockQty * product.unitPrice, 0)
+  const inventoryEstimatedCostValue = activeProductRows.reduce(
+    (total, product) => total + product.stockQty * product.lastPurchaseCost,
+    0,
+  )
   const periodWorkOrders = workOrderRows.filter((workOrder) => isWithinRange(workOrder.createdAt, dateFrom, dateTo))
   const completedWorkOrderCount = periodWorkOrders.filter((workOrder) =>
     workOrder.status === 'completed' || workOrder.status === 'invoiced',
@@ -219,6 +246,8 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
   const paymentByMethod = new Map<PaymentMethod, PaymentMethodSummary>()
   const itemByKey = new Map<string, TopSellingItemSummary>()
   const categoryNameById = new Map(categoryRows.map((category) => [category.id, category.name]))
+  const purchasedProductIds = new Set(purchaseItemRows.map((item) => item.productId))
+  const productById = new Map(productRows.map((product) => [product.id, product]))
   const categoryByProductId = new Map(
     productRows.map((product) => [
       product.id,
@@ -242,6 +271,7 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     if (item.itemType !== 'product') continue
 
     const key = `${item.itemType}:${item.productId ?? item.serviceId ?? item.name}`
+    const itemCogsTotal = item.costTotalSnapshot ?? 0
     const current = itemByKey.get(key) ?? {
       itemType: item.itemType,
       name: item.name,
@@ -249,12 +279,32 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
       category: item.productId === null ? null : (categoryByProductId.get(item.productId) ?? null),
       quantity: 0,
       total: 0,
+      cogsTotal: 0,
+      grossProfit: 0,
+      grossMarginPercent: 0,
     }
 
     current.quantity += item.quantity
     current.total += item.lineTotal
+    current.cogsTotal += itemCogsTotal
+    current.grossProfit = current.total - current.cogsTotal
+    current.grossMarginPercent = marginPercent(current.total, current.grossProfit)
     itemByKey.set(key, current)
   }
+
+  const cogsTotal = periodItems.reduce(
+    (total, item) => item.itemType === 'product' ? total + (item.costTotalSnapshot ?? 0) : total,
+    0,
+  )
+  const legacyCostMissingCount = periodItems.filter((item) => {
+    if (item.itemType !== 'product' || item.costTotalSnapshot !== null || item.productId === null) return false
+
+    const product = productById.get(item.productId)
+    if (!product) return false
+
+    return product.lastPurchaseCost > 0 || purchasedProductIds.has(product.id)
+  }).length
+  const grossProfit = salesTotal - cogsTotal
 
   return {
     period,
@@ -263,7 +313,14 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     salesTotal,
     invoiceCount: periodInvoices.length,
     averageInvoiceTotal: periodInvoices.length > 0 ? Math.round(salesTotal / periodInvoices.length) : 0,
-    inventoryValue,
+    inventoryValue: inventoryRetailValue,
+    inventoryRetailValue,
+    inventoryEstimatedCostValue,
+    cogsTotal,
+    grossProfit,
+    grossMarginPercent: marginPercent(salesTotal, grossProfit),
+    legacyCostMissingCount,
+    hasLegacyCostGaps: legacyCostMissingCount > 0,
     lowStockCount: lowStockItems.length,
     workOrderCount: periodWorkOrders.length,
     completedWorkOrderCount,

@@ -22,6 +22,8 @@
     "notes": "Notes",
     "all": "All",
     "today": "Today",
+    "yes": "Yes",
+    "no": "No",
     "noRecords": "No records found.",
     "actions": "Actions",
     "remove": "Remove",
@@ -258,11 +260,18 @@
     "atMinimum": "At or below minimum",
     "productList": "Product List",
     "stockValueHint": "{{value}} in current stock value.",
+    "stockValueHintWithCost": "{{retailValue}} retail value · {{costValue}} estimated cost.",
+    "estimatedCostValue": "Estimated Cost Value",
+    "latestCostEstimate": "Based on latest purchase cost",
+    "estimatedMargin": "{{value}}% est. margin",
+    "lastPurchaseCost": "Last purchase cost",
+    "purchaseHistory": "Purchase history",
     "searchPlaceholder": "Search inventory",
     "table": {
       "product": "Product",
       "category": "Category",
       "price": "Price",
+      "lastCost": "Last Cost",
       "stock": "Stock",
       "status": "Status",
       "remove": "Remove"
@@ -557,6 +566,21 @@
         "helper_one": "{{count}} low-stock item",
         "helper_other": "{{count}} low-stock items"
       },
+      "cogs": {
+        "title": "COGS",
+        "description": "Product cost captured at checkout.",
+        "helper": "Cost snapshots"
+      },
+      "grossProfit": {
+        "title": "Gross Profit",
+        "description": "Sales minus COGS.",
+        "helper": "Selected period"
+      },
+      "grossMargin": {
+        "title": "Gross Margin",
+        "description": "Gross profit as a percent of sales.",
+        "helper": "Selected period"
+      },
       "workOrders": {
         "title": "Work Orders",
         "description": "Repair jobs opened in this period.",
@@ -571,9 +595,17 @@
         "productName": "Product Name",
         "category": "Category",
         "totalUnit": "Total Unit",
-        "total": "Total"
+        "total": "Total",
+        "sales": "Sales",
+        "cogs": "COGS",
+        "profit": "Profit",
+        "margin": "Margin"
       }
     },
+    "legacyCostWarning": "{{count}} product sale line has missing historical cost. Gross profit and margin are incomplete for this period.",
+    "legacyCostWarning_one": "{{count}} product sale line has missing historical cost. Gross profit and margin are incomplete for this period.",
+    "legacyCostWarning_other": "{{count}} product sale lines have missing historical cost. Gross profit and margin are incomplete for this period.",
+    "incompleteProfit": "Incomplete historical cost",
     "paymentMethods": {
       "title": "Payment Methods",
       "description": "Paid invoices by method.",

@@ -110,6 +110,12 @@ and notes. Accurate vehicle records make Sales search and invoice lookup faster.
 - Maintain SKU, name, selling price, stock, unit type, and minimum stock.
 - Keep a product active when it should appear in Sales.
 - Low-stock indicators help identify products that need replenishment.
+- Admin users can review latest purchase cost, estimated margin, retail
+  inventory value, and estimated cost inventory value.
+
+Retail inventory value uses selling price times stock quantity. Estimated cost
+inventory value uses latest purchase cost times stock quantity. The estimated
+cost value is a latest-cost estimate, not a full accounting valuation.
 
 ### Services
 
@@ -128,6 +134,24 @@ and notes. Accurate vehicle records make Sales search and invoice lookup faster.
 Posting a purchase immediately increases product stock. Use **Needs Invoice** for
 received goods missing supplier invoice details and **Unpaid** for supplier
 invoices that still need payment.
+
+Purchases also update the latest cost on each received product. New checkouts
+capture that product cost on the sale line at the time checkout is completed, so
+later purchase-cost changes do not rewrite old sales.
+
+Products that have opening stock but no purchase history are treated as
+zero-cost for COGS until opening stock costing is added. Service-like items that
+are stored in the product table, such as car wash, do not require COGS unless
+they have purchase history or are explicitly cost-tracked in a future version.
+
+## Reports
+
+Admin reports include COGS, gross profit, and gross margin. These are
+admin-facing business metrics and are hidden from non-admin users.
+
+Older sales created before COGS snapshots existed may not have historical cost
+data. When a selected report period contains those sales, SimplePOS marks profit
+and margin as incomplete for that period.
 
 ## Troubleshooting
 

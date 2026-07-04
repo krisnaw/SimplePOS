@@ -23,6 +23,7 @@ export type ProductSummary = {
   stockQty: number
   minStock: number
   lastPurchaseCost: number
+  hasPurchaseHistory: boolean
   isActive: boolean
   createdAt?: string
   updatedAt: string

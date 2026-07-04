@@ -17,6 +17,7 @@ import {
 import {Separator} from '@/renderer/components/ui/separator'
 import {cn} from '@/renderer/lib/utils'
 import {formatCurrency, formatDate, formatDateTime, formatPaymentMethod} from '@/renderer/lib/formatters'
+import type {AuthenticatedUser} from '@/shared/types/user'
 import type {ReportPeriod, ReportSummary} from './ReportsWorkspace.types'
 import {ProductCategoryBadge} from '../inventory/ProductCategoryBadge'
 
@@ -28,6 +29,13 @@ const emptyReport: ReportSummary = {
   invoiceCount: 0,
   averageInvoiceTotal: 0,
   inventoryValue: 0,
+  inventoryRetailValue: 0,
+  inventoryEstimatedCostValue: 0,
+  cogsTotal: 0,
+  grossProfit: 0,
+  grossMarginPercent: 0,
+  legacyCostMissingCount: 0,
+  hasLegacyCostGaps: false,
   lowStockCount: 0,
   workOrderCount: 0,
   completedWorkOrderCount: 0,
@@ -41,8 +49,13 @@ const emptyReport: ReportSummary = {
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
 
-export function ReportsWorkspace() {
+function formatPercent(value: number): string {
+  return `${value.toLocaleString(undefined, {maximumFractionDigits: 1})}%`
+}
+
+export function ReportsWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
   const {t} = useTranslation()
+  const canViewProfit = currentUser.role === 'admin'
   const [period, setPeriod] = useState<ReportPeriod>('today')
   const [report, setReport] = useState<ReportSummary>(emptyReport)
   const [isLoading, setIsLoading] = useState(true)
@@ -132,18 +145,29 @@ export function ReportsWorkspace() {
                     <Separator className="bg-zinc-200"/>
 
                     <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      {[
+                      {(canViewProfit ? [
+                        [t('reports.groups.sales.title'), formatCurrency(report.salesTotal)],
+                        [t('reports.groups.cogs.title'), formatCurrency(report.cogsTotal)],
+                        [t('reports.groups.grossProfit.title'), formatCurrency(report.grossProfit)],
+                        [t('reports.groups.grossMargin.title'), formatPercent(report.grossMarginPercent)],
+                      ] : [
                         [t('reports.groups.sales.title'), formatCurrency(report.salesTotal)],
                         [t('reports.groups.averageInvoice.title'), formatCurrency(report.averageInvoiceTotal)],
-                        [t('reports.groups.inventoryValue.title'), formatCurrency(report.inventoryValue)],
+                        [t('reports.groups.inventoryValue.title'), formatCurrency(report.inventoryRetailValue)],
                         [t('reports.groups.workOrders.title'), String(report.workOrderCount)],
-                      ].map(([label, value]) => (
+                      ]).map(([label, value]) => (
                         <div key={label} className="flex flex-col gap-1 rounded-md bg-zinc-100 p-3">
                           <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">{label}</p>
                           <p className="text-sm font-semibold tabular-nums">{value}</p>
                         </div>
                       ))}
                     </section>
+
+                    {canViewProfit && report.hasLegacyCostGaps ? (
+                      <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        {t('reports.legacyCostWarning', {count: report.legacyCostMissingCount})}
+                      </p>
+                    ) : null}
 
                     <section className="grid gap-6 sm:grid-cols-2">
                       <div className="flex flex-col gap-3">
@@ -193,10 +217,19 @@ export function ReportsWorkspace() {
                       </div>
                       <div className="overflow-hidden rounded-md ring-1 ring-zinc-200">
                         <div
-                          className="grid grid-cols-[minmax(0,1fr)_70px_110px] gap-3 bg-zinc-100 px-3 py-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                          className={cn(
+                            'grid gap-3 bg-zinc-100 px-3 py-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500',
+                            canViewProfit
+                              ? 'grid-cols-[minmax(0,1fr)_58px_92px_92px]'
+                              : 'grid-cols-[minmax(0,1fr)_70px_110px]',
+                          )}
+                        >
                           <span>{t('reports.topSelling.table.productName')}</span>
                           <span className="text-right">{t('reports.topSelling.table.totalUnit')}</span>
-                          <span className="text-right">{t('reports.topSelling.table.total')}</span>
+                          <span className="text-right">{t('reports.topSelling.table.sales')}</span>
+                          {canViewProfit ? (
+                            <span className="text-right">{t('reports.topSelling.table.profit')}</span>
+                          ) : null}
                         </div>
                         {report.topSellingItems.length === 0 ? (
                           <p className="px-3 py-4 text-xs text-zinc-500">{t('reports.topSelling.noSales')}</p>
@@ -204,11 +237,19 @@ export function ReportsWorkspace() {
                           report.topSellingItems.slice(0, 8).map((item) => (
                             <div
                               key={`${item.itemType}:${item.sku ?? item.name}`}
-                              className="grid grid-cols-[minmax(0,1fr)_70px_110px] gap-3 border-t border-zinc-200 px-3 py-2 text-xs"
+                              className={cn(
+                                'grid gap-3 border-t border-zinc-200 px-3 py-2 text-xs',
+                                canViewProfit
+                                  ? 'grid-cols-[minmax(0,1fr)_58px_92px_92px]'
+                                  : 'grid-cols-[minmax(0,1fr)_70px_110px]',
+                              )}
                             >
                               <span className="truncate">{item.name}</span>
                               <span className="text-right tabular-nums">{item.quantity}</span>
                               <span className="text-right font-medium tabular-nums">{formatCurrency(item.total)}</span>
+                              {canViewProfit ? (
+                                <span className="text-right font-medium tabular-nums">{formatCurrency(item.grossProfit)}</span>
+                              ) : null}
                             </div>
                           ))
                         )}
@@ -255,25 +296,98 @@ export function ReportsWorkspace() {
           </CardAction>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          <div className={cn('grid gap-2', canViewProfit ? 'md:grid-cols-4' : 'md:grid-cols-3')}>
+            {(canViewProfit ? [
+              {
+                label: t('reports.groups.sales.title'),
+                value: formatCurrency(report.salesTotal),
+                helper: t('reports.groups.sales.helper', {count: report.invoiceCount}),
+              },
+              {
+                label: t('reports.groups.cogs.title'),
+                value: formatCurrency(report.cogsTotal),
+                helper: t('reports.groups.cogs.helper'),
+              },
+              {
+                label: t('reports.groups.grossProfit.title'),
+                value: formatCurrency(report.grossProfit),
+                helper: report.hasLegacyCostGaps
+                  ? t('reports.incompleteProfit')
+                  : t('reports.groups.grossProfit.helper'),
+              },
+              {
+                label: t('reports.groups.grossMargin.title'),
+                value: formatPercent(report.grossMarginPercent),
+                helper: t('reports.groups.grossMargin.helper'),
+              },
+            ] : [
+              {
+                label: t('reports.groups.sales.title'),
+                value: formatCurrency(report.salesTotal),
+                helper: t('reports.groups.sales.helper', {count: report.invoiceCount}),
+              },
+              {
+                label: t('reports.groups.averageInvoice.title'),
+                value: formatCurrency(report.averageInvoiceTotal),
+                helper: t('reports.groups.averageInvoice.helper'),
+              },
+              {
+                label: t('reports.groups.inventoryValue.title'),
+                value: formatCurrency(report.inventoryRetailValue),
+                helper: t('reports.groups.inventoryValue.helper', {count: report.lowStockCount}),
+              },
+            ]).map((metric) => (
+              <div key={metric.label} className="rounded-lg border bg-background px-3 py-2.5">
+                <p className="text-xs font-medium text-muted-foreground">{metric.label}</p>
+                <p className="mt-1 text-lg font-semibold tabular-nums">{metric.value}</p>
+                <p className="mt-1 truncate text-xs text-muted-foreground">{metric.helper}</p>
+              </div>
+            ))}
+          </div>
+
+          {canViewProfit && report.hasLegacyCostGaps ? (
+            <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-800 text-pretty" role="status">
+              {t('reports.legacyCostWarning', {count: report.legacyCostMissingCount})}
+            </p>
+          ) : null}
+
           {!isLoading && report.topSellingItems.length === 0 ? (
             <div
               className="flex min-h-52 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center">
               <p className="text-sm text-muted-foreground text-pretty">{t('reports.topSelling.noSales')}</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-lg border bg-background">
+            <div className="overflow-x-auto rounded-lg border bg-background">
               <div
-                className="grid grid-cols-[minmax(0,1.5fr)_minmax(120px,1fr)_100px_132px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
+                className={cn(
+                  'grid min-w-max gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground',
+                  canViewProfit
+                    ? 'grid-cols-[minmax(220px,1.5fr)_minmax(120px,1fr)_80px_120px_120px_120px_90px]'
+                    : 'grid-cols-[minmax(220px,1.5fr)_minmax(120px,1fr)_100px_132px]',
+                )}
+              >
                 <span>{t('reports.topSelling.table.productName')}</span>
                 <span>{t('reports.topSelling.table.category')}</span>
                 <span className="text-right">{t('reports.topSelling.table.totalUnit')}</span>
-                <span className="text-right">{t('reports.topSelling.table.total')}</span>
+                <span className="text-right">{t('reports.topSelling.table.sales')}</span>
+                {canViewProfit ? (
+                  <>
+                    <span className="text-right">{t('reports.topSelling.table.cogs')}</span>
+                    <span className="text-right">{t('reports.topSelling.table.profit')}</span>
+                    <span className="text-right">{t('reports.topSelling.table.margin')}</span>
+                  </>
+                ) : null}
               </div>
               <div className="divide-y">
                 {report.topSellingItems.map((item) => (
                   <div
                     key={`${item.itemType}:${item.sku ?? item.name}`}
-                    className="grid grid-cols-[minmax(0,1.5fr)_minmax(120px,1fr)_100px_132px] items-center gap-3 px-3 py-2.5 text-sm"
+                    className={cn(
+                      'grid min-w-max items-center gap-3 px-3 py-2.5 text-sm',
+                      canViewProfit
+                        ? 'grid-cols-[minmax(220px,1.5fr)_minmax(120px,1fr)_80px_120px_120px_120px_90px]'
+                        : 'grid-cols-[minmax(220px,1.5fr)_minmax(120px,1fr)_100px_132px]',
+                    )}
                   >
                     <p className="truncate font-medium text-balance">{item.name}</p>
                     {item.category ? (
@@ -283,6 +397,13 @@ export function ReportsWorkspace() {
                     )}
                     <span className="text-right tabular-nums">{item.quantity}</span>
                     <span className="text-right font-medium tabular-nums">{formatCurrency(item.total)}</span>
+                    {canViewProfit ? (
+                      <>
+                        <span className="text-right tabular-nums">{formatCurrency(item.cogsTotal)}</span>
+                        <span className="text-right font-medium tabular-nums">{formatCurrency(item.grossProfit)}</span>
+                        <span className="text-right tabular-nums">{formatPercent(item.grossMarginPercent)}</span>
+                      </>
+                    ) : null}
                   </div>
                 ))}
               </div>

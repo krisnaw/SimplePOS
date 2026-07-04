@@ -241,7 +241,7 @@ export default function Dashboard() {
               {activeSection === 'sales' ? <SalesWorkspace currentUser={user} /> : null}
               {activeSection === 'inventory' ? (
                 <InventoryLayout activeTab={inventoryTab} onTabChange={setInventoryTab}>
-                  {inventoryTab === 'product' ? <InventoryProduct /> : null}
+                  {inventoryTab === 'product' ? <InventoryProduct currentUser={user} /> : null}
                   {inventoryTab === 'purchase' ? (
                     <InventoryPurchase key="purchase" currentUser={user} embedded initialView="purchases" />
                   ) : null}
@@ -257,7 +257,7 @@ export default function Dashboard() {
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
               {activeSection === 'invoices' ? <InvoiceWorkspace /> : null}
               {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
-              {activeSection === 'reports' ? <ReportsWorkspace /> : null}
+              {activeSection === 'reports' ? <ReportsWorkspace currentUser={user} /> : null}
               {activeSection === 'user-guide' ? <UserGuideWorkspace /> : null}
               {activeSection === 'settings' ? <SettingsWorkspace /> : null}
               {activeSection !== 'dashboard' &&

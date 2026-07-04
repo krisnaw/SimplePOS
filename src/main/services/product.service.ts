@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { asc, eq, sql } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
-import { productCategories, products } from '../db/schema/index'
+import { productCategories, products, purchaseItems } from '../db/schema/index'
 import type { Product, ProductCategory, UnitType } from '../db/schema/index'
 import { getProductRepository } from '../repositories/product.repository'
 import { recordStockMovement } from './stock-movement.service'
@@ -29,6 +29,7 @@ export type ProductSummary = {
   stockQty: number
   minStock: number
   lastPurchaseCost: number
+  hasPurchaseHistory: boolean
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -47,7 +48,7 @@ function toProductCategorySummary(category: ProductCategory): ProductCategorySum
   }
 }
 
-function toProductSummary(product: Product): ProductSummary {
+function toProductSummary(product: Product, hasPurchaseHistory = false): ProductSummary {
   return {
     id: product.id,
     categoryId: product.categoryId,
@@ -60,6 +61,7 @@ function toProductSummary(product: Product): ProductSummary {
     stockQty: product.stockQty,
     minStock: product.minStock,
     lastPurchaseCost: product.lastPurchaseCost,
+    hasPurchaseHistory,
     isActive: product.isActive,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
@@ -148,8 +150,12 @@ export async function listProducts(): Promise<ProductSummary[]> {
     .from(products)
     .where(eq(products.isActive, true))
     .orderBy(asc(products.name))
+  const purchasedProductIds = new Set(
+    (await repository.select({ productId: purchaseItems.productId }).from(purchaseItems))
+      .map((item) => item.productId),
+  )
 
-  return list.map(toProductSummary)
+  return list.map((product) => toProductSummary(product, purchasedProductIds.has(product.id)))
 }
 
 export async function createProduct(input: {
@@ -298,5 +304,11 @@ export async function updateProduct(input: {
 
   await flushDatabase()
 
-  return { ok: true, message: 'Product updated', product: toProductSummary(updated) }
+  const [purchaseHistory] = await repository
+    .select({ id: purchaseItems.id })
+    .from(purchaseItems)
+    .where(eq(purchaseItems.productId, updated.id))
+    .limit(1)
+
+  return { ok: true, message: 'Product updated', product: toProductSummary(updated, Boolean(purchaseHistory)) }
 }
