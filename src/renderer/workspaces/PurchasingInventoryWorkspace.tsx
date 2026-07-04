@@ -7,7 +7,6 @@ import {
   FileText,
   Loader2,
   Minus,
-  Package,
   PackageCheck,
   PackagePlus,
   PencilLine,
@@ -65,6 +64,7 @@ import type { SupplierSummary } from '@/shared/types/supplier'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { StockMovementListInput, StockMovementListResult, StockMovementSummary, StockMovementType } from '@/shared/types/stock-movement'
 import type { ProductFormState } from './InventoryWorkspace.types'
+import { InventoryLayout, type InventoryLayoutTab } from './InventoryLayout'
 
 type InventoryView = 'products' | 'purchases' | 'movements' | 'pending' | 'unpaid'
 type WorkspaceScreen = 'list' | 'recordPurchase' | 'purchaseDetail' | 'invoiceForm' | 'productForm'
@@ -368,6 +368,11 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
     : 0
   const movementNet = movements.totalIn - movements.totalOut
   const movementLastPage = Math.max(0, Math.ceil(movements.total / movementPageSize) - 1)
+  const inventoryLayoutTab: InventoryLayoutTab = view === 'products'
+    ? 'product'
+    : view === 'movements'
+    ? 'moving'
+    : 'purchase'
 
   function updateForm<K extends keyof PurchaseForm>(field: K, value: PurchaseForm[K]) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -394,6 +399,21 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
     if (type === 'sale') return 'destructive'
     if (type === 'opening') return 'outline'
     return 'secondary'
+  }
+
+  function selectInventoryTab(tab: InventoryLayoutTab) {
+    setScreen('list')
+    setSelectedPurchase(null)
+    setFeedback(null)
+    if (tab === 'product') {
+      setView('products')
+      return
+    }
+    if (tab === 'moving') {
+      setView('movements')
+      return
+    }
+    setView('purchases')
   }
 
   function openProductMovements(product: ProductSummary) {
@@ -746,13 +766,23 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
         'grid-cols-1',
       )}
     >
-      <div className={cn('flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden', screen !== 'list' && 'hidden')}>
+      <InventoryLayout
+        activeTab={inventoryLayoutTab}
+        className={cn(screen !== 'list' && 'hidden')}
+        onTabChange={selectInventoryTab}
+      >
         <Card className="min-h-0 flex-1 overflow-hidden">
           <CardHeader className="pb-3">
             <div className="min-w-0">
-              <CardTitle className="text-balance">Inventory Purchasing</CardTitle>
+              <CardTitle className="text-balance">
+                {view === 'products' ? 'Product' : view === 'movements' ? t('inventory.movements.title') : 'Purchase'}
+              </CardTitle>
               <CardDescription className="text-pretty">
-                Receive supplier stock and track paid or unpaid invoices.
+                {view === 'products'
+                  ? 'Manage product catalog, pricing, and stock levels.'
+                  : view === 'movements'
+                  ? 'Review stock changes across purchases, sales, adjustments, and opening balances.'
+                  : 'Receive supplier stock and track paid or unpaid invoices.'}
               </CardDescription>
             </div>
             <CardAction>
@@ -782,37 +812,6 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
             <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
-              <div className="flex h-10 shrink-0 items-center gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Inventory purchasing views">
-                {[
-                  { id: 'products' as const, label: 'Products', icon: Package },
-                  { id: 'purchases' as const, label: 'Purchases', icon: ReceiptText },
-                  { id: 'movements' as const, label: t('inventory.movements.title'), icon: ClipboardList },
-                  { id: 'pending' as const, label: 'Needs Invoice', icon: CalendarClock },
-                  { id: 'unpaid' as const, label: 'Unpaid', icon: WalletCards },
-                ].map((item) => {
-                  const Icon = item.icon
-                  const isActive = view === item.id
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      onClick={() => {
-                        setView(item.id)
-                        setScreen('list')
-                      }}
-                      className={cn(
-                        'flex h-8 min-w-10 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
-                        isActive ? 'bg-background text-foreground shadow-border' : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <Icon className="size-3.5" aria-hidden="true" />
-                      <span className="hidden sm:inline">{item.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
               {view === 'products' ? (
                 <div className="w-full shrink-0 sm:w-52">
                   <BaseSelect
@@ -1102,7 +1101,7 @@ export function PurchasingInventoryWorkspace({ currentUser }: { currentUser: Aut
             </div>
           </CardContent>
         </Card>
-      </div>
+      </InventoryLayout>
 
       {screen === 'productForm' ? (
         <Card className="min-h-0 overflow-hidden">

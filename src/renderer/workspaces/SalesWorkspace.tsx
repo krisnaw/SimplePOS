@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronLeft, ChevronRight, LayoutGrid, List, Loader2, Minus, Package, Plus, Search, ShoppingCart, Wrench, X } from 'lucide-react'
+import { Check, Eye, LayoutGrid, List, Loader2, Minus, Package, Plus, Printer, Search, ShoppingCart, Wrench, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import {
@@ -25,10 +25,12 @@ import { Label } from '@/renderer/components/ui/label'
 import { BaseSelect } from '@/renderer/components/ui/base-select'
 import { cn } from '@/renderer/lib/utils'
 import { formatCurrency } from '@/renderer/lib/formatters'
+import { generateReceiptHTML, printInvoice } from '@/renderer/lib/invoice-print'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { CustomerSummary } from '@/shared/types/customer'
 import { SalesCatalogListItem } from './SalesCatalogListItem'
 import type { SimplePosApi, SampleProduct, CartItem } from './SalesWorkspace.types'
+import type { InvoiceDetail } from './InvoiceWorkspace.types'
 
 const UNLIMITED_STOCK = 999
 
@@ -81,6 +83,10 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   const [checkoutComplete, setCheckoutComplete] = useState(false)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [completedInvoice, setCompletedInvoice] = useState<InvoiceDetail>(null)
+  const [isLoadingCompletedInvoice, setIsLoadingCompletedInvoice] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
   const categories = useMemo(() => ['All', ...new Set(catalogItems.map((item) => item.category))], [catalogItems])
@@ -297,15 +303,59 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       }),
     )
 
-    window.setTimeout(() => {
-      setCartItems([])
-      setCheckoutComplete(false)
-    }, 1800)
+    setIsLoadingCompletedInvoice(true)
+    try {
+      const invoice = await window.simplepos?.invoices.get({ id: result.checkout.invoiceId })
+      setCompletedInvoice(invoice ?? null)
+
+      if (invoice) return
+    } catch {
+      setCompletedInvoice(null)
+    } finally {
+      setIsLoadingCompletedInvoice(false)
+    }
+
+    setActionMessage(t('sales.invoiceLoadFailed', { invoiceNumber: result.checkout.invoiceNumber }))
   }
 
   function handleClearCart() {
     setCartItems([])
     setActionMessage(t('sales.cartCleared'))
+  }
+
+  function handleNewSale() {
+    setCartItems([])
+    setSelectedCustomerId('')
+    setActionMessage('')
+    setCheckoutComplete(false)
+    setCompletedInvoice(null)
+    setIsPreviewOpen(false)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
+  }
+
+  function handlePrintCompletedInvoice() {
+    if (!completedInvoice) return
+    printInvoice(completedInvoice)
+  }
+
+  function handlePreviewCompletedInvoice() {
+    if (!completedInvoice) return
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    const html = generateReceiptHTML(completedInvoice)
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+    setPreviewUrl(url)
+    setIsPreviewOpen(true)
+  }
+
+  function handlePreviewClose() {
+    setIsPreviewOpen(false)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
   }
 
   return (
@@ -638,6 +688,60 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             </div>
           </div>
 
+          {checkoutComplete ? (
+            <div className="shrink-0 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-950 ring-1 ring-emerald-500/20">
+              <div className="flex items-start gap-2">
+                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+                  <Check className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-emerald-950">{t('sales.checkoutCompleteTitle')}</p>
+                  <p className="mt-0.5 text-xs text-emerald-800 text-pretty">
+                    {completedInvoice
+                      ? t('sales.checkoutCompleteDescription', { invoiceNumber: completedInvoice.invoiceNumber })
+                      : isLoadingCompletedInvoice
+                        ? t('sales.loadingInvoice')
+                        : t('sales.invoiceUnavailable')}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  className={cn('col-span-2 h-10', pressableButtonClass)}
+                  onClick={handlePrintCompletedInvoice}
+                  disabled={!completedInvoice || isLoadingCompletedInvoice}
+                >
+                  {isLoadingCompletedInvoice ? (
+                    <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Printer data-icon="inline-start" aria-hidden="true" />
+                  )}
+                  {t('sales.printInvoice')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={pressableButtonClass}
+                  onClick={handlePreviewCompletedInvoice}
+                  disabled={!completedInvoice || isLoadingCompletedInvoice}
+                >
+                  <Eye data-icon="inline-start" aria-hidden="true" />
+                  {t('invoices.preview')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={pressableButtonClass}
+                  onClick={handleNewSale}
+                >
+                  <Plus data-icon="inline-start" aria-hidden="true" />
+                  {t('sales.newSale')}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex shrink-0 gap-2">
             <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
               <Button
@@ -698,6 +802,34 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               {t('sales.clearCart')}
             </Button>
           </div>
+
+          <AlertDialog open={isPreviewOpen} onOpenChange={(open) => { if (!open) handlePreviewClose() }}>
+            <AlertDialogPortal>
+              <AlertDialogBackdrop />
+              <AlertDialogPopup className="flex max-h-[90vh] w-[90vw] max-w-3xl flex-col gap-0 p-0">
+                <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+                  <p className="text-sm font-semibold">{completedInvoice?.invoiceNumber ?? t('invoices.receiptPreview')}</p>
+                  <AlertDialogClose
+                    render={
+                      <Button type="button" variant="ghost" size="icon-sm" className={pressableButtonClass} aria-label="Close preview">
+                        <X aria-hidden="true" />
+                      </Button>
+                    }
+                  />
+                </div>
+                <div className="min-h-0 flex-1">
+                  {previewUrl ? (
+                    <iframe
+                      src={previewUrl}
+                      title={completedInvoice ? `Invoice ${completedInvoice.invoiceNumber}` : t('invoices.receiptPreview')}
+                      className="h-full w-full rounded-b-xl border-0"
+                      style={{ minHeight: '70vh' }}
+                    />
+                  ) : null}
+                </div>
+              </AlertDialogPopup>
+            </AlertDialogPortal>
+          </AlertDialog>
         </CardContent>
       </Card>
     </div>

@@ -4,9 +4,12 @@ import {
   Car,
   Check,
   Clock3,
+  Eye,
+  Loader2,
   Minus,
   Pencil,
   Plus,
+  Printer,
   ReceiptText,
   Search,
   Trash2,
@@ -29,9 +32,11 @@ import { Field, FieldError, FieldLabel } from '@/renderer/components/ui/field'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
 import { formatCurrency } from '@/renderer/lib/formatters'
+import { generateReceiptHTML, printInvoice } from '@/renderer/lib/invoice-print'
 import { cn } from '@/renderer/lib/utils'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { VehicleSummary } from '@/shared/types/vehicle'
+import type { InvoiceDetail } from './InvoiceWorkspace.types'
 import { ProductCategoryBadge } from './ProductCategoryBadge'
 import { SalesCatalogListItem } from './SalesCatalogListItem'
 import {
@@ -137,6 +142,12 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
   const [priceError, setPriceError] = useState('')
   const [isCheckoutConfirmOpen, setIsCheckoutConfirmOpen] = useState(false)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [isCheckoutCompleteOpen, setIsCheckoutCompleteOpen] = useState(false)
+  const [completedInvoice, setCompletedInvoice] = useState<InvoiceDetail>(null)
+  const [completedInvoiceNumber, setCompletedInvoiceNumber] = useState('')
+  const [isLoadingCompletedInvoice, setIsLoadingCompletedInvoice] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const parsedInput = useMemo(() => parseVehicleInput(query), [query])
   const normalizedQuery = normalizeSearchText(query)
@@ -181,6 +192,12 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
     }, 150)
     return () => window.clearTimeout(timeout)
   }, [query])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
 
   const matchedVehicles = useMemo(() => {
     if (!normalizedQuery) return vehicles
@@ -311,11 +328,26 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
       })
       setStatusMessage(result.message)
       setIsCheckoutConfirmOpen(false)
-      if (result.ok) {
+      if (result.ok && result.checkout) {
         playCheckoutCompleteSound()
+        setCompletedInvoice(null)
+        setCompletedInvoiceNumber(result.checkout.invoiceNumber)
+        setIsCheckoutCompleteOpen(true)
         setOrders((current) => current.filter((order) => order.id !== activeOrder.id))
         setActiveOrderId(null)
         setQuery('')
+
+        setIsLoadingCompletedInvoice(true)
+        try {
+          const invoice = await api.invoices.get({ id: result.checkout.invoiceId })
+          setCompletedInvoice(invoice ?? null)
+          if (!invoice) setStatusMessage(`Sale completed, but invoice ${result.checkout.invoiceNumber} could not be prepared for printing.`)
+        } catch {
+          setCompletedInvoice(null)
+          setStatusMessage(`Sale completed, but invoice ${result.checkout.invoiceNumber} could not be prepared for printing.`)
+        } finally {
+          setIsLoadingCompletedInvoice(false)
+        }
       }
     } finally {
       setIsCheckingOut(false)
@@ -432,6 +464,34 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
       ),
     )
     cancelPriceEdit()
+  }
+
+  function closeCompletedSaleDialog() {
+    setIsCheckoutCompleteOpen(false)
+    setCompletedInvoice(null)
+    setCompletedInvoiceNumber('')
+  }
+
+  function handlePrintCompletedInvoice() {
+    if (!completedInvoice) return
+    printInvoice(completedInvoice)
+  }
+
+  function handlePreviewCompletedInvoice() {
+    if (!completedInvoice) return
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    const html = generateReceiptHTML(completedInvoice)
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+    setPreviewUrl(url)
+    setIsPreviewOpen(true)
+  }
+
+  function handlePreviewClose() {
+    setIsPreviewOpen(false)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
   }
 
   function getOrderTotal(order: MockSaleOrder): number {
@@ -1047,6 +1107,102 @@ export function EmptySalesWorkspace({ currentUser }: { currentUser: Authenticate
                   {isCheckingOut ? 'Completing...' : 'Cash received'}
                 </Button>
               </div>
+            </div>
+          </AlertDialogPopup>
+        </AlertDialogPortal>
+      </AlertDialog>
+      <AlertDialog
+        open={isCheckoutCompleteOpen}
+        onOpenChange={(open) => {
+          if (!open) closeCompletedSaleDialog()
+        }}
+      >
+        <AlertDialogPortal>
+          <AlertDialogBackdrop />
+          <AlertDialogPopup className="max-w-md">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                <Check aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle>Sale completed</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {completedInvoice
+                    ? `Invoice ${completedInvoice.invoiceNumber} is ready to print.`
+                    : isLoadingCompletedInvoice
+                      ? `Preparing invoice ${completedInvoiceNumber} for printing...`
+                      : `Invoice ${completedInvoiceNumber || 'for this sale'} is not ready here. You can still print it from Invoice History.`}
+                </AlertDialogDescription>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2">
+              <Button
+                type="button"
+                className={cn('h-10 w-full', pressableClass)}
+                disabled={!completedInvoice || isLoadingCompletedInvoice}
+                onClick={handlePrintCompletedInvoice}
+              >
+                {isLoadingCompletedInvoice ? (
+                  <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Printer data-icon="inline-start" aria-hidden="true" />
+                )}
+                Print Invoice
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={pressableClass}
+                  disabled={!completedInvoice || isLoadingCompletedInvoice}
+                  onClick={handlePreviewCompletedInvoice}
+                >
+                  <Eye data-icon="inline-start" aria-hidden="true" />
+                  Preview
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={pressableClass}
+                  onClick={closeCompletedSaleDialog}
+                >
+                  <Plus data-icon="inline-start" aria-hidden="true" />
+                  New Sale
+                </Button>
+              </div>
+            </div>
+          </AlertDialogPopup>
+        </AlertDialogPortal>
+      </AlertDialog>
+      <AlertDialog
+        open={isPreviewOpen}
+        onOpenChange={(open) => {
+          if (!open) handlePreviewClose()
+        }}
+      >
+        <AlertDialogPortal>
+          <AlertDialogBackdrop />
+          <AlertDialogPopup className="flex max-h-[90vh] w-[90vw] max-w-3xl flex-col gap-0 p-0">
+            <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+              <p className="text-sm font-semibold">{completedInvoice?.invoiceNumber ?? 'Receipt Preview'}</p>
+              <AlertDialogClose
+                render={
+                  <Button type="button" variant="ghost" size="icon-sm" className={pressableClass} aria-label="Close preview">
+                    <X aria-hidden="true" />
+                  </Button>
+                }
+              />
+            </div>
+            <div className="min-h-0 flex-1">
+              {previewUrl ? (
+                <iframe
+                  src={previewUrl}
+                  title={completedInvoice ? `Invoice ${completedInvoice.invoiceNumber}` : 'Receipt Preview'}
+                  className="h-full w-full rounded-b-xl border-0"
+                  style={{ minHeight: '70vh' }}
+                />
+              ) : null}
             </div>
           </AlertDialogPopup>
         </AlertDialogPortal>

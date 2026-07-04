@@ -26,6 +26,7 @@ const emptyForm: ProductFormState = {
 const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
 const productTableGrid =
   'grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)_104px_88px_84px]'
+const inventoryTabs = ['Product', 'Purchase', 'Moving'] as const
 
 function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock
@@ -176,8 +177,46 @@ export function InventoryWorkspace() {
   }
 
   return (
-    <div className="grid h-full min-h-0 min-w-0 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-hidden px-2">
+
+
+      <div>
+        Hello world
+      </div>
+
+
+      <div
+        role="tablist"
+        aria-label="Inventory sections"
+        className="flex shrink-0 items-center gap-1 rounded-xl bg-muted p-1 shadow-border"
+      >
+        {inventoryTabs.map((tab, index) => {
+          const isActive = index === 0
+
+          return (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-label={tab}
+              disabled={!isActive}
+              className={cn(
+                'flex h-9 min-w-0 flex-1 items-center justify-center rounded-lg px-3 text-sm font-medium transition-[background-color,color,transform,box-shadow] duration-150 ease-out',
+                'disabled:cursor-default disabled:opacity-100',
+                isActive
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {tab}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="grid min-h-0 min-w-0 flex-1 gap-3 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
         <div className="grid shrink-0 gap-3 md:grid-cols-3">
           <Card>
             <CardHeader>
@@ -297,7 +336,7 @@ export function InventoryWorkspace() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
 
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
@@ -450,6 +489,7 @@ export function InventoryWorkspace() {
           </CardFooter>
         ) : null}
       </Card>
+      </div>
     </div>
   )
 }
