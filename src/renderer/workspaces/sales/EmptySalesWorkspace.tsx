@@ -36,8 +36,8 @@ import { generateReceiptHTML, printInvoice } from '@/renderer/lib/invoice-print'
 import { cn } from '@/renderer/lib/utils'
 import type { AuthenticatedUser } from '@/shared/types/user'
 import type { VehicleSummary } from '@/shared/types/vehicle'
-import type { InvoiceDetail } from './InvoiceWorkspace.types'
-import { ProductCategoryBadge } from './ProductCategoryBadge'
+import type { InvoiceDetail } from '../invoice/InvoiceWorkspace.types'
+import { ProductCategoryBadge } from '../inventory/ProductCategoryBadge'
 import { SalesCatalogListItem } from './SalesCatalogListItem'
 import {
   normalizePlateNumber,

@@ -30,7 +30,7 @@ import type { AuthenticatedUser } from '@/shared/types/user'
 import type { CustomerSummary } from '@/shared/types/customer'
 import { SalesCatalogListItem } from './SalesCatalogListItem'
 import type { SimplePosApi, SampleProduct, CartItem } from './SalesWorkspace.types'
-import type { InvoiceDetail } from './InvoiceWorkspace.types'
+import type { InvoiceDetail } from '../invoice/InvoiceWorkspace.types'
 
 const UNLIMITED_STOCK = 999
 

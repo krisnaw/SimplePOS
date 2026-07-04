@@ -18,7 +18,7 @@ import { Separator } from '@/renderer/components/ui/separator'
 import { cn } from '@/renderer/lib/utils'
 import { formatCurrency, formatDate, formatDateTime, formatPaymentMethod } from '@/renderer/lib/formatters'
 import type { ReportPeriod, ReportSummary } from './ReportsWorkspace.types'
-import { ProductCategoryBadge } from './ProductCategoryBadge'
+import { ProductCategoryBadge } from '../inventory/ProductCategoryBadge'
 
 const emptyReport: ReportSummary = {
   period: 'today',

@@ -16,7 +16,7 @@ import { cn } from '@/renderer/lib/utils'
 import { formatCurrency, formatDateTime, formatPaymentMethod } from '@/renderer/lib/formatters'
 import { generateReceiptHTML, printInvoice } from '@/renderer/lib/invoice-print'
 import type { InvoiceSummary, InvoiceDetail } from './InvoiceWorkspace.types'
-import { ProductCategoryBadge } from './ProductCategoryBadge'
+import { ProductCategoryBadge } from '../inventory/ProductCategoryBadge'
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'

@@ -1,4 +1,4 @@
-import type { InvoiceDetail } from '@/renderer/workspaces/InvoiceWorkspace.types'
+import type { InvoiceDetail } from '@/renderer/workspaces/invoice/InvoiceWorkspace.types'
 
 type PrintableInvoice = NonNullable<InvoiceDetail>
 

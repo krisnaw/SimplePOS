@@ -2,7 +2,7 @@ import { Package, Plus, Wrench } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { formatCurrency } from '@/renderer/lib/formatters'
 import { cn } from '@/renderer/lib/utils'
-import { ProductCategoryBadge } from './ProductCategoryBadge'
+import { ProductCategoryBadge } from '../inventory/ProductCategoryBadge'
 
 type SalesCatalogListItemProps = {
   itemType: 'product' | 'service'
