@@ -1,8 +1,8 @@
 import {useEffect, useMemo, useState} from 'react'
-import {Loader2, PackagePlus, Trash2} from 'lucide-react'
+import {Loader2, PackagePlus, Plus, Trash2} from 'lucide-react'
 import {useTranslation} from 'react-i18next'
 import {Button} from '@/renderer/components/ui/button'
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/renderer/components/ui/card'
+import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
 import {BaseSelect} from '@/renderer/components/ui/base-select'
@@ -244,6 +244,12 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
                   })
                   : t('inventory.stockValueHint', {value: formatCurrency(inventoryValue)})}
               </CardDescription>
+              <CardAction>
+                <Button type="button" size="sm" onClick={resetForm}>
+                  <Plus data-icon="inline-start" aria-hidden="true" />
+                  {t('inventory.newProduct')}
+                </Button>
+              </CardAction>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
               <Input
@@ -354,6 +360,11 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
               <CardTitle>
                 {editingProduct ? t('inventory.editProduct') : t('inventory.createProduct')}
               </CardTitle>
+              <CardDescription className="truncate">
+                {editingProduct
+                  ? t('inventory.selectedProduct', {name: editingProduct.name})
+                  : t('inventory.createProductHint')}
+              </CardDescription>
             </CardHeader>
             <CardContent className="min-h-0 flex-1 overflow-y-auto">
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
