@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Database, Download, Printer, RefreshCw, Settings } from 'lucide-react'
+import { Database, Download, FolderTree, Printer, RefreshCw, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { cn } from '@/renderer/lib/utils'
 import type { UpdateStatus } from '@/shared/types/updates'
+import { ProductCategorySettingsScreen } from './ProductCategorySettingsScreen'
+
+type AppSettingsForm = {
+  appName: string
+  appDescription: string
+}
 
 const externalDevices = [
   {
@@ -28,8 +34,23 @@ const externalDevices = [
   },
 ]
 
-export function SettingsWorkspace() {
+type SettingsTab = 'devices' | 'product-categories' | 'updates'
+
+const settingsTabs = [
+  { id: 'devices', labelKey: 'settings.tabs.devices', icon: Settings },
+  { id: 'product-categories', labelKey: 'settings.tabs.productCategories', icon: FolderTree },
+  { id: 'updates', labelKey: 'settings.tabs.updates', icon: Download },
+] as const
+
+export function SettingsWorkspace({
+  appSettings,
+  onAppSettingsChange,
+}: {
+  appSettings: AppSettingsForm
+  onAppSettingsChange: (settings: AppSettingsForm) => void
+}) {
   const { t } = useTranslation()
+  const [activeTab, setActiveTab] = useState<SettingsTab>('devices')
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({
     state: 'idle',
     message: t('settings.updatesNotChecked'),
@@ -86,7 +107,123 @@ export function SettingsWorkspace() {
   }
 
   return (
-    <div className="grid gap-4 p-1 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 p-1">
+      <div
+        role="tablist"
+        aria-label={t('settings.tabs.sectionsLabel')}
+        className="flex shrink-0 items-center gap-1 overflow-x-auto rounded-lg bg-muted p-1"
+      >
+        {settingsTabs.map((tab) => {
+          const isActive = activeTab === tab.id
+          const Icon = tab.icon
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex h-9 min-w-44 flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]',
+                isActive ? 'bg-background text-foreground shadow-border' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              <span className="truncate">{t(tab.labelKey)}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {activeTab === 'devices' ? (
+        <DeviceSettingsPanel appSettings={appSettings} onAppSettingsChange={onAppSettingsChange} />
+      ) : null}
+      {activeTab === 'product-categories' ? <ProductCategorySettingsScreen /> : null}
+      {activeTab === 'updates' ? (
+        <UpdateSettingsPanel
+          updateStatus={updateStatus}
+          isCheckingUpdates={isCheckingUpdates}
+          onCheckForUpdates={checkForUpdates}
+          onInstallUpdate={installUpdate}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+function DeviceSettingsPanel({
+  appSettings,
+  onAppSettingsChange,
+}: {
+  appSettings: AppSettingsForm
+  onAppSettingsChange: (settings: AppSettingsForm) => void
+}) {
+  const { t } = useTranslation()
+  const [form, setForm] = useState(appSettings)
+  const [message, setMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    setForm(appSettings)
+  }, [appSettings])
+
+  async function saveAppSettings() {
+    if (isSaving) return
+
+    setIsSaving(true)
+    const result = await window.simplepos?.settings?.updateApp(form)
+    setIsSaving(false)
+
+    if (!result) {
+      setMessage(t('settings.appIdentity.unavailable'))
+      return
+    }
+
+    setMessage(result.message)
+    if (result.ok && result.settings) onAppSettingsChange(result.settings)
+  }
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.appIdentity.title')}</CardTitle>
+          <CardDescription>{t('settings.appIdentity.description')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              {t('settings.appIdentity.name')}
+              <Input
+                value={form.appName}
+                onChange={(event) => setForm((current) => ({ ...current, appName: event.target.value }))}
+                placeholder={t('settings.appIdentity.namePlaceholder')}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              {t('settings.appIdentity.descriptionLabel')}
+              <Input
+                value={form.appDescription}
+                onChange={(event) => setForm((current) => ({ ...current, appDescription: event.target.value }))}
+                placeholder={t('settings.appIdentity.descriptionPlaceholder')}
+              />
+            </label>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-h-5 text-sm text-muted-foreground" role="status">{message}</p>
+            <Button
+              type="button"
+              size="sm"
+              onClick={saveAppSettings}
+              disabled={isSaving || !form.appName.trim() || !form.appDescription.trim()}
+            >
+              {isSaving ? t('common.saving') : t('common.save')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{t('settings.externalDevices')}</CardTitle>
@@ -164,40 +301,55 @@ export function SettingsWorkspace() {
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.softwareUpdates')}</CardTitle>
-          <CardDescription>{t('settings.updatesHint')}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="rounded-lg border bg-background p-3">
-            <p className="text-sm font-medium">{updateStatus.message}</p>
-            {typeof updateStatus.percent === 'number' ? (
-              <p className="text-xs text-muted-foreground">
-                {t('settings.percentDownloaded', { percent: Math.round(updateStatus.percent) })}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={checkForUpdates} disabled={isCheckingUpdates}>
-              <RefreshCw data-icon="inline-start" aria-hidden="true" />
-              {isCheckingUpdates ? t('settings.checking') : t('settings.check')}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={installUpdate}
-              disabled={updateStatus.state !== 'downloaded'}
-            >
-              <Download data-icon="inline-start" aria-hidden="true" />
-              {t('settings.install')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
     </div>
+  )
+}
+
+function UpdateSettingsPanel({
+  updateStatus,
+  isCheckingUpdates,
+  onCheckForUpdates,
+  onInstallUpdate,
+}: {
+  updateStatus: UpdateStatus
+  isCheckingUpdates: boolean
+  onCheckForUpdates: () => void
+  onInstallUpdate: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('settings.softwareUpdates')}</CardTitle>
+        <CardDescription>{t('settings.updatesHint')}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="rounded-lg border bg-background p-3">
+          <p className="text-sm font-medium">{updateStatus.message}</p>
+          {typeof updateStatus.percent === 'number' ? (
+            <p className="text-xs text-muted-foreground">
+              {t('settings.percentDownloaded', { percent: Math.round(updateStatus.percent) })}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onCheckForUpdates} disabled={isCheckingUpdates}>
+            <RefreshCw data-icon="inline-start" aria-hidden="true" />
+            {isCheckingUpdates ? t('settings.checking') : t('settings.check')}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onInstallUpdate}
+            disabled={updateStatus.state !== 'downloaded'}
+          >
+            <Download data-icon="inline-start" aria-hidden="true" />
+            {t('settings.install')}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

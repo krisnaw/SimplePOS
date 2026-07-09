@@ -17,10 +17,12 @@ async function main(): Promise<void> {
   const productCount = database.exec('SELECT COUNT(*) FROM products')[0]?.values[0]?.[0] ?? 0
   const categoryCount = database.exec('SELECT COUNT(*) FROM product_categories')[0]?.values[0]?.[0] ?? 0
   const serviceCount = database.exec('SELECT COUNT(*) FROM services')[0]?.values[0]?.[0] ?? 0
+  const supplierCount = database.exec('SELECT COUNT(*) FROM suppliers')[0]?.values[0]?.[0] ?? 0
+  const vehicleCount = database.exec('SELECT COUNT(*) FROM vehicles')[0]?.values[0]?.[0] ?? 0
 
   database.close()
 
-  console.log(`Seeded ${productCount} products, ${categoryCount} product categories, and ${serviceCount} services in ${status.path}`)
+  console.log(`Seeded ${productCount} products, ${categoryCount} product categories, ${serviceCount} services, ${supplierCount} suppliers, and ${vehicleCount} vehicles in ${status.path}`)
 }
 
 main().catch((error) => {

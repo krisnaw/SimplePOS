@@ -118,7 +118,7 @@ export function InventoryMovements({
               </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col">
-                <div className="grid min-w-245 shrink-0 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
+                <div className="grid min-w-215 shrink-0 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px] gap-3 border-b bg-muted/95 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur">
                   <span>{t('inventory.movements.table.date')}</span>
                   <span>{t('inventory.movements.table.product')}</span>
                   <span>{t('inventory.movements.table.type')}</span>
@@ -126,14 +126,13 @@ export function InventoryMovements({
                   <span className="text-right">{t('inventory.movements.table.in')}</span>
                   <span className="text-right">{t('inventory.movements.table.out')}</span>
                   <span className="text-right">{t('inventory.movements.table.balance')}</span>
-                  <span>{t('inventory.movements.table.user')}</span>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto">
-                  <div className="min-w-245 divide-y">
+                  <div className="min-w-215 divide-y">
                     {movements.items.map((movement) => (
                       <div
                         key={movement.id}
-                        className="grid min-h-14 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px_120px] items-center gap-3 px-3 py-2 text-sm"
+                        className="grid min-h-14 grid-cols-[135px_minmax(0,1fr)_110px_minmax(0,1fr)_90px_90px_100px] items-center gap-3 px-3 py-2 text-sm"
                       >
                         <span className="text-xs text-muted-foreground tabular-nums">{formatDateTime(movement.createdAt)}</span>
                         <span className="min-w-0">
@@ -153,7 +152,6 @@ export function InventoryMovements({
                           {movement.quantityDelta < 0 ? `${Math.abs(movement.quantityDelta)} ${movement.unitType}` : '—'}
                         </span>
                         <span className="text-right font-medium tabular-nums">{movement.balanceAfter} {movement.unitType}</span>
-                        <span className="truncate text-xs text-muted-foreground">{movement.createdByName ?? t('system.label')}</span>
                       </div>
                     ))}
                   </div>

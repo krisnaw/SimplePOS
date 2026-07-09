@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm'
-import { invoices, payments, productCategories, products, purchaseItems, saleItems, workOrders } from '../db/schema/index'
+import { invoices, payments, productCategories, products, purchaseItems, saleItems, sales, services, workOrders } from '../db/schema/index'
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 
@@ -49,6 +49,11 @@ export type LowStockItemSummary = {
   minStock: number
 }
 
+export type CategorySalesSummary = {
+  category: string
+  total: number
+}
+
 export type ReportSummary = {
   period: ReportPeriod
   dateFrom: string
@@ -65,11 +70,13 @@ export type ReportSummary = {
   legacyCostMissingCount: number
   hasLegacyCostGaps: boolean
   lowStockCount: number
+  vehicleCount: number
   workOrderCount: number
   completedWorkOrderCount: number
   invoicedWorkOrderCount: number
   workOrderCompletionRate: number
   paymentMethods: PaymentMethodSummary[]
+  categorySales: CategorySalesSummary[]
   lowStockItems: LowStockItemSummary[]
   topSellingItems: TopSellingItemSummary[]
 }
@@ -120,6 +127,19 @@ function isWithinRange(value: string, dateFrom: Date, dateTo: Date): boolean {
 
 function marginPercent(total: number, profit: number): number {
   return total > 0 ? Math.round((profit / total) * 1000) / 10 : 0
+}
+
+const reportCategoryNames = ['Bengkel', 'Cuci', 'Mesin', 'Minuman']
+
+function normalizeCategoryName(value: string | null | undefined): string | null {
+  if (!value) return null
+
+  const normalized = value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('id-ID')
+  return reportCategoryNames.find((category) => category.toLocaleLowerCase('id-ID') === normalized) ?? null
+}
+
+function listReportCategories(): CategorySalesSummary[] {
+  return reportCategoryNames.map((category) => ({ category, total: 0 }))
 }
 
 async function listLowStockItems(): Promise<LowStockItemSummary[]> {
@@ -204,22 +224,26 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     legacyCostMissingCount: 0,
     hasLegacyCostGaps: false,
     lowStockCount: 0,
+    vehicleCount: 0,
     workOrderCount: 0,
     completedWorkOrderCount: 0,
     invoicedWorkOrderCount: 0,
     workOrderCompletionRate: 0,
     paymentMethods: [],
+    categorySales: [],
     lowStockItems: [],
     topSellingItems: [],
   }
 
   if (!repository) return emptySummary
 
-  const [invoiceRows, paymentRows, itemRows, productRows, categoryRows, purchaseItemRows, workOrderRows, lowStockItems] = await Promise.all([
+  const [invoiceRows, paymentRows, itemRows, saleRows, productRows, serviceRows, categoryRows, purchaseItemRows, workOrderRows, lowStockItems] = await Promise.all([
     repository.select().from(invoices).where(eq(invoices.status, 'paid')),
     repository.select().from(payments).where(eq(payments.status, 'paid')),
     repository.select().from(saleItems),
+    repository.select().from(sales),
     repository.select().from(products),
+    repository.select().from(services),
     repository.select().from(productCategories),
     repository.select({ productId: purchaseItems.productId }).from(purchaseItems),
     repository.select().from(workOrders),
@@ -231,6 +255,7 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
   const invoiceIds = new Set(periodInvoices.map((invoice) => invoice.id))
   const periodPayments = paymentRows.filter((payment) => invoiceIds.has(payment.invoiceId))
   const periodItems = itemRows.filter((item) => saleIds.has(item.saleId))
+  const periodVehicleCount = saleRows.filter((sale) => saleIds.has(sale.id) && sale.vehicleId !== null).length
   const salesTotal = periodInvoices.reduce((total, invoice) => total + invoice.total, 0)
   const activeProductRows = productRows.filter((product) => product.isActive)
   const inventoryRetailValue = activeProductRows.reduce((total, product) => total + product.stockQty * product.unitPrice, 0)
@@ -245,6 +270,10 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
   const invoicedWorkOrderCount = periodWorkOrders.filter((workOrder) => workOrder.status === 'invoiced').length
   const paymentByMethod = new Map<PaymentMethod, PaymentMethodSummary>()
   const itemByKey = new Map<string, TopSellingItemSummary>()
+  const reportCategories = listReportCategories()
+  const salesByCategory = new Map<string, CategorySalesSummary>(
+    reportCategories.map((category) => [category.category, category]),
+  )
   const categoryNameById = new Map(categoryRows.map((category) => [category.id, category.name]))
   const purchasedProductIds = new Set(purchaseItemRows.map((item) => item.productId))
   const productById = new Map(productRows.map((product) => [product.id, product]))
@@ -254,6 +283,7 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
       product.categoryId === null ? null : (categoryNameById.get(product.categoryId) ?? null),
     ]),
   )
+  const categoryByServiceId = new Map(serviceRows.map((service) => [service.id, service.category]))
 
   for (const payment of periodPayments) {
     const current = paymentByMethod.get(payment.method) ?? {
@@ -268,6 +298,15 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
   }
 
   for (const item of periodItems) {
+    const category = item.itemType === 'product'
+      ? item.productId === null ? null : (categoryByProductId.get(item.productId) ?? null)
+      : item.serviceId === null ? null : (categoryByServiceId.get(item.serviceId) ?? null)
+    const categoryName = normalizeCategoryName(category)
+    if (categoryName) {
+      const categorySales = salesByCategory.get(categoryName)
+      if (categorySales) categorySales.total += item.lineTotal
+    }
+
     if (item.itemType !== 'product') continue
 
     const key = `${item.itemType}:${item.productId ?? item.serviceId ?? item.name}`
@@ -322,6 +361,7 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
     legacyCostMissingCount,
     hasLegacyCostGaps: legacyCostMissingCount > 0,
     lowStockCount: lowStockItems.length,
+    vehicleCount: periodVehicleCount,
     workOrderCount: periodWorkOrders.length,
     completedWorkOrderCount,
     invoicedWorkOrderCount,
@@ -329,6 +369,7 @@ export async function getReportSummary(input: { period?: unknown } = {}): Promis
       ? Math.round((completedWorkOrderCount / periodWorkOrders.length) * 100)
       : 0,
     paymentMethods: [...paymentByMethod.values()].sort((a, b) => b.total - a.total),
+    categorySales: [...salesByCategory.values()].slice(0, 4),
     lowStockItems: lowStockItems.slice(0, 8),
     topSellingItems: [...itemByKey.values()].sort((a, b) => b.total - a.total),
   }

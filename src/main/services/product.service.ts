@@ -116,6 +116,92 @@ export async function createProductCategory(input: {
   }
 }
 
+export async function updateProductCategory(input: {
+  id?: unknown
+  name?: unknown
+}): Promise<ProductCategoryMutationResult> {
+  const repository = getProductRepository()
+
+  if (!repository) return { ok: false, message: 'Database unavailable' }
+  if (typeof input.id !== 'number' || !Number.isInteger(input.id) || input.id <= 0) {
+    return { ok: false, message: 'Invalid category request' }
+  }
+  if (typeof input.name !== 'string') return { ok: false, message: 'Category name is required' }
+
+  const name = input.name.trim().replace(/\s+/g, ' ')
+  if (!name) return { ok: false, message: 'Category name is required' }
+
+  const [existing] = await repository
+    .select({ id: productCategories.id })
+    .from(productCategories)
+    .where(eq(productCategories.id, input.id))
+    .limit(1)
+
+  if (!existing) return { ok: false, message: 'Category not found' }
+
+  const duplicate = await repository
+    .select({ id: productCategories.id })
+    .from(productCategories)
+    .where(sql`lower(${productCategories.name}) = lower(${name}) and ${productCategories.id} <> ${input.id}`)
+    .limit(1)
+
+  if (duplicate.length > 0) {
+    return { ok: false, message: 'A category with this name already exists' }
+  }
+
+  const [updated] = await repository
+    .update(productCategories)
+    .set({ name })
+    .where(eq(productCategories.id, input.id))
+    .returning()
+
+  await flushDatabase()
+
+  return {
+    ok: true,
+    message: 'Category updated',
+    category: toProductCategorySummary(updated),
+  }
+}
+
+export async function deleteProductCategory(input: {
+  id?: unknown
+}): Promise<ProductCategoryMutationResult> {
+  const repository = getProductRepository()
+
+  if (!repository) return { ok: false, message: 'Database unavailable' }
+  if (typeof input.id !== 'number' || !Number.isInteger(input.id) || input.id <= 0) {
+    return { ok: false, message: 'Invalid category request' }
+  }
+
+  const [existing] = await repository
+    .select({ id: productCategories.id, name: productCategories.name })
+    .from(productCategories)
+    .where(eq(productCategories.id, input.id))
+    .limit(1)
+
+  if (!existing) return { ok: false, message: 'Category not found' }
+
+  const [assignedProduct] = await repository
+    .select({ id: products.id })
+    .from(products)
+    .where(eq(products.categoryId, input.id))
+    .limit(1)
+
+  if (assignedProduct) {
+    return { ok: false, message: 'Move products out of this category before deleting it' }
+  }
+
+  await repository.delete(productCategories).where(eq(productCategories.id, input.id))
+  await flushDatabase()
+
+  return {
+    ok: true,
+    message: 'Category deleted',
+    category: toProductCategorySummary(existing),
+  }
+}
+
 async function resolveCategoryId(
   categoryId: unknown,
 ): Promise<{ ok: true; categoryId: number } | { ok: false; message: string }> {

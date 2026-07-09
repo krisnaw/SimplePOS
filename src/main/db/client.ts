@@ -4,7 +4,7 @@ import path from 'path'
 import { drizzle, type SQLJsDatabase } from 'drizzle-orm/sql-js'
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
 import * as schema from './schema/index'
-import { seedProductCatalog, seedServiceCatalog } from './seeder'
+import { seedProductCatalog, seedServiceCatalog, seedSupplierCatalog, seedVehicleCatalog } from './seeder'
 
 export type DatabaseConnectionState = 'connected_existing' | 'connected_created' | 'error'
 
@@ -352,6 +352,13 @@ function runSchemaMigration(database: SqlJsDatabase): void {
       initialized_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
     )
   `)
+  database.run(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key text PRIMARY KEY NOT NULL,
+      value text NOT NULL,
+      updated_at text NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    )
+  `)
 
   database.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -672,6 +679,8 @@ function runSchemaMigration(database: SqlJsDatabase): void {
 
   seedServiceCatalog(database)
   seedProductCatalog(database)
+  seedSupplierCatalog(database)
+  seedVehicleCatalog(database)
   migrateStockMovements(database)
 }
 

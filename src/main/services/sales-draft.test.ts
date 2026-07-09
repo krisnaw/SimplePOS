@@ -4,7 +4,7 @@ import os from 'os'
 import { and, eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { closeDatabase, initializeDatabase } from '../db/client'
-import { saleItems, stockMovements } from '../db/schema/index'
+import { products, saleItems, stockMovements } from '../db/schema/index'
 import { getProductRepository } from '../repositories/product.repository'
 import { quickCreateVehicle } from './customer.service'
 import { createCheckout } from './checkout.service'
@@ -139,6 +139,28 @@ describe('persisted sales drafts', () => {
 
     expect(new Set(drafts.map((draft) => draft?.id)).size).toBe(1)
     expect((await listSalesDrafts()).filter((draft) => draft.vehicle.id === vehicleResult.vehicle!.id)).toHaveLength(1)
+  })
+
+  it('lists in-progress drafts by vehicle entry order', async () => {
+    const firstVehicle = await quickCreateVehicle({
+      plateNumber: 'DK 51 AB',
+      model: 'Ertiga',
+      customerName: 'First Queue Customer',
+    })
+    const secondVehicle = await quickCreateVehicle({
+      plateNumber: 'DK 52 AB',
+      model: 'Agya',
+      customerName: 'Second Queue Customer',
+    })
+    const firstDraft = await createSalesDraft({ vehicleId: firstVehicle.vehicle!.id, createdById: 1 })
+    const secondDraft = await createSalesDraft({ vehicleId: secondVehicle.vehicle!.id, createdById: 1 })
+
+    const draftIds = [firstDraft!.id, secondDraft!.id]
+    const orderedDraftIds = (await listSalesDrafts())
+      .filter((draft) => draftIds.includes(draft.id))
+      .map((draft) => draft.id)
+
+    expect(orderedDraftIds).toEqual(draftIds)
   })
 
   it('permanently deletes only an in-progress draft and its items', async () => {
@@ -284,6 +306,45 @@ describe('persisted sales drafts', () => {
       price: product.unitPrice,
       priceOverriddenById: null,
       priceOverriddenAt: null,
+    })
+  })
+
+  it('rejects product sale prices below inventory cost', async () => {
+    const repository = getProductRepository()!
+    const vehicleResult = await quickCreateVehicle({
+      plateNumber: 'DK 49 AB',
+      model: 'Brio',
+      customerName: 'Cost Guard Customer',
+    })
+    const product = (await listProducts())[0]
+    const inventoryCost = product.unitPrice - 1_000
+    await repository.update(products)
+      .set({ lastPurchaseCost: inventoryCost })
+      .where(eq(products.id, product.id))
+    const draft = await createSalesDraft({ vehicleId: vehicleResult.vehicle!.id, createdById: 1 })
+
+    await expect(saveSalesDraftItems({
+      saleId: draft!.id,
+      updatedById: 1,
+      items: [{ itemType: 'product', id: product.id, quantity: 1, unitPrice: inventoryCost - 1 }],
+    })).resolves.toEqual({ ok: false })
+
+    await expect(saveSalesDraftItems({
+      saleId: draft!.id,
+      updatedById: 1,
+      items: [{ itemType: 'product', id: product.id, quantity: 1, unitPrice: inventoryCost }],
+    })).resolves.toEqual({ ok: true })
+
+    await expect(createCheckout({
+      saleId: draft!.id,
+      vehicleId: vehicleResult.vehicle!.id,
+      createdById: 1,
+      paymentMethod: 'cash',
+      amountPaid: inventoryCost - 1,
+      items: [{ itemType: 'product', id: product.id, quantity: 1, unitPrice: inventoryCost - 1 }],
+    })).resolves.toEqual({
+      ok: false,
+      message: 'Product sale price cannot be lower than inventory cost',
     })
   })
 

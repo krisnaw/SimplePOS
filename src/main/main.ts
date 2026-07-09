@@ -20,10 +20,12 @@ import {
   addWorkOrderItem,
   checkoutWorkOrder,
   deleteCustomer,
+  deleteProductCategory,
   deleteSalesDraft,
   deleteVehicle,
   deleteWorkOrderItem,
   getDashboardSummary,
+  getAppSettings,
   getInvoiceDetail,
   getWorkOrderDetail,
   getReportSummary,
@@ -41,6 +43,7 @@ import {
   saveSalesDraftItems,
   updateCustomer,
   updateProduct,
+  updateProductCategory,
   updateService,
   updateUser,
   updateVehicle,
@@ -50,6 +53,7 @@ import {
   createSupplier,
   listSuppliers,
   updateSupplier,
+  updateAppSettings,
   createPurchase,
   getPurchaseDetail,
   listPurchases,
@@ -114,9 +118,17 @@ app.whenReady().then(async () => {
   registerUpdateHandlers()
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
+  ipcMain.handle('settings:getApp', () => getAppSettings())
+  ipcMain.handle('settings:updateApp', (_event, input: unknown) => updateAppSettings(input as Record<string, unknown>))
   ipcMain.handle('categories:list', () => listProductCategories())
   ipcMain.handle('categories:create', (_event, input: unknown) => (
     createProductCategory(input as { name?: unknown })
+  ))
+  ipcMain.handle('categories:update', (_event, input: unknown) => (
+    updateProductCategory(input as { id?: unknown; name?: unknown })
+  ))
+  ipcMain.handle('categories:delete', (_event, input: unknown) => (
+    deleteProductCategory(input as { id?: unknown })
   ))
   ipcMain.handle('products:list', () => listProducts())
   ipcMain.handle('products:create', (_event, input: unknown) => createProduct(input as Record<string, unknown>))

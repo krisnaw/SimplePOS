@@ -16,6 +16,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -28,7 +29,20 @@ import {
 import {Badge} from '@/renderer/components/ui/badge'
 import {Button} from '@/renderer/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
-import {FieldError} from '@/renderer/components/ui/field'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/renderer/components/ui/field'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/renderer/components/ui/dialog'
 import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
 import {formatCurrency} from '@/renderer/lib/formatters'
@@ -86,6 +100,7 @@ function vehicleName(vehicle: MockVehicle): string {
 }
 
 export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
+  const { t } = useTranslation()
   const [vehicles, setVehicles] = useState<MockVehicle[]>([])
   const [catalogItems, setCatalogItems] = useState<MockCatalogItem[]>([])
   const [query, setQuery] = useState('')
@@ -138,9 +153,10 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             name: product.name,
             code: product.sku,
             category: product.categoryId === null
-              ? 'Uncategorized'
-              : categoryNames.get(product.categoryId) ?? 'Uncategorized',
+              ? t('sales.uncategorized')
+              : categoryNames.get(product.categoryId) ?? t('sales.uncategorized'),
             price: product.unitPrice,
+            minimumPrice: product.lastPurchaseCost > 0 ? product.lastPurchaseCost : 0,
           })),
         )
       },
@@ -149,7 +165,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       setOrders(drafts)
       setActiveOrderId(drafts[0]?.id ?? null)
     })
-  }, [])
+  }, [t])
 
   useEffect(() => {
     const api = window.simplepos
@@ -176,14 +192,6 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     })
   }, [normalizedQuery, vehicles])
 
-  const hasExactPlateMatch = parsedInput.plateNumber
-    ? vehicles.some(
-        (vehicle) =>
-          normalizePlateNumber(vehicle.plateNumber) ===
-          normalizePlateNumber(parsedInput.plateNumber),
-      )
-    : false
-
   function clearSearch() {
     setQuery('')
     setIsDropdownOpen(false)
@@ -198,7 +206,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     const drafts = await api.salesDrafts.list()
     setOrders(drafts)
     setActiveOrderId(draft.id)
-    setStatusMessage(draft.created ? '' : 'This vehicle already has an ongoing sale.')
+    setStatusMessage(draft.created ? '' : t('sales.vehicleAlreadyHasOngoingSale'))
     setQuery('')
     setIsDropdownOpen(false)
   }
@@ -221,10 +229,11 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   function openAddVehicleForm() {
     setNewVehiclePlate(parsedInput.plateNumber)
     setNewVehicleBrand('')
-    setNewVehicleName(parsedInput.model)
+    setNewVehicleName(parsedInput.model || (parsedInput.plateNumber ? '' : query.trim()))
     setNewCustomerName('')
     setNewCustomerPhone('')
     setNewVehicleErrors({})
+    setIsDropdownOpen(false)
     setIsAddVehicleOpen(true)
   }
 
@@ -238,9 +247,9 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       (vehicle) => normalizePlateNumber(vehicle.plateNumber) === plateNumber,
     )
     const errors = {
-      ...(!plateNumber ? { plateNumber: 'Plate number is required.' } : {}),
-      ...(plateExists ? { plateNumber: 'This plate number already exists.' } : {}),
-      ...(!carName ? { model: 'Model is required.' } : {}),
+      ...(!plateNumber ? { plateNumber: t('sales.validation.plateRequired') } : {}),
+      ...(plateExists ? { plateNumber: t('sales.validation.plateExists') } : {}),
+      ...(!carName ? { model: t('sales.validation.modelRequired') } : {}),
     }
 
     if (Object.keys(errors).length > 0) {
@@ -308,10 +317,10 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         try {
           const invoice = await api.invoices.get({ id: result.checkout.invoiceId })
           setCompletedInvoice(invoice ?? null)
-          if (!invoice) setStatusMessage(`Sale completed, but invoice ${result.checkout.invoiceNumber} could not be prepared for printing.`)
+          if (!invoice) setStatusMessage(t('sales.invoiceLoadFailed', { invoiceNumber: result.checkout.invoiceNumber }))
         } catch {
           setCompletedInvoice(null)
-          setStatusMessage(`Sale completed, but invoice ${result.checkout.invoiceNumber} could not be prepared for printing.`)
+          setStatusMessage(t('sales.invoiceLoadFailed', { invoiceNumber: result.checkout.invoiceNumber }))
         } finally {
           setIsLoadingCompletedInvoice(false)
         }
@@ -400,14 +409,20 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     if (!activeOrder) return
     const lineTotal = Number(priceDraft)
     if (!Number.isInteger(lineTotal) || lineTotal < 0) {
-      setPriceError('Enter a non-negative whole amount.')
+      setPriceError(t('sales.validation.nonNegativeWholeAmount'))
       return
     }
     if (lineTotal % item.quantity !== 0) {
-      setPriceError(`Total must be divisible by ${item.quantity}.`)
+      setPriceError(t('sales.validation.totalDivisibleByQuantity', { quantity: item.quantity }))
       return
     }
     const unitPrice = lineTotal / item.quantity
+    if (item.type === 'product' && unitPrice < item.minimumPrice) {
+      setPriceError(t('sales.validation.priceBelowInventoryCost', {
+        price: formatCurrency(item.minimumPrice * item.quantity),
+      }))
+      return
+    }
 
     const nextItems = activeOrder.lineItems.map((lineItem) =>
       lineItem.key === item.key
@@ -421,7 +436,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     )
     const result = await saveDraftItems(activeOrder.id, nextItems)
     if (!result.ok) {
-      setPriceError('Unable to save this price.')
+      setPriceError(t('sales.validation.unableToSavePrice'))
       return
     }
 
@@ -470,7 +485,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       <Card className="overflow-visible">
         <CardContent className="overflow-visible">
           <div className="relative flex max-w-2xl flex-col gap-2">
-            <Label htmlFor="vehicle-intake-search" className="sr-only">Plate / vehicle</Label>
+            <Label htmlFor="vehicle-intake-search" className="sr-only">{t('sales.vehicleSearchLabel')}</Label>
             <div className="relative">
               <Search
                 aria-hidden="true"
@@ -490,7 +505,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               {query ? (
                 <button
                   type="button"
-                  aria-label="Clear vehicle search"
+                  aria-label={t('sales.clearVehicleSearch')}
                   onClick={clearSearch}
                   className="absolute inset-y-0 right-0 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96]"
                 >
@@ -503,7 +518,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               <div className="absolute top-full right-0 left-0 z-20 mt-2 overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-lg">
                 <div className="flex items-center justify-between gap-3 border-b bg-muted/50 px-3 py-2">
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {matchedVehicles.length} result{matchedVehicles.length === 1 ? '' : 's'}
+                    {t('sales.searchResults', { count: matchedVehicles.length })}
                   </span>
                 </div>
 
@@ -515,15 +530,15 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                           <Car className="size-4 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-balance">No vehicle found</p>
+                          <p className="text-sm font-medium text-balance">{t('sales.noVehicleFound')}</p>
                           <p className="mt-1 text-xs text-muted-foreground text-pretty">
-                            Type a plate number to add a mock vehicle.
+                            {t('sales.addVehicleFromPlateHint')}
                           </p>
                         </div>
-                        {parsedInput.plateNumber && !hasExactPlateMatch ? (
+                        {!isAddVehicleOpen ? (
                           <Button type="button" size="sm" className={pressableClass} onClick={openAddVehicleForm}>
                             <Plus data-icon="inline-start" aria-hidden="true" />
-                            Add vehicle
+                            {t('sales.createNewVehicle')}
                           </Button>
                         ) : null}
                       </div>
@@ -568,91 +583,6 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       })}
                     </div>
                   )}
-                  {isAddVehicleOpen ? (
-                    <form className="flex flex-col gap-3 border-t p-3" onSubmit={addMockVehicle}>
-                      <div>
-                        <p className="text-sm font-medium text-balance">Add vehicle</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground text-pretty">
-                          This mock record will be cleared when the app refreshes.
-                        </p>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="new-vehicle-plate">Plate number</Label>
-                          <Input
-                            id="new-vehicle-plate"
-                            value={newVehiclePlate}
-                            onChange={(event) => {
-                              setNewVehiclePlate(event.target.value)
-                              setNewVehicleErrors((current) => ({ ...current, plateNumber: undefined }))
-                            }}
-                            placeholder="DK1234"
-                            className="uppercase tabular-nums"
-                            aria-invalid={Boolean(newVehicleErrors.plateNumber)}
-                            autoFocus
-                          />
-                          {newVehicleErrors.plateNumber ? (
-                            <p className="text-xs text-destructive" role="alert">
-                              {newVehicleErrors.plateNumber}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="new-customer-name">Customer name (optional)</Label>
-                          <Input
-                            id="new-customer-name"
-                            value={newCustomerName}
-                            onChange={(event) => setNewCustomerName(event.target.value)}
-                            placeholder="Customer name"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="new-customer-phone">Phone (optional)</Label>
-                          <Input
-                            id="new-customer-phone"
-                            value={newCustomerPhone}
-                            onChange={(event) => setNewCustomerPhone(event.target.value)}
-                            placeholder="08123456789"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="new-vehicle-brand">Brand (optional)</Label>
-                          <Input
-                            id="new-vehicle-brand"
-                            value={newVehicleBrand}
-                            onChange={(event) => setNewVehicleBrand(event.target.value)}
-                            placeholder="Toyota"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="new-vehicle-name">Model</Label>
-                          <Input
-                            id="new-vehicle-name"
-                            value={newVehicleName}
-                            onChange={(event) => {
-                              setNewVehicleName(event.target.value)
-                              setNewVehicleErrors((current) => ({ ...current, model: undefined }))
-                            }}
-                            placeholder="Avanza"
-                            aria-invalid={Boolean(newVehicleErrors.model)}
-                          />
-                          {newVehicleErrors.model ? (
-                            <p className="text-xs text-destructive" role="alert">
-                              {newVehicleErrors.model}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" className={pressableClass} onClick={cancelAddVehicle}>
-                          Cancel
-                        </Button>
-                        <Button type="submit" className={pressableClass}>
-                          Add vehicle
-                        </Button>
-                      </div>
-                    </form>
-                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -660,19 +590,107 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         </CardContent>
       </Card>
 
+      <Dialog
+        open={isAddVehicleOpen}
+        onOpenChange={(open) => {
+          if (!open) cancelAddVehicle()
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <form className="flex flex-col gap-4" onSubmit={addMockVehicle}>
+            <DialogHeader>
+              <DialogTitle>{t('sales.createNewVehicle')}</DialogTitle>
+              <DialogDescription>
+                {t('sales.addVehicleTemporaryHint')}
+              </DialogDescription>
+            </DialogHeader>
+
+            <FieldGroup className="grid gap-4 sm:grid-cols-3">
+              <Field data-invalid={Boolean(newVehicleErrors.plateNumber)}>
+                <FieldLabel htmlFor="new-vehicle-plate">{t('sales.plateNumber')}</FieldLabel>
+                <Input
+                  id="new-vehicle-plate"
+                  value={newVehiclePlate}
+                  onChange={(event) => {
+                    setNewVehiclePlate(event.target.value)
+                    setNewVehicleErrors((current) => ({ ...current, plateNumber: undefined }))
+                  }}
+                  placeholder="DK1234"
+                  className="uppercase tabular-nums"
+                  aria-invalid={Boolean(newVehicleErrors.plateNumber)}
+                  autoFocus
+                />
+                <FieldError>{newVehicleErrors.plateNumber}</FieldError>
+              </Field>
+              <Field data-invalid={Boolean(newVehicleErrors.model)}>
+                <FieldLabel htmlFor="new-vehicle-name">{t('sales.model')}</FieldLabel>
+                <Input
+                  id="new-vehicle-name"
+                  value={newVehicleName}
+                  onChange={(event) => {
+                    setNewVehicleName(event.target.value)
+                    setNewVehicleErrors((current) => ({ ...current, model: undefined }))
+                  }}
+                  placeholder="Avanza"
+                  aria-invalid={Boolean(newVehicleErrors.model)}
+                />
+                <FieldError>{newVehicleErrors.model}</FieldError>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="new-vehicle-brand">{t('sales.brandOptional')}</FieldLabel>
+                <Input
+                  id="new-vehicle-brand"
+                  value={newVehicleBrand}
+                  onChange={(event) => setNewVehicleBrand(event.target.value)}
+                  placeholder="Toyota"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="new-customer-name">{t('sales.customerNameOptional')}</FieldLabel>
+                <Input
+                  id="new-customer-name"
+                  value={newCustomerName}
+                  onChange={(event) => setNewCustomerName(event.target.value)}
+                  placeholder={t('sales.customerNamePlaceholder')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="new-customer-phone">{t('sales.phoneOptional')}</FieldLabel>
+                <Input
+                  id="new-customer-phone"
+                  value={newCustomerPhone}
+                  onChange={(event) => setNewCustomerPhone(event.target.value)}
+                  placeholder="08123456789"
+                />
+              </Field>
+            </FieldGroup>
+
+            <DialogFooter className="mx-0 mb-0 border-t-0 bg-transparent p-0">
+              <Button type="button" variant="outline" className={pressableClass} onClick={cancelAddVehicle}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" className={pressableClass}>
+                {t('sales.createNewVehicle')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[240px_minmax(0,1fr)_340px]">
           <Card className="min-h-0 overflow-hidden">
             <CardHeader>
-              <CardTitle>In Progress</CardTitle>
+              <CardTitle>{t('sales.runningOrders')}</CardTitle>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto">
               {orders.length === 0 ? (
                 <div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed p-4 text-center">
-                  <p className="text-sm text-muted-foreground text-pretty">No orders in progress.</p>
+                  <p className="text-sm text-muted-foreground text-pretty">{t('sales.noRunningOrders')}</p>
                 </div>
               ) : (
-                orders.map((order) => {
+                orders.map((order, orderIndex) => {
                   const isActive = order.id === activeOrderId
+                  const entryNumber = orderIndex + 1
 
                   return (
                     <div
@@ -695,11 +713,14 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         <span className="flex items-start justify-between gap-2">
                           <span className="min-w-0">
                             <span className="flex flex-wrap items-center gap-1.5">
+                              <Badge variant="outline" className="h-5 px-1.5 text-[11px] tabular-nums">
+                                #{entryNumber}
+                              </Badge>
                               <span className="text-sm font-semibold tabular-nums">{order.vehicle.plateNumber}</span>
                               {order.isStale ? (
                                 <Badge variant="secondary">
                                   <Clock3 data-icon="inline-start" aria-hidden="true" />
-                                  Stale
+                                  {t('sales.stale')}
                                 </Badge>
                               ) : null}
                             </span>
@@ -715,7 +736,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         variant="ghost"
                         className={cn('my-1 mr-1 shrink-0 self-start text-muted-foreground hover:text-destructive', pressableClass)}
                         onClick={() => setOrderToDelete(order)}
-                        aria-label={`Delete draft for ${order.vehicle.plateNumber}`}
+                        aria-label={t('sales.deleteDraftForVehicle', { plateNumber: order.vehicle.plateNumber })}
                       >
                         <Trash2 aria-hidden="true" />
                       </Button>
@@ -728,7 +749,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         className="col-span-2 flex w-full items-center justify-between gap-2 rounded-b-lg px-2.5 pb-2 pt-1.5 text-xs text-muted-foreground transition-transform duration-150 ease-out active:scale-[0.98]"
                       >
                         <span className="tabular-nums">
-                          {order.lineItems.length} item{order.lineItems.length === 1 ? '' : 's'}
+                          {t('sales.activeItemCount', { count: order.lineItems.length })}
                         </span>
                         <span className="font-medium text-foreground tabular-nums">
                           {formatCurrency(getOrderTotal(order))}
@@ -745,7 +766,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             <>
               <Card className="min-h-0 overflow-hidden">
                 <CardHeader>
-                  <CardTitle>Products</CardTitle>
+                  <CardTitle>{t('sales.products')}</CardTitle>
                   <CardDescription>{selectedVehicle.plateNumber} · {vehicleName(selectedVehicle)}</CardDescription>
                 </CardHeader>
                 <CardContent className="scroll-fade flex min-h-0 flex-col gap-3 overflow-auto">
@@ -753,12 +774,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                     <SalesCatalogListItem
                       key={item.key}
                       itemType={item.type}
-                      typeLabel={item.type === 'service' ? 'Service' : 'Product'}
+                      typeLabel={item.type === 'service' ? t('sales.service') : t('sales.product')}
                       name={item.name}
                       category={item.category}
                       code={item.code}
                       price={item.price}
-                      addLabel="Add"
+                      addLabel={t('sales.add')}
                       onAdd={() => addLineItem(item)}
                     />
                   ))}
@@ -767,16 +788,16 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
               <Card className="min-h-0 overflow-hidden">
                 <CardHeader>
-                  <CardTitle>Current Sale</CardTitle>
+                  <CardTitle>{t('sales.currentSale')}</CardTitle>
                   <CardDescription>
-                    {saleItemCount} item{saleItemCount === 1 ? '' : 's'}
+                    {t('sales.activeItemCount', { count: saleItemCount })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
                   <div className="scroll-fade flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
                     {lineItems.length === 0 ? (
                       <div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed p-4 text-center">
-                        <p className="text-sm text-muted-foreground text-pretty">Add a product to start.</p>
+                        <p className="text-sm text-muted-foreground text-pretty">{t('sales.addProductToStart')}</p>
                       </div>
                     ) : (
                       lineItems.map((item) => (
@@ -785,7 +806,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <p className="truncate text-sm font-medium">{item.name}</p>
-                                {item.price !== item.basePrice ? <Badge variant="secondary">Adjusted</Badge> : null}
+                                {item.price !== item.basePrice ? <Badge variant="secondary">{t('sales.adjusted')}</Badge> : null}
                               </div>
                             </div>
                             <div className="flex shrink-0 items-start">
@@ -795,7 +816,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                 variant="ghost"
                                 className={pressableClass}
                                 onClick={() => beginPriceEdit(item)}
-                                aria-label={`Edit price for ${item.name}`}
+                                aria-label={t('sales.editPriceForItem', { name: item.name })}
                               >
                                 <Pencil aria-hidden="true" />
                               </Button>
@@ -809,7 +830,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                 size="icon-sm"
                                 className={pressableClass}
                                 onClick={() => updateLineItemQuantity(item.key, item.quantity - 1)}
-                                aria-label={`Decrease ${item.name}`}
+                                aria-label={t('sales.decreaseItem', { name: item.name })}
                               >
                                 <Minus aria-hidden="true" />
                               </Button>
@@ -820,7 +841,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                 size="icon-sm"
                                 className={pressableClass}
                                 onClick={() => updateLineItemQuantity(item.key, item.quantity + 1)}
-                                aria-label={`Increase ${item.name}`}
+                                aria-label={t('sales.increaseItem', { name: item.name })}
                               >
                                 <Plus aria-hidden="true" />
                               </Button>
@@ -831,7 +852,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                 <Input
                                   id={`sale-total-${item.key}`}
                                   type="number"
-                                  min="0"
+                                  min={item.type === 'product' ? item.minimumPrice * item.quantity : 0}
                                   step="1"
                                   value={priceDraft}
                                   onChange={(event) => {
@@ -843,7 +864,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                     if (event.key === 'Escape') cancelPriceEdit()
                                   }}
                                   className="h-8 w-24 tabular-nums"
-                                  aria-label={`Total price for ${item.name}`}
+                                  aria-label={t('sales.totalPriceForItem', { name: item.name })}
                                   aria-invalid={Boolean(priceError)}
                                   autoFocus
                                 />
@@ -852,7 +873,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                   size="icon-sm"
                                   className={pressableClass}
                                   onClick={() => void saveLinePrice(item)}
-                                  aria-label={`Save total price for ${item.name}`}
+                                  aria-label={t('sales.saveTotalPriceForItem', { name: item.name })}
                                 >
                                   <Check aria-hidden="true" />
                                 </Button>
@@ -862,7 +883,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                   variant="outline"
                                   className={pressableClass}
                                   onClick={cancelPriceEdit}
-                                  aria-label="Cancel price edit"
+                                  aria-label={t('sales.cancelPriceEdit')}
                                 >
                                   <X aria-hidden="true" />
                                 </Button>
@@ -884,7 +905,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
                   <div className="border-t pt-3">
                     <div className="flex items-center justify-between gap-3 text-base font-semibold">
-                      <span>Total</span>
+                      <span>{t('sales.total')}</span>
                       <span className="tabular-nums">{formatCurrency(total)}</span>
                     </div>
                     {statusMessage ? (
@@ -896,7 +917,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       disabled={lineItems.length === 0}
                       onClick={() => setIsCheckoutConfirmOpen(true)}
                     >
-                      Checkout
+                      {t('sales.checkout')}
                     </Button>
                   </div>
                 </CardContent>
@@ -906,23 +927,23 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             <>
               <Card className="min-h-0 overflow-hidden">
                 <CardHeader>
-                  <CardTitle>Products</CardTitle>
-                  <CardDescription>No vehicle selected</CardDescription>
+                  <CardTitle>{t('sales.products')}</CardTitle>
+                  <CardDescription>{t('sales.noVehicleSelected')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex min-h-32 flex-1 items-center justify-center p-4 text-center">
                   <p className="text-sm text-muted-foreground text-pretty">
-                    Select a vehicle to add products.
+                    {t('sales.selectVehicleToAddProducts')}
                   </p>
                 </CardContent>
               </Card>
               <Card className="min-h-0 overflow-hidden">
                 <CardHeader>
-                  <CardTitle>Current Sale</CardTitle>
-                  <CardDescription>No active sale</CardDescription>
+                  <CardTitle>{t('sales.currentSale')}</CardTitle>
+                  <CardDescription>{t('sales.noActiveSale')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex min-h-32 flex-1 items-center justify-center p-4 text-center">
                   <p className="text-sm text-muted-foreground text-pretty">
-                    The selected vehicle&apos;s sale items will appear here.
+                    {t('sales.selectedVehicleItemsHint')}
                   </p>
                 </CardContent>
               </Card>
@@ -934,14 +955,14 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         <AlertDialogPortal>
           <AlertDialogBackdrop />
           <AlertDialogPopup>
-            <AlertDialogTitle>Delete this draft?</AlertDialogTitle>
+            <AlertDialogTitle>{t('sales.deleteDraftTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
               {orderToDelete
-                ? `The unfinished sale for ${orderToDelete.vehicle.plateNumber} and all of its items will be permanently deleted.`
-                : 'This unfinished sale and all of its items will be permanently deleted.'}
+                ? t('sales.deleteDraftDescriptionWithVehicle', { plateNumber: orderToDelete.vehicle.plateNumber })
+                : t('sales.deleteDraftDescription')}
             </AlertDialogDescription>
             <div className="mt-5 flex justify-end gap-2">
-              <AlertDialogClose render={<Button type="button" variant="outline" className={pressableClass}>Keep draft</Button>} />
+              <AlertDialogClose render={<Button type="button" variant="outline" className={pressableClass}>{t('sales.keepDraft')}</Button>} />
               <Button
                 type="button"
                 variant="destructive"
@@ -949,7 +970,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 onClick={() => { if (orderToDelete) void deleteDraft(orderToDelete) }}
               >
                 <Trash2 data-icon="inline-start" aria-hidden="true" />
-                Delete draft
+                {t('sales.deleteDraft')}
               </Button>
             </div>
           </AlertDialogPopup>
@@ -969,9 +990,9 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 <ReceiptText aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-lg">Review sale &amp; confirm payment</AlertDialogTitle>
+                <AlertDialogTitle className="text-lg">{t('sales.reviewSaleTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Check the sale details before confirming that full cash payment was received.
+                  {t('sales.reviewSaleDescription')}
                 </AlertDialogDescription>
               </div>
             </div>
@@ -980,20 +1001,20 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               <div className="rounded-lg bg-muted/40 p-4">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sale</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('sales.sale')}</p>
                     <p className="mt-1 font-semibold tabular-nums">#{activeOrder?.id}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vehicle</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('sales.vehicle')}</p>
                     <p className="mt-1 font-semibold">{selectedVehicle?.plateNumber}</p>
                     <p className="text-sm text-muted-foreground text-pretty">
                       {selectedVehicle ? vehicleName(selectedVehicle) : ''}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Customer</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('sales.customer')}</p>
                     <p className="mt-1 font-semibold">
-                      {selectedVehicle?.customerName || 'Walk-in customer'}
+                      {selectedVehicle?.customerName || t('sales.walkInCustomer')}
                     </p>
                     {selectedVehicle?.customerPhone ? (
                       <p className="text-sm text-muted-foreground tabular-nums">
@@ -1006,11 +1027,11 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
               <div className="mt-5 overflow-hidden rounded-lg border bg-background">
                 <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
-                  <span>Item</span>
-                  <span>Category</span>
-                  <span className="text-right">Qty</span>
-                  <span className="text-right">Price</span>
-                  <span className="text-right">Total</span>
+                  <span>{t('sales.item')}</span>
+                  <span>{t('sales.category')}</span>
+                  <span className="text-right">{t('sales.qty')}</span>
+                  <span className="text-right">{t('sales.price')}</span>
+                  <span className="text-right">{t('sales.total')}</span>
                 </div>
                 <div className="divide-y">
                   {lineItems.map((item) => (
@@ -1037,16 +1058,16 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="w-16 text-muted-foreground">Items</span>
+                    <span className="w-16 text-muted-foreground">{t('sales.items')}</span>
                     <span className="tabular-nums">{saleItemCount}</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="w-16 text-muted-foreground">Payment</span>
-                    <span>Cash</span>
+                    <span className="w-16 text-muted-foreground">{t('sales.payment')}</span>
+                    <span>{t('sales.cash')}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-6 text-lg font-semibold sm:justify-end">
-                  <span>Total</span>
+                  <span>{t('sales.total')}</span>
                   <span className="tabular-nums">{formatCurrency(total)}</span>
                 </div>
               </div>
@@ -1054,13 +1075,13 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
             <div className="flex flex-col-reverse gap-2 bg-muted/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground text-pretty">
-                Completing this sale creates a paid invoice and updates product stock.
+                {t('sales.checkoutSideEffectHint')}
               </p>
               <div className="flex shrink-0 justify-end gap-2">
                 <AlertDialogClose
                   render={
                     <Button type="button" variant="outline" className={pressableClass} disabled={isCheckingOut}>
-                      Go back
+                      {t('sales.goBack')}
                     </Button>
                   }
                 />
@@ -1071,7 +1092,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                   onClick={() => void checkoutActiveSale()}
                 >
                   <Banknote data-icon="inline-start" aria-hidden="true" />
-                  {isCheckingOut ? 'Completing...' : 'Cash received'}
+                  {isCheckingOut ? t('sales.completing') : t('sales.cashReceived')}
                 </Button>
               </div>
             </div>
@@ -1092,13 +1113,13 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 <Check aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle>Sale completed</AlertDialogTitle>
+                <AlertDialogTitle>{t('sales.checkoutCompleteTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
                   {completedInvoice
-                    ? `Invoice ${completedInvoice.invoiceNumber} is ready to print.`
+                    ? t('sales.checkoutCompleteDescription', { invoiceNumber: completedInvoice.invoiceNumber })
                     : isLoadingCompletedInvoice
-                      ? `Preparing invoice ${completedInvoiceNumber} for printing...`
-                      : `Invoice ${completedInvoiceNumber || 'for this sale'} is not ready here. You can still print it from Invoice History.`}
+                      ? t('sales.preparingInvoiceForPrinting', { invoiceNumber: completedInvoiceNumber })
+                      : t('sales.invoiceNotReadyHere', { invoiceNumber: completedInvoiceNumber || t('sales.thisSale') })}
                 </AlertDialogDescription>
               </div>
             </div>
@@ -1115,7 +1136,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 ) : (
                   <Printer data-icon="inline-start" aria-hidden="true" />
                 )}
-                Print Invoice
+                {t('sales.printInvoice')}
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -1126,7 +1147,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                   onClick={handlePreviewCompletedInvoice}
                 >
                   <Eye data-icon="inline-start" aria-hidden="true" />
-                  Preview
+                  {t('sales.preview')}
                 </Button>
                 <Button
                   type="button"
@@ -1135,7 +1156,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                   onClick={closeCompletedSaleDialog}
                 >
                   <Plus data-icon="inline-start" aria-hidden="true" />
-                  New Sale
+                  {t('sales.newSale')}
                 </Button>
               </div>
             </div>
@@ -1152,10 +1173,10 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           <AlertDialogBackdrop />
           <AlertDialogPopup className="flex max-h-[90vh] w-[90vw] max-w-3xl flex-col gap-0 p-0">
             <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-              <p className="text-sm font-semibold">{completedInvoice?.invoiceNumber ?? 'Receipt Preview'}</p>
+              <p className="text-sm font-semibold">{completedInvoice?.invoiceNumber ?? t('sales.receiptPreview')}</p>
               <AlertDialogClose
                 render={
-                  <Button type="button" variant="ghost" size="icon-sm" className={pressableClass} aria-label="Close preview">
+                  <Button type="button" variant="ghost" size="icon-sm" className={pressableClass} aria-label={t('sales.closePreview')}>
                     <X aria-hidden="true" />
                   </Button>
                 }
@@ -1165,7 +1186,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               {previewUrl ? (
                 <iframe
                   src={previewUrl}
-                  title={completedInvoice ? `Invoice ${completedInvoice.invoiceNumber}` : 'Receipt Preview'}
+                  title={completedInvoice ? t('sales.invoiceTitle', { invoiceNumber: completedInvoice.invoiceNumber }) : t('sales.receiptPreview')}
                   className="h-full w-full rounded-b-xl border-0"
                   style={{ minHeight: '70vh' }}
                 />

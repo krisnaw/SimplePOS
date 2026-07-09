@@ -1,19 +1,12 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
-import { Building2, MapPin, Pencil, Plus, Search } from 'lucide-react'
-import { Button } from '@/renderer/components/ui/button'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/renderer/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/renderer/components/ui/field'
-import { Input } from '@/renderer/components/ui/input'
-import { cn } from '@/renderer/lib/utils'
-import type { SupplierSummary } from '@/shared/types/supplier'
-import type { SupplierFeedback, SupplierForm } from './SupplierManagement.types'
+import {type FormEvent, useEffect, useMemo, useState} from 'react'
+import {Building2, Plus, Search} from 'lucide-react'
+import {Button} from '@/renderer/components/ui/button'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle,} from '@/renderer/components/ui/card'
+import {Field, FieldGroup, FieldLabel} from '@/renderer/components/ui/field'
+import {Input} from '@/renderer/components/ui/input'
+import {cn} from '@/renderer/lib/utils'
+import type {SupplierSummary} from '@/shared/types/supplier'
+import type {SupplierFeedback, SupplierForm} from './SupplierManagement.types'
 
 const emptyForm: SupplierForm = {
   name: '',
@@ -102,6 +95,11 @@ export function SupplierManagement() {
   }
 
   function startEditing(supplier: SupplierSummary) {
+    if (editing?.id === supplier.id) {
+      resetForm()
+      return
+    }
+
     setEditing(supplier)
     setIsCreating(false)
     setForm(toForm(supplier))
@@ -142,7 +140,7 @@ export function SupplierManagement() {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="relative shrink-0">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -170,26 +168,23 @@ export function SupplierManagement() {
             ) : (
               <div className="divide-y">
                 {filteredSuppliers.map((supplier) => (
-                  <div
+                  <button
                     key={supplier.id}
-                    className="grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/50"
+                    type="button"
+                    aria-current={editing?.id === supplier.id ? 'true' : undefined}
+                    onClick={() => startEditing(supplier)}
+                    className={cn(
+                      'grid min-h-16 w-full grid-cols-[minmax(0,1fr)] items-center gap-3 px-3 py-2.5 text-left transition-[background-color,border-color,transform] duration-150 hover:bg-muted/50 active:scale-[0.98]',
+                      editing?.id === supplier.id && 'bg-muted',
+                    )}
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{supplier.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {[supplier.contactName, supplier.phone].filter(Boolean).join(' · ') || 'No contact details'}
+                        {[supplier.contactName, supplier.phone, supplier.address].filter(Boolean).join(' · ') || 'No contact details'}
                       </p>
-                      {supplier.address ? (
-                        <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                          <MapPin className="size-3 shrink-0" aria-hidden="true" />
-                          <span className="truncate">{supplier.address}</span>
-                        </p>
-                      ) : null}
                     </div>
-                    <Button type="button" variant="ghost" size="icon-sm" className={pressableClass} onClick={() => startEditing(supplier)} aria-label={`Edit ${supplier.name}`}>
-                      <Pencil aria-hidden="true" />
-                    </Button>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

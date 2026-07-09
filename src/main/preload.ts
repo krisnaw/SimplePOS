@@ -4,6 +4,10 @@ contextBridge.exposeInMainWorld('simplepos', {
   db: {
     getStatus: () => ipcRenderer.invoke('db:getStatus'),
   },
+  settings: {
+    getApp: () => ipcRenderer.invoke('settings:getApp'),
+    updateApp: (input: { appName: string; appDescription: string }) => ipcRenderer.invoke('settings:updateApp', input),
+  },
   auth: {
     login: (credentials: { username: string; password: string }) => {
       return ipcRenderer.invoke('auth:login', credentials)
@@ -28,6 +32,8 @@ contextBridge.exposeInMainWorld('simplepos', {
   categories: {
     list: () => ipcRenderer.invoke('categories:list'),
     create: (input: { name: string }) => ipcRenderer.invoke('categories:create', input),
+    update: (input: { id: number; name: string }) => ipcRenderer.invoke('categories:update', input),
+    delete: (input: { id: number }) => ipcRenderer.invoke('categories:delete', input),
   },
   products: {
     list: () => ipcRenderer.invoke('products:list'),

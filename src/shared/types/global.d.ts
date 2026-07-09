@@ -28,6 +28,17 @@ type DatabaseStatus = {
   checkedAt: string
 }
 
+type AppSettingsSummary = {
+  appName: string
+  appDescription: string
+}
+
+type AppSettingsMutationResult = {
+  ok: boolean
+  message: string
+  settings?: AppSettingsSummary
+}
+
 type LoginResult = {
   ok: boolean
   message: string
@@ -403,6 +414,11 @@ type LowStockItemSummary = {
   minStock: number
 }
 
+type CategorySalesSummary = {
+  category: string
+  total: number
+}
+
 type ReportSummary = {
   period: ReportPeriod
   dateFrom: string
@@ -419,11 +435,13 @@ type ReportSummary = {
   legacyCostMissingCount: number
   hasLegacyCostGaps: boolean
   lowStockCount: number
+  vehicleCount: number
   workOrderCount: number
   completedWorkOrderCount: number
   invoicedWorkOrderCount: number
   workOrderCompletionRate: number
   paymentMethods: PaymentMethodSummary[]
+  categorySales: CategorySalesSummary[]
   lowStockItems: LowStockItemSummary[]
   topSellingItems: TopSellingItemSummary[]
 }
@@ -433,6 +451,10 @@ declare global {
     simplepos?: {
       db: {
         getStatus: () => Promise<DatabaseStatus>
+      }
+      settings: {
+        getApp: () => Promise<AppSettingsSummary>
+        updateApp: (input: { appName: string; appDescription: string }) => Promise<AppSettingsMutationResult>
       }
       auth: {
         login: (credentials: { username: string; password: string }) => Promise<LoginResult>
@@ -452,6 +474,8 @@ declare global {
       categories: {
         list: () => Promise<ProductCategorySummary[]>
         create: (input: { name: string }) => Promise<ProductCategoryMutationResult>
+        update: (input: { id: number; name: string }) => Promise<ProductCategoryMutationResult>
+        delete: (input: { id: number }) => Promise<ProductCategoryMutationResult>
       }
       products: {
         list: () => Promise<ProductSummary[]>
@@ -494,6 +518,7 @@ declare global {
             code: string
             price: number
             basePrice: number
+            minimumPrice: number
             priceOverriddenById: number | null
             priceOverriddenAt: string | null
             quantity: number

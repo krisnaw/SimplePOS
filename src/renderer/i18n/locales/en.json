@@ -32,6 +32,7 @@
     "online": "Online",
     "offline": "Offline",
     "notConfigured": "Not configured",
+    "refresh": "Refresh",
     "unableToReachDb": "Unable to reach the database."
   },
   "system": {
@@ -190,7 +191,81 @@
     "confirmCheckoutTitle": "Confirm Checkout",
     "confirmCheckoutDescription": "You are about to complete this sale for {{total}}. This action cannot be undone.",
     "confirmCheckout": "Confirm",
-    "cancelCheckout": "Cancel"
+    "cancelCheckout": "Cancel",
+    "vehicleSearchLabel": "Plate / vehicle",
+    "clearVehicleSearch": "Clear vehicle search",
+    "searchResults_one": "{{count}} result",
+    "searchResults_other": "{{count}} results",
+    "noVehicleFound": "No vehicle found",
+    "addVehicleFromPlateHint": "Create a vehicle record from this search and start a sale.",
+    "addVehicle": "Add vehicle",
+    "createNewVehicle": "Create new vehicle",
+    "addVehicleTemporaryHint": "This record will be available for future sales.",
+    "plateNumber": "Plate number",
+    "customerNameOptional": "Customer name (optional)",
+    "customerNamePlaceholder": "Customer name",
+    "phoneOptional": "Phone (optional)",
+    "brandOptional": "Brand (optional)",
+    "model": "Model",
+    "runningOrders": "Order Berjalan",
+    "noRunningOrders": "No orders in progress.",
+    "stale": "Stale",
+    "deleteDraftForVehicle": "Delete draft for {{plateNumber}}",
+    "activeItemCount_one": "{{count}} item",
+    "activeItemCount_other": "{{count}} items",
+    "products": "Products",
+    "addProductToStart": "Add a product to start.",
+    "adjusted": "Adjusted",
+    "editPriceForItem": "Edit price for {{name}}",
+    "decreaseItem": "Decrease {{name}}",
+    "increaseItem": "Increase {{name}}",
+    "totalPriceForItem": "Total price for {{name}}",
+    "saveTotalPriceForItem": "Save total price for {{name}}",
+    "cancelPriceEdit": "Cancel price edit",
+    "noVehicleSelected": "No vehicle selected",
+    "selectVehicleToAddProducts": "Select a vehicle to add products.",
+    "noActiveSale": "No active sale",
+    "selectedVehicleItemsHint": "The selected vehicle's sale items will appear here.",
+    "deleteDraftTitle": "Delete this draft?",
+    "deleteDraftDescription": "This unfinished sale and all of its items will be permanently deleted.",
+    "deleteDraftDescriptionWithVehicle": "The unfinished sale for {{plateNumber}} and all of its items will be permanently deleted.",
+    "keepDraft": "Keep draft",
+    "deleteDraft": "Delete draft",
+    "reviewSaleTitle": "Review sale & confirm payment",
+    "reviewSaleDescription": "Check the sale details before confirming that full cash payment was received.",
+    "sale": "Sale",
+    "vehicle": "Vehicle",
+    "customer": "Customer",
+    "walkInCustomer": "Walk-in customer",
+    "item": "Item",
+    "category": "Category",
+    "qty": "Qty",
+    "price": "Price",
+    "items": "Items",
+    "payment": "Payment",
+    "cash": "Cash",
+    "checkoutSideEffectHint": "Completing this sale creates a paid invoice and updates product stock.",
+    "goBack": "Go back",
+    "completing": "Completing...",
+    "cashReceived": "Cash received",
+    "preparingInvoiceForPrinting": "Preparing invoice {{invoiceNumber}} for printing...",
+    "invoiceNotReadyHere": "Invoice {{invoiceNumber}} is not ready here. You can still print it from Invoice History.",
+    "thisSale": "for this sale",
+    "preview": "Preview",
+    "receiptPreview": "Receipt Preview",
+    "closePreview": "Close preview",
+    "invoiceTitle": "Invoice {{invoiceNumber}}",
+    "uncategorized": "Uncategorized",
+    "vehicleAlreadyHasOngoingSale": "This vehicle already has an ongoing sale.",
+    "validation": {
+      "plateRequired": "Plate number is required.",
+      "plateExists": "This plate number already exists.",
+      "modelRequired": "Model is required.",
+      "nonNegativeWholeAmount": "Enter a non-negative whole amount.",
+      "totalDivisibleByQuantity": "Total must be divisible by {{quantity}}.",
+      "priceBelowInventoryCost": "Total cannot be lower than inventory cost (minimum {{price}}).",
+      "unableToSavePrice": "Unable to save this price."
+    }
   },
   "invoices": {
     "invoiceHistory": "Invoice History",
@@ -252,6 +327,13 @@
         "description": "Track spare parts, supplies, stock levels, and reorder needs."
       }
     },
+    "tabs": {
+      "sectionsLabel": "Inventory sections",
+      "product": "Product",
+      "purchase": "Purchase",
+      "moving": "Movements",
+      "emptyContentHint": "Inventory content will be attached here as each tab is migrated into the layout."
+    },
     "totalItems": "Total Items",
     "activeSkus": "Active product SKUs",
     "stockUnits": "Stock Units",
@@ -267,6 +349,8 @@
     "lastPurchaseCost": "Last purchase cost",
     "purchaseHistory": "Purchase history",
     "searchPlaceholder": "Search inventory",
+    "categoryFilter": "Filter products by category",
+    "allCategories": "All categories",
     "table": {
       "product": "Product",
       "category": "Category",
@@ -537,6 +621,7 @@
       "activityTitle": "Operational Activity",
       "activityDescription": "Invoice and work-order progress for this period.",
       "paidInvoices": "Paid invoices",
+      "vehicles": "Vehicles",
       "completedWorkOrders": "Completed work orders",
       "invoicedWorkOrders": "Invoiced work orders",
       "completionRate": "Completion rate",
@@ -588,6 +673,15 @@
         "title": "Work Orders",
         "description": "Repair jobs opened in this period.",
         "helper": "{{count}} completed · {{rate}}% rate"
+      },
+      "vehicles": {
+        "title": "Vehicles",
+        "description": "Vehicles attached to paid sales in this period.",
+        "helper": "Paid sales in selected period"
+      },
+      "categorySales": {
+        "emptyTitle": "Category {{number}}",
+        "helper": "Category sales"
       }
     },
     "topSelling": {
@@ -597,7 +691,7 @@
       "table": {
         "productName": "Product Name",
         "category": "Category",
-        "totalUnit": "Total Unit",
+        "totalUnit": "Qty",
         "total": "Total",
         "sales": "Sales",
         "cogs": "COGS",
@@ -632,7 +726,58 @@
       }
     },
     "externalDevices": "External Devices",
+    "tabs": {
+      "sectionsLabel": "Settings sections",
+      "devices": "Devices",
+      "productCategories": "Product Categories",
+      "updates": "Updates"
+    },
+    "productCategories": {
+      "listTitle": "Product Categories",
+      "listHint": "Create and maintain the category names used by inventory products.",
+      "loading": "Loading product categories...",
+      "empty": "No product categories found.",
+      "categoryId": "ID {{id}}",
+      "productCount_one": "{{count}} product",
+      "productCount_other": "{{count}} products",
+      "editCategory": "Edit {{name}}",
+      "deleteCategory": "Delete {{name}}",
+      "deleteConfirm": "Delete {{name}}? This cannot be undone.",
+      "createTitle": "Create Category",
+      "createHint": "Add a category before assigning it to products.",
+      "editTitle": "Edit Category",
+      "editHint": "Renaming {{name}} updates the label everywhere it is shown.",
+      "nameLabel": "Category name",
+      "namePlaceholder": "Engine Parts",
+      "nameHint": "Names are trimmed and duplicate names are blocked.",
+      "table": {
+        "category": "Category",
+        "products": "Products",
+        "actions": "Actions"
+      },
+      "metrics": {
+        "total": "Categories",
+        "totalHint": "Available inventory groups",
+        "assigned": "Assigned Products",
+        "assignedHint": "Products using a category",
+        "empty": "Unused Categories",
+        "emptyHint": "Safe to delete"
+      },
+      "messages": {
+        "nameRequired": "Category name is required",
+        "deleteBlocked": "Move {{count}} products out of this category before deleting it."
+      }
+    },
     "devicesHint": "Manage hardware and service connections used by the POS.",
+    "appIdentity": {
+      "title": "App Identity",
+      "description": "Set the name and description shown in the app header and reports.",
+      "name": "App name",
+      "namePlaceholder": "SimplePOS",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Car Repair Shop",
+      "unavailable": "App settings are unavailable."
+    },
     "devices": {
       "database": {
         "description": "Local POS data storage"

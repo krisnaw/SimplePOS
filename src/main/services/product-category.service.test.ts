@@ -6,8 +6,10 @@ import { closeDatabase, initializeDatabase } from '../db/client'
 import {
   createProduct,
   createProductCategory,
+  deleteProductCategory,
   listProductCategories,
   listProducts,
+  updateProductCategory,
   updateProduct,
 } from './product.service'
 
@@ -82,6 +84,53 @@ describe('product category service', () => {
       name: 'Engine Parts',
     })
     expect(Object.keys(category ?? {})).toEqual(['id', 'name'])
+  })
+
+  it('updates category names and rejects duplicate renames', async () => {
+    const created = await createProductCategory({ name: 'Body Parts' })
+    expect(created.ok).toBe(true)
+
+    await expect(updateProductCategory({
+      id: created.category!.id,
+      name: '  Exterior   Parts ',
+    })).resolves.toEqual({
+      ok: true,
+      message: 'Category updated',
+      category: {
+        id: created.category!.id,
+        name: 'Exterior Parts',
+      },
+    })
+
+    await expect(updateProductCategory({
+      id: created.category!.id,
+      name: 'mesin',
+    })).resolves.toEqual({
+      ok: false,
+      message: 'A category with this name already exists',
+    })
+  })
+
+  it('deletes unused categories and rejects categories assigned to products', async () => {
+    const unused = await createProductCategory({ name: 'Unused Category' })
+    expect(unused.ok).toBe(true)
+
+    await expect(deleteProductCategory({ id: unused.category!.id })).resolves.toMatchObject({
+      ok: true,
+      message: 'Category deleted',
+      category: {
+        id: unused.category!.id,
+        name: 'Unused Category',
+      },
+    })
+
+    const assigned = (await listProductCategories()).find((item) => item.name === 'Mesin')
+    expect(assigned).toBeDefined()
+
+    await expect(deleteProductCategory({ id: assigned!.id })).resolves.toEqual({
+      ok: false,
+      message: 'Move products out of this category before deleting it',
+    })
   })
 
   it('creates and updates a product with a valid category', async () => {

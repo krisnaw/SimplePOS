@@ -1,12 +1,16 @@
 export { authenticateUser } from './auth.service'
 export type { LoginResult } from './auth.service'
+export { getAppSettings, updateAppSettings } from './app-settings.service'
+export type { AppSettingsMutationResult, AppSettingsSummary } from './app-settings.service'
 export { createUser, listUsers, updateUser } from './user.service'
 export type { UserMutationResult, UserSummary } from './user.service'
 export {
   createProduct,
   createProductCategory,
+  deleteProductCategory,
   listProductCategories,
   listProducts,
+  updateProductCategory,
   updateProduct,
 } from './product.service'
 export { adjustStock, listStockMovements } from './stock-movement.service'

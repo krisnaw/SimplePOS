@@ -32,12 +32,6 @@ function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock
 }
 
-function estimatedMarginPercent(product: ProductSummary): number | null {
-  if (product.unitPrice <= 0) return null
-
-  return Math.round(((product.unitPrice - product.lastPurchaseCost) / product.unitPrice) * 1000) / 10
-}
-
 function toProductForm(product: ProductSummary): ProductFormState {
   return {
     sku: product.sku,
@@ -61,6 +55,7 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
   const [form, setForm] = useState<ProductFormState>(emptyForm)
   const [editingProduct, setEditingProduct] = useState<ProductSummary | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -97,14 +92,17 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
 
-    if (!query) return products
+    return products.filter((product) => {
+      const matchesCategory = categoryFilter === 'all'
+        || product.categoryId === Number(categoryFilter)
+      if (!matchesCategory) return false
+      if (!query) return true
 
-    return products.filter((product) =>
-      [product.name, product.sku, product.barcode ?? ''].some((value) =>
+      return [product.name, product.sku, product.barcode ?? ''].some((value) =>
         value.toLowerCase().includes(query),
-      ),
-    )
-  }, [products, searchQuery])
+      )
+    })
+  }, [categoryFilter, products, searchQuery])
 
   const lowStockCount = products.filter(isLowStock).length
   const totalUnits = products.reduce((total, p) => total + p.stockQty, 0)
@@ -187,49 +185,49 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
 
-      <div className={cn('grid shrink-0 gap-2', canViewCost ? 'grid-cols-4' : 'grid-cols-3')}>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('inventory.totalItems')}</CardTitle>
-            <CardDescription>{t('inventory.activeSkus')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold tabular-nums">{products.length}</p>
-          </CardContent>
-        </Card>
+      {/*<div className={cn('grid shrink-0 gap-2', canViewCost ? 'grid-cols-4' : 'grid-cols-3')}>*/}
+      {/*  <Card>*/}
+      {/*    <CardHeader>*/}
+      {/*      <CardTitle>{t('inventory.totalItems')}</CardTitle>*/}
+      {/*      <CardDescription>{t('inventory.activeSkus')}</CardDescription>*/}
+      {/*    </CardHeader>*/}
+      {/*    <CardContent>*/}
+      {/*      <p className="text-2xl font-semibold tabular-nums">{products.length}</p>*/}
+      {/*    </CardContent>*/}
+      {/*  </Card>*/}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('inventory.stockUnits')}</CardTitle>
-            <CardDescription>{t('inventory.availableQty')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold tabular-nums">{totalUnits}</p>
-          </CardContent>
-        </Card>
+      {/*  <Card>*/}
+      {/*    <CardHeader>*/}
+      {/*      <CardTitle>{t('inventory.stockUnits')}</CardTitle>*/}
+      {/*      <CardDescription>{t('inventory.availableQty')}</CardDescription>*/}
+      {/*    </CardHeader>*/}
+      {/*    <CardContent>*/}
+      {/*      <p className="text-2xl font-semibold tabular-nums">{totalUnits}</p>*/}
+      {/*    </CardContent>*/}
+      {/*  </Card>*/}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('inventory.lowStock')}</CardTitle>
-            <CardDescription>{t('inventory.atMinimum')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold tabular-nums">{lowStockCount}</p>
-          </CardContent>
-        </Card>
+      {/*  <Card>*/}
+      {/*    <CardHeader>*/}
+      {/*      <CardTitle>{t('inventory.lowStock')}</CardTitle>*/}
+      {/*      <CardDescription>{t('inventory.atMinimum')}</CardDescription>*/}
+      {/*    </CardHeader>*/}
+      {/*    <CardContent>*/}
+      {/*      <p className="text-2xl font-semibold tabular-nums">{lowStockCount}</p>*/}
+      {/*    </CardContent>*/}
+      {/*  </Card>*/}
 
-        {canViewCost ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('inventory.estimatedCostValue')}</CardTitle>
-              <CardDescription>{t('inventory.latestCostEstimate')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold tabular-nums">{formatCurrency(inventoryCostValue)}</p>
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
+      {/*  {canViewCost ? (*/}
+      {/*    <Card>*/}
+      {/*      <CardHeader>*/}
+      {/*        <CardTitle>{t('inventory.estimatedCostValue')}</CardTitle>*/}
+      {/*        <CardDescription>{t('inventory.latestCostEstimate')}</CardDescription>*/}
+      {/*      </CardHeader>*/}
+      {/*      <CardContent>*/}
+      {/*        <p className="text-2xl font-semibold tabular-nums">{formatCurrency(inventoryCostValue)}</p>*/}
+      {/*      </CardContent>*/}
+      {/*    </Card>*/}
+      {/*  ) : null}*/}
+      {/*</div>*/}
 
       <div className="grid min-h-0 flex-1 grid-cols-12 gap-2">
         <div className="col-span-8 min-h-0">
@@ -252,22 +250,32 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
               </CardAction>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('inventory.searchPlaceholder')}
-                className="shrink-0"
-              />
+              <div className="grid shrink-0 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)]">
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('inventory.searchPlaceholder')}
+                />
+                <BaseSelect
+                  value={categoryFilter}
+                  ariaLabel={t('inventory.categoryFilter')}
+                  options={[
+                    {value: 'all', label: t('inventory.allCategories')},
+                    ...categories.map((category) => ({
+                      value: String(category.id),
+                      label: category.name,
+                    })),
+                  ]}
+                  onValueChange={setCategoryFilter}
+                />
+              </div>
               <div className="min-h-0 flex-1 rounded-lg border bg-background">
-                <Table containerClassName="h-full overflow-auto" className={canViewCost ? 'min-w-220' : 'min-w-180'}>
+                <Table containerClassName="h-full overflow-auto" className="min-w-180">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="sticky top-0 z-10 rounded-tl-lg bg-muted/95 backdrop-blur">{t('inventory.table.product')}</TableHead>
                       <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">{t('inventory.table.category')}</TableHead>
                       <TableHead className="sticky top-0 z-10 bg-muted/95 text-right backdrop-blur">{t('inventory.table.price')}</TableHead>
-                      {canViewCost ? (
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 text-right backdrop-blur">{t('inventory.table.lastCost')}</TableHead>
-                      ) : null}
                       <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">{t('inventory.table.stock')}</TableHead>
                       <TableHead className="sticky top-0 z-10 rounded-tr-lg bg-muted/95 backdrop-blur">{t('inventory.table.status')}</TableHead>
                     </TableRow>
@@ -275,7 +283,7 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
                   <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={canViewCost ? 6 : 5}>
+                      <TableCell colSpan={5}>
                         <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                           <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true"/>
                           <p className="text-sm text-muted-foreground">{t('inventory.loading')}</p>
@@ -284,7 +292,7 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
                     </TableRow>
                   ) : filteredProducts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={canViewCost ? 6 : 5} className="h-24 text-muted-foreground">
+                      <TableCell colSpan={5} className="h-24 text-muted-foreground">
                         {products.length === 0 ? t('inventory.noProducts') : t('inventory.noMatchingProducts')}
                       </TableCell>
                     </TableRow>
@@ -293,7 +301,6 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
                   {!isLoading && filteredProducts.map((product) => {
                     const categoryName = categories.find((c) => c.id === product.categoryId)?.name ?? '—'
                     const lowStock = isLowStock(product)
-                    const marginPercent = estimatedMarginPercent(product)
 
                     return (
                       <TableRow
@@ -314,22 +321,11 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
                       >
                         <TableCell>
                           <span className="block truncate font-medium">{product.name}</span>
-                          <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
                         </TableCell>
                         <TableCell>
                           <ProductCategoryBadge name={categoryName} />
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{formatCurrency(product.unitPrice)}</TableCell>
-                        {canViewCost ? (
-                          <TableCell className="text-right tabular-nums">
-                            <span className="block">{formatCurrency(product.lastPurchaseCost)}</span>
-                            {marginPercent !== null ? (
-                              <span className="block text-xs text-muted-foreground">
-                                {t('inventory.estimatedMargin', {value: marginPercent})}
-                              </span>
-                            ) : null}
-                          </TableCell>
-                        ) : null}
                         <TableCell className="tabular-nums">
                           {product.stockQty} {product.unitType}
                         </TableCell>

@@ -141,6 +141,10 @@ async function costSnapshotForProduct(product: typeof products.$inferSelect, qua
   }
 }
 
+function minimumSaleUnitPriceForProduct(product: typeof products.$inferSelect) {
+  return product.lastPurchaseCost > 0 ? product.lastPurchaseCost : 0
+}
+
 function zeroCostSnapshot() {
   return {
     unitCostSnapshot: 0,
@@ -229,6 +233,9 @@ async function prepareCheckoutItems(
       const unitPrice = requestedUnitPrice ?? existing?.unitPrice ?? basePrice
       const isOverride = unitPrice !== basePrice
       if (isOverride && !overriddenById) return 'A user is required to override a price'
+      if (unitPrice < minimumSaleUnitPriceForProduct(product)) {
+        return 'Product sale price cannot be lower than inventory cost'
+      }
       const unchangedOverride = isOverride && existing?.unitPrice === unitPrice
       const costSnapshot = await costSnapshotForProduct(product, quantity)
 

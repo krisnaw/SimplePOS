@@ -223,7 +223,7 @@ export function InvoiceWorkspace() {
               </div>
             </div>
 
-            <div className="-mx-1 min-h-0 flex-1 overflow-auto px-1 py-1">
+            <div className="scroll-fade -mx-1 min-h-0 flex-1 overflow-auto px-1 py-1">
               {isLoadingList ? (
                 <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background p-5 text-center">
                   <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />

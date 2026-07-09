@@ -32,6 +32,7 @@
     "online": "Online",
     "offline": "Offline",
     "notConfigured": "Belum dikonfigurasi",
+    "refresh": "Muat ulang",
     "unableToReachDb": "Tidak dapat terhubung ke database."
   },
   "system": {
@@ -190,7 +191,81 @@
     "confirmCheckoutTitle": "Konfirmasi Pembayaran",
     "confirmCheckoutDescription": "Anda akan menyelesaikan penjualan ini senilai {{total}}. Tindakan ini tidak dapat dibatalkan.",
     "confirmCheckout": "Konfirmasi",
-    "cancelCheckout": "Batal"
+    "cancelCheckout": "Batal",
+    "vehicleSearchLabel": "Plat / kendaraan",
+    "clearVehicleSearch": "Bersihkan pencarian kendaraan",
+    "searchResults_one": "{{count}} hasil",
+    "searchResults_other": "{{count}} hasil",
+    "noVehicleFound": "Kendaraan tidak ditemukan",
+    "addVehicleFromPlateHint": "Buat data kendaraan dari pencarian ini dan mulai penjualan.",
+    "addVehicle": "Tambah kendaraan",
+    "createNewVehicle": "Tambah kendaraan baru",
+    "addVehicleTemporaryHint": "Data ini akan tersedia untuk penjualan berikutnya.",
+    "plateNumber": "Nomor plat",
+    "customerNameOptional": "Nama pelanggan (opsional)",
+    "customerNamePlaceholder": "Nama pelanggan",
+    "phoneOptional": "Telepon (opsional)",
+    "brandOptional": "Merek (opsional)",
+    "model": "Model",
+    "runningOrders": "Order Berjalan",
+    "noRunningOrders": "Tidak ada order berjalan.",
+    "stale": "Lama",
+    "deleteDraftForVehicle": "Hapus draft untuk {{plateNumber}}",
+    "activeItemCount_one": "{{count}} item",
+    "activeItemCount_other": "{{count}} item",
+    "products": "Produk",
+    "addProductToStart": "Tambah produk untuk memulai.",
+    "adjusted": "Disesuaikan",
+    "editPriceForItem": "Edit harga {{name}}",
+    "decreaseItem": "Kurangi {{name}}",
+    "increaseItem": "Tambah {{name}}",
+    "totalPriceForItem": "Total harga {{name}}",
+    "saveTotalPriceForItem": "Simpan total harga {{name}}",
+    "cancelPriceEdit": "Batalkan edit harga",
+    "noVehicleSelected": "Belum ada kendaraan dipilih",
+    "selectVehicleToAddProducts": "Pilih kendaraan untuk menambahkan produk.",
+    "noActiveSale": "Tidak ada penjualan aktif",
+    "selectedVehicleItemsHint": "Item penjualan kendaraan yang dipilih akan muncul di sini.",
+    "deleteDraftTitle": "Hapus draft ini?",
+    "deleteDraftDescription": "Penjualan yang belum selesai ini dan semua itemnya akan dihapus permanen.",
+    "deleteDraftDescriptionWithVehicle": "Penjualan yang belum selesai untuk {{plateNumber}} dan semua itemnya akan dihapus permanen.",
+    "keepDraft": "Simpan draft",
+    "deleteDraft": "Hapus draft",
+    "reviewSaleTitle": "Tinjau penjualan & konfirmasi pembayaran",
+    "reviewSaleDescription": "Periksa detail penjualan sebelum mengonfirmasi pembayaran tunai penuh diterima.",
+    "sale": "Penjualan",
+    "vehicle": "Kendaraan",
+    "customer": "Pelanggan",
+    "walkInCustomer": "Pelanggan langsung",
+    "item": "Item",
+    "category": "Kategori",
+    "qty": "Qty",
+    "price": "Harga",
+    "items": "Item",
+    "payment": "Pembayaran",
+    "cash": "Tunai",
+    "checkoutSideEffectHint": "Menyelesaikan penjualan ini akan membuat faktur lunas dan memperbarui stok produk.",
+    "goBack": "Kembali",
+    "completing": "Menyelesaikan...",
+    "cashReceived": "Tunai diterima",
+    "preparingInvoiceForPrinting": "Menyiapkan faktur {{invoiceNumber}} untuk dicetak...",
+    "invoiceNotReadyHere": "Faktur {{invoiceNumber}} belum siap di sini. Anda masih dapat mencetaknya dari Riwayat Faktur.",
+    "thisSale": "untuk penjualan ini",
+    "preview": "Pratinjau",
+    "receiptPreview": "Pratinjau Struk",
+    "closePreview": "Tutup pratinjau",
+    "invoiceTitle": "Faktur {{invoiceNumber}}",
+    "uncategorized": "Tanpa kategori",
+    "vehicleAlreadyHasOngoingSale": "Kendaraan ini sudah memiliki penjualan berjalan.",
+    "validation": {
+      "plateRequired": "Nomor plat wajib diisi.",
+      "plateExists": "Nomor plat ini sudah ada.",
+      "modelRequired": "Model wajib diisi.",
+      "nonNegativeWholeAmount": "Masukkan jumlah bulat yang tidak negatif.",
+      "totalDivisibleByQuantity": "Total harus habis dibagi {{quantity}}.",
+      "priceBelowInventoryCost": "Total tidak boleh lebih rendah dari biaya inventaris (minimum {{price}}).",
+      "unableToSavePrice": "Tidak dapat menyimpan harga ini."
+    }
   },
   "invoices": {
     "invoiceHistory": "Riwayat Faktur",
@@ -252,6 +327,13 @@
         "description": "Lacak suku cadang, persediaan, tingkat stok, dan kebutuhan pemesanan ulang."
       }
     },
+    "tabs": {
+      "sectionsLabel": "Bagian inventaris",
+      "product": "Produk",
+      "purchase": "Pembelian",
+      "moving": "Mutasi",
+      "emptyContentHint": "Konten inventaris akan ditampilkan di sini saat setiap tab dipindahkan ke layout."
+    },
     "totalItems": "Total Item",
     "activeSkus": "SKU produk aktif",
     "stockUnits": "Unit Stok",
@@ -267,6 +349,8 @@
     "lastPurchaseCost": "Biaya pembelian terakhir",
     "purchaseHistory": "Riwayat pembelian",
     "searchPlaceholder": "Cari inventaris",
+    "categoryFilter": "Filter produk berdasarkan kategori",
+    "allCategories": "Semua kategori",
     "table": {
       "product": "Produk",
       "category": "Kategori",
@@ -537,6 +621,7 @@
       "activityTitle": "Aktivitas Operasional",
       "activityDescription": "Progres faktur dan perintah kerja untuk periode ini.",
       "paidInvoices": "Faktur dibayar",
+      "vehicles": "Kendaraan",
       "completedWorkOrders": "Perintah kerja selesai",
       "invoicedWorkOrders": "Perintah kerja difakturkan",
       "completionRate": "Tingkat penyelesaian",
@@ -588,6 +673,15 @@
         "title": "Perintah Kerja",
         "description": "Pekerjaan perbaikan yang dibuka pada periode ini.",
         "helper": "{{count}} selesai · tingkat {{rate}}%"
+      },
+      "vehicles": {
+        "title": "Kendaraan",
+        "description": "Kendaraan pada penjualan lunas di periode ini.",
+        "helper": "Penjualan lunas pada periode terpilih"
+      },
+      "categorySales": {
+        "emptyTitle": "Kategori {{number}}",
+        "helper": "Penjualan kategori"
       }
     },
     "topSelling": {
@@ -597,7 +691,7 @@
       "table": {
         "productName": "Nama Produk",
         "category": "Kategori",
-        "totalUnit": "Total Unit",
+        "totalUnit": "Qty",
         "total": "Total",
         "sales": "Penjualan",
         "cogs": "HPP",
@@ -632,7 +726,58 @@
       }
     },
     "externalDevices": "Perangkat Eksternal",
+    "tabs": {
+      "sectionsLabel": "Bagian pengaturan",
+      "devices": "Perangkat",
+      "productCategories": "Kategori Produk",
+      "updates": "Pembaruan"
+    },
+    "productCategories": {
+      "listTitle": "Kategori Produk",
+      "listHint": "Buat dan kelola nama kategori yang digunakan produk inventaris.",
+      "loading": "Memuat kategori produk...",
+      "empty": "Kategori produk tidak ditemukan.",
+      "categoryId": "ID {{id}}",
+      "productCount_one": "{{count}} produk",
+      "productCount_other": "{{count}} produk",
+      "editCategory": "Ubah {{name}}",
+      "deleteCategory": "Hapus {{name}}",
+      "deleteConfirm": "Hapus {{name}}? Tindakan ini tidak dapat dibatalkan.",
+      "createTitle": "Tambah Kategori",
+      "createHint": "Tambahkan kategori sebelum menggunakannya pada produk.",
+      "editTitle": "Ubah Kategori",
+      "editHint": "Mengubah nama {{name}} akan memperbarui label di semua tempat.",
+      "nameLabel": "Nama kategori",
+      "namePlaceholder": "Suku Cadang Mesin",
+      "nameHint": "Nama akan dirapikan dan nama duplikat diblokir.",
+      "table": {
+        "category": "Kategori",
+        "products": "Produk",
+        "actions": "Aksi"
+      },
+      "metrics": {
+        "total": "Kategori",
+        "totalHint": "Grup inventaris tersedia",
+        "assigned": "Produk Terpakai",
+        "assignedHint": "Produk yang memakai kategori",
+        "empty": "Kategori Kosong",
+        "emptyHint": "Aman dihapus"
+      },
+      "messages": {
+        "nameRequired": "Nama kategori wajib diisi",
+        "deleteBlocked": "Pindahkan {{count}} produk dari kategori ini sebelum menghapusnya."
+      }
+    },
     "devicesHint": "Kelola koneksi perangkat keras dan layanan yang digunakan oleh POS.",
+    "appIdentity": {
+      "title": "Identitas Aplikasi",
+      "description": "Atur nama dan deskripsi yang tampil di header aplikasi dan laporan.",
+      "name": "Nama aplikasi",
+      "namePlaceholder": "SimplePOS",
+      "descriptionLabel": "Deskripsi",
+      "descriptionPlaceholder": "Bengkel Mobil",
+      "unavailable": "Pengaturan aplikasi tidak tersedia."
+    },
     "devices": {
       "database": {
         "description": "Penyimpanan data POS lokal"

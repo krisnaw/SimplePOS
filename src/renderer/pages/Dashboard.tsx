@@ -58,6 +58,11 @@ const sectionTranslationKeys: Record<AppSection, string> = {
   settings: 'settings',
 }
 
+const defaultAppSettings = {
+  appName: 'SimplePOS',
+  appDescription: 'Car Repair Shop',
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -65,6 +70,7 @@ export default function Dashboard() {
   const user = (location.state as DashboardLocationState | null)?.user
   const [activeSection, setActiveSection] = useState<AppSection>('dashboard')
   const [inventoryTab, setInventoryTab] = useState<InventoryLayoutTab>('product')
+  const [appSettings, setAppSettings] = useState(defaultAppSettings)
   const activeDetails = sectionDetails[activeSection]
   const activeDetailsKey = `${sectionTranslationKeys[activeSection]}.sections.${sectionTranslationKeys[activeSection]}`
 
@@ -73,6 +79,12 @@ export default function Dashboard() {
       navigate('/', { replace: true })
     }
   }, [navigate, user])
+
+  useEffect(() => {
+    void window.simplepos?.settings?.getApp().then((settings) => {
+      if (settings) setAppSettings(settings)
+    })
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -108,8 +120,8 @@ export default function Dashboard() {
                 <FileText aria-hidden="true" data-icon="inline-start" />
               </div>
               <div className="min-w-0">
-                <h1 className="truncate text-base font-semibold text-balance">SimplePOS</h1>
-                <p className="truncate text-[11px] leading-4 text-muted-foreground text-pretty">{t('app.subtitle')}</p>
+                <h1 className="truncate text-base font-semibold text-balance">{appSettings.appName}</h1>
+                <p className="truncate text-[11px] leading-4 text-muted-foreground text-pretty">{appSettings.appDescription}</p>
               </div>
             </div>
 
@@ -257,9 +269,11 @@ export default function Dashboard() {
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
               {activeSection === 'invoices' ? <InvoiceWorkspace /> : null}
               {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
-              {activeSection === 'reports' ? <ReportsWorkspace currentUser={user} /> : null}
+              {activeSection === 'reports' ? <ReportsWorkspace currentUser={user} appSettings={appSettings} /> : null}
               {activeSection === 'user-guide' ? <UserGuideWorkspace /> : null}
-              {activeSection === 'settings' ? <SettingsWorkspace /> : null}
+              {activeSection === 'settings' ? (
+                <SettingsWorkspace appSettings={appSettings} onAppSettingsChange={setAppSettings} />
+              ) : null}
               {activeSection !== 'dashboard' &&
               activeSection !== 'sales' &&
               activeSection !== 'inventory' &&

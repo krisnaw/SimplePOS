@@ -143,6 +143,7 @@ describe('COGS checkout and reporting', () => {
     const service = await createService({
       code: 'COGS-SVC',
       name: 'COGS Service',
+      category: '  bengkel  ',
       price: 80_000,
     })
     expect(service.ok).toBe(true)
@@ -248,6 +249,13 @@ describe('COGS checkout and reporting', () => {
     const report = await getReportSummary({ period: 'today' })
 
     expect(report.salesTotal).toBe(expectedSalesTotal)
+    expect(report.vehicleCount).toBe(4)
+    expect(report.categorySales).toEqual([
+      { category: 'Bengkel', total: 80_000 },
+      { category: 'Cuci', total: 0 },
+      { category: 'Mesin', total: 0 },
+      { category: 'Minuman', total: 0 },
+    ])
     expect(report.cogsTotal).toBe(expectedCogsTotal)
     expect(report.grossProfit).toBe(expectedSalesTotal - expectedCogsTotal)
     expect(report.grossMarginPercent).toBe(Math.round(((expectedSalesTotal - expectedCogsTotal) / expectedSalesTotal) * 1000) / 10)

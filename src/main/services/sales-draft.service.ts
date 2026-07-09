@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
 import { products, saleItems, sales, services, vehicles } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
@@ -11,6 +11,10 @@ export function isSalesDraftStale(updatedAt: string, now = Date.now()): boolean 
   return Number.isFinite(updatedAtMs) && now - updatedAtMs > SALES_DRAFT_STALE_AFTER_MS
 }
 
+function minimumSaleUnitPriceForProduct(product: typeof products.$inferSelect) {
+  return product.lastPurchaseCost > 0 ? product.lastPurchaseCost : 0
+}
+
 export async function listSalesDrafts() {
   const db = getCheckoutRepository()
   if (!db) return []
@@ -18,7 +22,12 @@ export async function listSalesDrafts() {
     .from(sales)
     .innerJoin(vehicles, eq(sales.vehicleId, vehicles.id))
     .where(eq(sales.status, 'in_progress'))
+    .orderBy(asc(sales.createdAt), asc(sales.id))
   const items = await db.select().from(saleItems)
+  const productRows = await db.select().from(products)
+  const minimumProductPrices = new Map(
+    productRows.map((product) => [product.id, minimumSaleUnitPriceForProduct(product)]),
+  )
   return rows.map(({ sale, vehicle }) => ({
     id: sale.id,
     vehicle,
@@ -33,6 +42,9 @@ export async function listSalesDrafts() {
       code: item.sku ?? '',
       price: item.unitPrice,
       basePrice: item.basePrice,
+      minimumPrice: item.itemType === 'product'
+        ? minimumProductPrices.get(item.productId ?? 0) ?? 0
+        : 0,
       priceOverriddenById: item.priceOverriddenById,
       priceOverriddenAt: item.priceOverriddenAt,
       quantity: item.quantity,
@@ -113,6 +125,7 @@ export async function saveSalesDraftItems(input: Record<string, unknown>) {
       const unitPrice = typeof raw.unitPrice === 'number' ? raw.unitPrice : existing?.unitPrice ?? basePrice
       const isOverride = unitPrice !== basePrice
       if (isOverride && !overriddenById) return { ok: false }
+      if (unitPrice < minimumSaleUnitPriceForProduct(item)) return { ok: false }
       const unchangedOverride = isOverride && existing?.unitPrice === unitPrice
       prepared.push({
         itemType: 'product',

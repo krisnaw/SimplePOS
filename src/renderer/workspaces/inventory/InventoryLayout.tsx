@@ -1,13 +1,14 @@
 import { type ReactNode, useState } from 'react'
 import { ClipboardList, Package, ReceiptText } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/renderer/lib/utils'
 
 export type InventoryLayoutTab = 'product' | 'purchase' | 'moving'
 
 const inventorySectionTabs = [
-  { id: 'product', label: 'Product', icon: Package },
-  { id: 'purchase', label: 'Purchase', icon: ReceiptText },
-  { id: 'moving', label: 'Moving', icon: ClipboardList },
+  { id: 'product', labelKey: 'inventory.tabs.product', icon: Package },
+  { id: 'purchase', labelKey: 'inventory.tabs.purchase', icon: ReceiptText },
+  { id: 'moving', labelKey: 'inventory.tabs.moving', icon: ClipboardList },
 ] as const
 
 type InventoryLayoutProps = {
@@ -18,8 +19,10 @@ type InventoryLayoutProps = {
 }
 
 export function InventoryLayout({ activeTab, children, className, onTabChange }: InventoryLayoutProps) {
+  const { t } = useTranslation()
   const [internalTab, setInternalTab] = useState<InventoryLayoutTab>('product')
   const selectedTab = activeTab ?? internalTab
+  const selectedTabLabelKey = inventorySectionTabs.find((tab) => tab.id === selectedTab)?.labelKey
 
   function selectTab(tab: InventoryLayoutTab) {
     setInternalTab(tab)
@@ -30,16 +33,17 @@ export function InventoryLayout({ activeTab, children, className, onTabChange }:
     <div className={cn('flex min-h-0 min-w-0 flex-col gap-3 p-1', className)}>
       <div
         role="tablist"
-        aria-label="Inventory sections"
+        aria-label={t('inventory.tabs.sectionsLabel')}
         className="flex shrink-0 items-center gap-1 rounded-lg bg-muted p-1"
       >
         {inventorySectionTabs.map((tab) => {
           const isActive = selectedTab === tab.id
           const Icon = tab.icon
+          const label = t(tab.labelKey)
 
           return (
             <button
-              key={tab.label}
+              key={tab.id}
               type="button"
               role="tab"
               aria-selected={isActive}
@@ -50,7 +54,7 @@ export function InventoryLayout({ activeTab, children, className, onTabChange }:
               )}
             >
               <Icon className="size-4" aria-hidden="true" />
-              <span>{tab.label}</span>
+              <span>{label}</span>
             </button>
           )
         })}
@@ -58,9 +62,9 @@ export function InventoryLayout({ activeTab, children, className, onTabChange }:
       {children ?? (
         <div className="flex min-h-48 flex-1 items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center">
           <div className="max-w-sm">
-            <p className="font-medium">{inventorySectionTabs.find((tab) => tab.id === selectedTab)?.label}</p>
+            <p className="font-medium">{selectedTabLabelKey ? t(selectedTabLabelKey) : null}</p>
             <p className="mt-1 text-sm text-muted-foreground text-pretty">
-              Inventory content will be attached here as each tab is migrated into the layout.
+              {t('inventory.tabs.emptyContentHint')}
             </p>
           </div>
         </div>

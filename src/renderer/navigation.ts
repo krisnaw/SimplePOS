@@ -5,6 +5,7 @@ import {
   Package,
   ReceiptText,
   ScrollText,
+  Settings,
   ShoppingCart,
 } from 'lucide-react'
 import type { AppSection, SectionDetail } from '@/shared/types/app'
@@ -64,6 +65,13 @@ export const navigationItems: Array<{
     label: 'Vehicles',
     description: 'Vehicle records',
     icon: Car,
+  },
+  {
+    id: 'settings',
+    translationKey: 'settings',
+    label: 'Settings',
+    description: 'Shop preferences',
+    icon: Settings,
   },
 ]
 

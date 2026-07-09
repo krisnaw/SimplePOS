@@ -32,6 +32,7 @@ export type MockCatalogItem = {
   code: string
   category: string
   price: number
+  minimumPrice: number
 }
 
 export type SaleLineItem = Omit<MockCatalogItem, 'category'> & {
