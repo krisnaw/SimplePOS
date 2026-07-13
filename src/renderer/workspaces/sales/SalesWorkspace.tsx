@@ -1,4 +1,4 @@
-import {type FormEvent, useEffect, useMemo, useState} from 'react'
+import {type SubmitEvent, useEffect, useMemo, useReducer, useState} from 'react'
 import {
   Banknote,
   Car,
@@ -16,7 +16,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+import {useTranslation} from 'react-i18next'
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -29,34 +29,112 @@ import {
 import {Badge} from '@/renderer/components/ui/badge'
 import {Button} from '@/renderer/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/renderer/components/ui/field'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/renderer/components/ui/dialog'
+import {FieldError} from '@/renderer/components/ui/field'
 import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
 import {formatCurrency} from '@/renderer/lib/formatters'
 import {generateReceiptHTML, printInvoice} from '@/renderer/lib/invoice-print'
 import {cn} from '@/renderer/lib/utils'
 import type {AuthenticatedUser} from '@/shared/types/user'
-import type {InvoiceDetail} from '../invoice/InvoiceWorkspace.types'
 import {ProductCategoryBadge} from '../inventory/ProductCategoryBadge'
+import {AddVehicleDialog} from './AddVehicleDialog'
 import {SalesCatalogListItem} from './SalesCatalogListItem'
-import type {MockCatalogItem, MockSaleOrder, MockVehicle, SaleLineItem} from './SalesWorkspace.types'
+import type {
+  MockCatalogItem,
+  MockSaleOrder,
+  MockVehicle,
+  NewVehicleFormState,
+  SaleLineItem,
+  SalesWorkspaceUiAction,
+  SalesWorkspaceUiState,
+} from './SalesWorkspace.types'
 import {normalizePlateNumber, normalizeSearchText, parseVehicleInput,} from './vehicle-intake'
 
 const pressableClass =
   'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96]'
+
+const initialNewVehicleFormState: NewVehicleFormState = {
+  isOpen: false,
+  plate: '',
+  brand: '',
+  model: '',
+  customerName: '',
+  customerPhone: '',
+  errors: {},
+}
+
+const initialSalesWorkspaceUiState: SalesWorkspaceUiState = {
+  vehicleSearch: {
+    query: '',
+    isDropdownOpen: false,
+  },
+  newVehicleForm: initialNewVehicleFormState,
+  statusMessage: '',
+  orderToDelete: null,
+  priceEdit: {
+    editingKey: null,
+    draft: '',
+    error: '',
+  },
+  checkout: {
+    isConfirmOpen: false,
+    isCheckingOut: false,
+    isCompleteOpen: false,
+    completedInvoice: null,
+    completedInvoiceNumber: '',
+    isLoadingCompletedInvoice: false,
+  },
+  receiptPreview: {
+    isOpen: false,
+    url: null,
+  },
+}
+
+function salesWorkspaceUiReducer(
+  state: SalesWorkspaceUiState,
+  action: SalesWorkspaceUiAction,
+): SalesWorkspaceUiState {
+  switch (action.type) {
+    case 'vehicleSearch/set':
+      return { ...state, vehicleSearch: { ...state.vehicleSearch, ...action.patch } }
+    case 'vehicleSearch/reset':
+      return { ...state, vehicleSearch: initialSalesWorkspaceUiState.vehicleSearch }
+    case 'newVehicleForm/set':
+      return { ...state, newVehicleForm: { ...state.newVehicleForm, ...action.patch } }
+    case 'newVehicleForm/reset':
+      return { ...state, newVehicleForm: initialNewVehicleFormState }
+    case 'newVehicleForm/setErrors':
+      return { ...state, newVehicleForm: { ...state.newVehicleForm, errors: action.errors } }
+    case 'statusMessage/set':
+      return { ...state, statusMessage: action.message }
+    case 'orderToDelete/set':
+      return { ...state, orderToDelete: action.order }
+    case 'priceEdit/start':
+      return { ...state, priceEdit: { editingKey: action.key, draft: action.draft, error: '' } }
+    case 'priceEdit/cancel':
+      return { ...state, priceEdit: initialSalesWorkspaceUiState.priceEdit }
+    case 'priceEdit/setDraft':
+      return { ...state, priceEdit: { ...state.priceEdit, draft: action.draft, error: '' } }
+    case 'priceEdit/setError':
+      return { ...state, priceEdit: { ...state.priceEdit, error: action.error } }
+    case 'checkout/set':
+      return { ...state, checkout: { ...state.checkout, ...action.patch } }
+    case 'checkout/closeCompletedSale':
+      return {
+        ...state,
+        checkout: {
+          ...state.checkout,
+          isCompleteOpen: false,
+          completedInvoice: null,
+          completedInvoiceNumber: '',
+        },
+      }
+    case 'receiptPreview/open':
+      return { ...state, receiptPreview: { isOpen: true, url: action.url } }
+    case 'receiptPreview/close':
+      return { ...state, receiptPreview: { isOpen: false, url: null } }
+  }
+}
 
 function playCheckoutCompleteSound() {
   const AudioContext = window.AudioContext
@@ -103,33 +181,45 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   const { t } = useTranslation()
   const [vehicles, setVehicles] = useState<MockVehicle[]>([])
   const [catalogItems, setCatalogItems] = useState<MockCatalogItem[]>([])
-  const [query, setQuery] = useState('')
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isAddVehicleOpen, setIsAddVehicleOpen] = useState(false)
-  const [newVehiclePlate, setNewVehiclePlate] = useState('')
-  const [newVehicleBrand, setNewVehicleBrand] = useState('')
-  const [newVehicleName, setNewVehicleName] = useState('')
-  const [newCustomerName, setNewCustomerName] = useState('')
-  const [newCustomerPhone, setNewCustomerPhone] = useState('')
-  const [statusMessage, setStatusMessage] = useState('')
-  const [newVehicleErrors, setNewVehicleErrors] = useState<{
-    plateNumber?: string
-    model?: string
-  }>({})
+  const [uiState, dispatchUi] = useReducer(
+    salesWorkspaceUiReducer,
+    initialSalesWorkspaceUiState,
+  )
   const [orders, setOrders] = useState<MockSaleOrder[]>([])
   const [activeOrderId, setActiveOrderId] = useState<number | null>(null)
-  const [orderToDelete, setOrderToDelete] = useState<MockSaleOrder | null>(null)
-  const [editingPriceKey, setEditingPriceKey] = useState<string | null>(null)
-  const [priceDraft, setPriceDraft] = useState('')
-  const [priceError, setPriceError] = useState('')
-  const [isCheckoutConfirmOpen, setIsCheckoutConfirmOpen] = useState(false)
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const [isCheckoutCompleteOpen, setIsCheckoutCompleteOpen] = useState(false)
-  const [completedInvoice, setCompletedInvoice] = useState<InvoiceDetail>(null)
-  const [completedInvoiceNumber, setCompletedInvoiceNumber] = useState('')
-  const [isLoadingCompletedInvoice, setIsLoadingCompletedInvoice] = useState(false)
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  const {
+    vehicleSearch,
+    newVehicleForm,
+    statusMessage,
+    orderToDelete,
+    priceEdit,
+    checkout,
+    receiptPreview,
+  } = uiState
+  const { query, isDropdownOpen } = vehicleSearch
+  const {
+    isOpen: isAddVehicleOpen,
+    plate: newVehiclePlate,
+    brand: newVehicleBrand,
+    model: newVehicleName,
+    customerName: newCustomerName,
+    customerPhone: newCustomerPhone,
+  } = newVehicleForm
+  const {
+    editingKey: editingPriceKey,
+    draft: priceDraft,
+    error: priceError,
+  } = priceEdit
+  const {
+    isConfirmOpen: isCheckoutConfirmOpen,
+    isCheckingOut,
+    isCompleteOpen: isCheckoutCompleteOpen,
+    completedInvoice,
+    completedInvoiceNumber,
+    isLoadingCompletedInvoice,
+  } = checkout
+  const { isOpen: isPreviewOpen, url: previewUrl } = receiptPreview
 
   const parsedInput = useMemo(() => parseVehicleInput(query), [query])
   const normalizedQuery = normalizeSearchText(query)
@@ -193,9 +283,8 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   }, [normalizedQuery, vehicles])
 
   function clearSearch() {
-    setQuery('')
-    setIsDropdownOpen(false)
-    setIsAddVehicleOpen(false)
+    dispatchUi({ type: 'vehicleSearch/reset' })
+    dispatchUi({ type: 'newVehicleForm/set', patch: { isOpen: false } })
   }
 
   async function selectVehicle(vehicle: MockVehicle) {
@@ -206,17 +295,19 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     const drafts = await api.salesDrafts.list()
     setOrders(drafts)
     setActiveOrderId(draft.id)
-    setStatusMessage(draft.created ? '' : t('sales.vehicleAlreadyHasOngoingSale'))
-    setQuery('')
-    setIsDropdownOpen(false)
+    dispatchUi({
+      type: 'statusMessage/set',
+      message: draft.created ? '' : t('sales.vehicleAlreadyHasOngoingSale'),
+    })
+    dispatchUi({ type: 'vehicleSearch/reset' })
   }
 
   async function deleteDraft(order: MockSaleOrder) {
     const api = window.simplepos
     if (!api) return
     const result = await api.salesDrafts.delete({ saleId: order.id })
-    setStatusMessage(result.message)
-    setOrderToDelete(null)
+    dispatchUi({ type: 'statusMessage/set', message: result.message })
+    dispatchUi({ type: 'orderToDelete/set', order: null })
     if (!result.ok) return
 
     const remainingOrders = orders.filter((candidate) => candidate.id !== order.id)
@@ -227,17 +318,21 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   }
 
   function openAddVehicleForm() {
-    setNewVehiclePlate(parsedInput.plateNumber)
-    setNewVehicleBrand('')
-    setNewVehicleName(parsedInput.model || (parsedInput.plateNumber ? '' : query.trim()))
-    setNewCustomerName('')
-    setNewCustomerPhone('')
-    setNewVehicleErrors({})
-    setIsDropdownOpen(false)
-    setIsAddVehicleOpen(true)
+    dispatchUi({
+      type: 'newVehicleForm/set',
+      patch: {
+        isOpen: true,
+        plate: parsedInput.plateNumber,
+        brand: '',
+        model: parsedInput.model || (parsedInput.plateNumber ? '' : query.trim()),
+        customerName: '',
+        customerPhone: '',
+        errors: {},
+      },
+    })
   }
 
-  async function addMockVehicle(event: FormEvent<HTMLFormElement>) {
+  async function addMockVehicle(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const plateNumber = normalizePlateNumber(newVehiclePlate)
@@ -253,7 +348,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     }
 
     if (Object.keys(errors).length > 0) {
-      setNewVehicleErrors(errors)
+      dispatchUi({ type: 'newVehicleForm/setErrors', errors })
       return
     }
 
@@ -267,27 +362,24 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       customerPhone: newCustomerPhone.trim() || null,
     })
     if (!result.ok || !result.vehicle) {
-      setNewVehicleErrors({ plateNumber: result.message })
+      dispatchUi({
+        type: 'newVehicleForm/setErrors',
+        errors: { plateNumber: result.message },
+      })
       return
     }
     const nextVehicle = result.vehicle
 
     setVehicles((currentVehicles) => [nextVehicle, ...currentVehicles])
     await selectVehicle(nextVehicle)
-    setNewVehiclePlate('')
-    setNewVehicleBrand('')
-    setNewVehicleName('')
-    setNewCustomerName('')
-    setNewCustomerPhone('')
-    setNewVehicleErrors({})
-    setIsAddVehicleOpen(false)
+    dispatchUi({ type: 'newVehicleForm/reset' })
   }
 
   async function checkoutActiveSale() {
     if (!activeOrder || lineItems.length === 0 || isCheckingOut) return
     const api = window.simplepos
     if (!api) return
-    setIsCheckingOut(true)
+    dispatchUi({ type: 'checkout/set', patch: { isCheckingOut: true } })
     try {
       const result = await api.checkout.create({
         saleId: activeOrder.id,
@@ -302,37 +394,50 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           unitPrice: item.price,
         })),
       })
-      setStatusMessage(result.message)
-      setIsCheckoutConfirmOpen(false)
+      dispatchUi({ type: 'statusMessage/set', message: result.message })
+      dispatchUi({ type: 'checkout/set', patch: { isConfirmOpen: false } })
       if (result.ok && result.checkout) {
         playCheckoutCompleteSound()
-        setCompletedInvoice(null)
-        setCompletedInvoiceNumber(result.checkout.invoiceNumber)
-        setIsCheckoutCompleteOpen(true)
+        dispatchUi({
+          type: 'checkout/set',
+          patch: {
+            completedInvoice: null,
+            completedInvoiceNumber: result.checkout.invoiceNumber,
+            isCompleteOpen: true,
+          },
+        })
         setOrders((current) => current.filter((order) => order.id !== activeOrder.id))
         setActiveOrderId(null)
-        setQuery('')
+        dispatchUi({ type: 'vehicleSearch/set', patch: { query: '' } })
 
-        setIsLoadingCompletedInvoice(true)
+        dispatchUi({ type: 'checkout/set', patch: { isLoadingCompletedInvoice: true } })
         try {
           const invoice = await api.invoices.get({ id: result.checkout.invoiceId })
-          setCompletedInvoice(invoice ?? null)
-          if (!invoice) setStatusMessage(t('sales.invoiceLoadFailed', { invoiceNumber: result.checkout.invoiceNumber }))
+          dispatchUi({ type: 'checkout/set', patch: { completedInvoice: invoice ?? null } })
+          if (!invoice) {
+            dispatchUi({
+              type: 'statusMessage/set',
+              message: t('sales.invoiceLoadFailed', { invoiceNumber: result.checkout.invoiceNumber }),
+            })
+          }
         } catch {
-          setCompletedInvoice(null)
-          setStatusMessage(t('sales.invoiceLoadFailed', { invoiceNumber: result.checkout.invoiceNumber }))
+          dispatchUi({ type: 'checkout/set', patch: { completedInvoice: null } })
+          dispatchUi({
+            type: 'statusMessage/set',
+            message: t('sales.invoiceLoadFailed', { invoiceNumber: result.checkout.invoiceNumber }),
+          })
         } finally {
-          setIsLoadingCompletedInvoice(false)
+          dispatchUi({ type: 'checkout/set', patch: { isLoadingCompletedInvoice: false } })
         }
       }
     } finally {
-      setIsCheckingOut(false)
+      dispatchUi({ type: 'checkout/set', patch: { isCheckingOut: false } })
     }
   }
 
   function cancelAddVehicle() {
-    setIsAddVehicleOpen(false)
-    setNewVehicleErrors({})
+    dispatchUi({ type: 'newVehicleForm/set', patch: { isOpen: false, errors: {} } })
+    dispatchUi({ type: 'vehicleSearch/set', patch: { isDropdownOpen: false } })
   }
 
   function addLineItem(item: MockCatalogItem) {
@@ -394,33 +499,39 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   }
 
   function beginPriceEdit(item: SaleLineItem) {
-    setEditingPriceKey(item.key)
-    setPriceDraft(String(item.price * item.quantity))
-    setPriceError('')
+    dispatchUi({
+      type: 'priceEdit/start',
+      key: item.key,
+      draft: String(item.price * item.quantity),
+    })
   }
 
   function cancelPriceEdit() {
-    setEditingPriceKey(null)
-    setPriceDraft('')
-    setPriceError('')
+    dispatchUi({ type: 'priceEdit/cancel' })
   }
 
   async function saveLinePrice(item: SaleLineItem) {
     if (!activeOrder) return
     const lineTotal = Number(priceDraft)
     if (!Number.isInteger(lineTotal) || lineTotal < 0) {
-      setPriceError(t('sales.validation.nonNegativeWholeAmount'))
+      dispatchUi({ type: 'priceEdit/setError', error: t('sales.validation.nonNegativeWholeAmount') })
       return
     }
     if (lineTotal % item.quantity !== 0) {
-      setPriceError(t('sales.validation.totalDivisibleByQuantity', { quantity: item.quantity }))
+      dispatchUi({
+        type: 'priceEdit/setError',
+        error: t('sales.validation.totalDivisibleByQuantity', { quantity: item.quantity }),
+      })
       return
     }
     const unitPrice = lineTotal / item.quantity
     if (item.type === 'product' && unitPrice < item.minimumPrice) {
-      setPriceError(t('sales.validation.priceBelowInventoryCost', {
-        price: formatCurrency(item.minimumPrice * item.quantity),
-      }))
+      dispatchUi({
+        type: 'priceEdit/setError',
+        error: t('sales.validation.priceBelowInventoryCost', {
+          price: formatCurrency(item.minimumPrice * item.quantity),
+        }),
+      })
       return
     }
 
@@ -436,7 +547,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     )
     const result = await saveDraftItems(activeOrder.id, nextItems)
     if (!result.ok) {
-      setPriceError(t('sales.validation.unableToSavePrice'))
+      dispatchUi({ type: 'priceEdit/setError', error: t('sales.validation.unableToSavePrice') })
       return
     }
 
@@ -449,9 +560,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   }
 
   function closeCompletedSaleDialog() {
-    setIsCheckoutCompleteOpen(false)
-    setCompletedInvoice(null)
-    setCompletedInvoiceNumber('')
+    dispatchUi({ type: 'checkout/closeCompletedSale' })
   }
 
   function handlePrintCompletedInvoice() {
@@ -464,16 +573,14 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     const html = generateReceiptHTML(completedInvoice)
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
-    setPreviewUrl(url)
-    setIsPreviewOpen(true)
+    dispatchUi({ type: 'receiptPreview/open', url })
   }
 
   function handlePreviewClose() {
-    setIsPreviewOpen(false)
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl)
-      setPreviewUrl(null)
     }
+    dispatchUi({ type: 'receiptPreview/close' })
   }
 
   function getOrderTotal(order: MockSaleOrder): number {
@@ -495,10 +602,20 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                 id="vehicle-intake-search"
                 value={query}
                 onChange={(event) => {
-                  setQuery(event.target.value)
-                  setIsDropdownOpen(Boolean(event.target.value.trim()))
+                  dispatchUi({
+                    type: 'vehicleSearch/set',
+                    patch: {
+                      query: event.target.value,
+                      isDropdownOpen: Boolean(event.target.value.trim()),
+                    },
+                  })
                 }}
-                onFocus={() => setIsDropdownOpen(Boolean(query.trim()))}
+                onFocus={() => {
+                  dispatchUi({
+                    type: 'vehicleSearch/set',
+                    patch: { isDropdownOpen: Boolean(query.trim()) },
+                  })
+                }}
                 placeholder="DK1234 Avanza"
                 className="pl-10 pr-10 uppercase"
               />
@@ -535,12 +652,17 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                             {t('sales.addVehicleFromPlateHint')}
                           </p>
                         </div>
-                        {!isAddVehicleOpen ? (
-                          <Button type="button" size="sm" className={pressableClass} onClick={openAddVehicleForm}>
-                            <Plus data-icon="inline-start" aria-hidden="true" />
-                            {t('sales.createNewVehicle')}
-                          </Button>
-                        ) : null}
+                        <AddVehicleDialog
+                          open={isAddVehicleOpen}
+                          form={newVehicleForm}
+                          onOpen={openAddVehicleForm}
+                          onClose={cancelAddVehicle}
+                          onSubmit={addMockVehicle}
+                          onCancel={cancelAddVehicle}
+                          onFormChange={(patch) => {
+                            dispatchUi({ type: 'newVehicleForm/set', patch })
+                          }}
+                        />
                       </div>
                     </div>
                   ) : (
@@ -590,93 +712,6 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
         </CardContent>
       </Card>
 
-      <Dialog
-        open={isAddVehicleOpen}
-        onOpenChange={(open) => {
-          if (!open) cancelAddVehicle()
-        }}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          <form className="flex flex-col gap-4" onSubmit={addMockVehicle}>
-            <DialogHeader>
-              <DialogTitle>{t('sales.createNewVehicle')}</DialogTitle>
-              <DialogDescription>
-                {t('sales.addVehicleTemporaryHint')}
-              </DialogDescription>
-            </DialogHeader>
-
-            <FieldGroup className="grid gap-4 sm:grid-cols-3">
-              <Field data-invalid={Boolean(newVehicleErrors.plateNumber)}>
-                <FieldLabel htmlFor="new-vehicle-plate">{t('sales.plateNumber')}</FieldLabel>
-                <Input
-                  id="new-vehicle-plate"
-                  value={newVehiclePlate}
-                  onChange={(event) => {
-                    setNewVehiclePlate(event.target.value)
-                    setNewVehicleErrors((current) => ({ ...current, plateNumber: undefined }))
-                  }}
-                  placeholder="DK1234"
-                  className="uppercase tabular-nums"
-                  aria-invalid={Boolean(newVehicleErrors.plateNumber)}
-                  autoFocus
-                />
-                <FieldError>{newVehicleErrors.plateNumber}</FieldError>
-              </Field>
-              <Field data-invalid={Boolean(newVehicleErrors.model)}>
-                <FieldLabel htmlFor="new-vehicle-name">{t('sales.model')}</FieldLabel>
-                <Input
-                  id="new-vehicle-name"
-                  value={newVehicleName}
-                  onChange={(event) => {
-                    setNewVehicleName(event.target.value)
-                    setNewVehicleErrors((current) => ({ ...current, model: undefined }))
-                  }}
-                  placeholder="Avanza"
-                  aria-invalid={Boolean(newVehicleErrors.model)}
-                />
-                <FieldError>{newVehicleErrors.model}</FieldError>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="new-vehicle-brand">{t('sales.brandOptional')}</FieldLabel>
-                <Input
-                  id="new-vehicle-brand"
-                  value={newVehicleBrand}
-                  onChange={(event) => setNewVehicleBrand(event.target.value)}
-                  placeholder="Toyota"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="new-customer-name">{t('sales.customerNameOptional')}</FieldLabel>
-                <Input
-                  id="new-customer-name"
-                  value={newCustomerName}
-                  onChange={(event) => setNewCustomerName(event.target.value)}
-                  placeholder={t('sales.customerNamePlaceholder')}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="new-customer-phone">{t('sales.phoneOptional')}</FieldLabel>
-                <Input
-                  id="new-customer-phone"
-                  value={newCustomerPhone}
-                  onChange={(event) => setNewCustomerPhone(event.target.value)}
-                  placeholder="08123456789"
-                />
-              </Field>
-            </FieldGroup>
-
-            <DialogFooter className="mx-0 mb-0 border-t-0 bg-transparent p-0">
-              <Button type="button" variant="outline" className={pressableClass} onClick={cancelAddVehicle}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" className={pressableClass}>
-                {t('sales.createNewVehicle')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
       <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[240px_minmax(0,1fr)_340px]">
           <Card className="min-h-0 overflow-hidden">
             <CardHeader>
@@ -706,7 +741,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         type="button"
                         onClick={() => {
                           setActiveOrderId(order.id)
-                          setIsDropdownOpen(false)
+                          dispatchUi({ type: 'vehicleSearch/set', patch: { isDropdownOpen: false } })
                         }}
                         className="min-w-0 rounded-tl-lg px-2.5 pt-2 text-left transition-transform duration-150 ease-out active:scale-[0.98]"
                       >
@@ -735,7 +770,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         size="icon-sm"
                         variant="ghost"
                         className={cn('my-1 mr-1 shrink-0 self-start text-muted-foreground hover:text-destructive', pressableClass)}
-                        onClick={() => setOrderToDelete(order)}
+                        onClick={() => dispatchUi({ type: 'orderToDelete/set', order })}
                         aria-label={t('sales.deleteDraftForVehicle', { plateNumber: order.vehicle.plateNumber })}
                       >
                         <Trash2 aria-hidden="true" />
@@ -744,7 +779,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                         type="button"
                         onClick={() => {
                           setActiveOrderId(order.id)
-                          setIsDropdownOpen(false)
+                          dispatchUi({ type: 'vehicleSearch/set', patch: { isDropdownOpen: false } })
                         }}
                         className="col-span-2 flex w-full items-center justify-between gap-2 rounded-b-lg px-2.5 pb-2 pt-1.5 text-xs text-muted-foreground transition-transform duration-150 ease-out active:scale-[0.98]"
                       >
@@ -856,8 +891,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                   step="1"
                                   value={priceDraft}
                                   onChange={(event) => {
-                                    setPriceDraft(event.target.value)
-                                    setPriceError('')
+                                    dispatchUi({ type: 'priceEdit/setDraft', draft: event.target.value })
                                   }}
                                   onKeyDown={(event) => {
                                     if (event.key === 'Enter') void saveLinePrice(item)
@@ -915,7 +949,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       type="button"
                       className={cn('mt-3 h-10 w-full', pressableClass)}
                       disabled={lineItems.length === 0}
-                      onClick={() => setIsCheckoutConfirmOpen(true)}
+                      onClick={() => dispatchUi({ type: 'checkout/set', patch: { isConfirmOpen: true } })}
                     >
                       {t('sales.checkout')}
                     </Button>
@@ -951,7 +985,12 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
           )}
       </div>
 
-      <AlertDialog open={Boolean(orderToDelete)} onOpenChange={(open) => { if (!open) setOrderToDelete(null) }}>
+      <AlertDialog
+        open={Boolean(orderToDelete)}
+        onOpenChange={(open) => {
+          if (!open) dispatchUi({ type: 'orderToDelete/set', order: null })
+        }}
+      >
         <AlertDialogPortal>
           <AlertDialogBackdrop />
           <AlertDialogPopup>
@@ -979,7 +1018,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       <AlertDialog
         open={isCheckoutConfirmOpen}
         onOpenChange={(open) => {
-          if (!isCheckingOut) setIsCheckoutConfirmOpen(open)
+          if (!isCheckingOut) dispatchUi({ type: 'checkout/set', patch: { isConfirmOpen: open } })
         }}
       >
         <AlertDialogPortal>
