@@ -7,6 +7,7 @@ import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
 import {BaseSelect} from '@/renderer/components/ui/base-select'
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/renderer/components/ui/table'
+import {ProductListFilters} from '@/renderer/components/ProductListFilters'
 import {cn} from '@/renderer/lib/utils'
 import {formatCurrency} from '@/renderer/lib/formatters'
 import type {AuthenticatedUser} from '@/shared/types/user'
@@ -250,25 +251,23 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
               </CardAction>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
-              <div className="grid shrink-0 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)]">
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('inventory.searchPlaceholder')}
-                />
-                <BaseSelect
-                  value={categoryFilter}
-                  ariaLabel={t('inventory.categoryFilter')}
-                  options={[
-                    {value: 'all', label: t('inventory.allCategories')},
-                    ...categories.map((category) => ({
-                      value: String(category.id),
-                      label: category.name,
-                    })),
-                  ]}
-                  onValueChange={setCategoryFilter}
-                />
-              </div>
+              <ProductListFilters
+                searchId="inventory-product-search"
+                searchQuery={searchQuery}
+                searchPlaceholder={t('inventory.searchPlaceholder')}
+                onSearchQueryChange={setSearchQuery}
+                categoryFilterId="inventory-product-category-filter"
+                categoryFilter={categoryFilter}
+                categoryFilterLabel={t('inventory.categoryFilter')}
+                categoryOptions={[
+                  {value: 'all', label: t('inventory.allCategories')},
+                  ...categories.map((category) => ({
+                    value: String(category.id),
+                    label: category.name,
+                  })),
+                ]}
+                onCategoryFilterChange={setCategoryFilter}
+              />
               <div className="min-h-0 flex-1 rounded-lg border bg-background">
                 <Table containerClassName="h-full overflow-auto" className="min-w-180">
                   <TableHeader>

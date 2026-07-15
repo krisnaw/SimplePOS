@@ -1,6 +1,6 @@
 {
   "name": "simple-pos",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple POS and Inventory App for Car Repair Shop",
   "author": "krisnaw",
   "main": "dist-electron/main.js",
@@ -14,7 +14,9 @@
     "db:migrate": "npm run build:electron && ELECTRON_RUN_AS_NODE=1 electron ./dist-electron/db/migrate.js .",
     "db:seed": "npm run build:electron && ELECTRON_RUN_AS_NODE=1 electron ./dist-electron/db/seeder/seed-products.js",
     "start": "npm run build && electron .",
-    "dist:mac": "npm run build && electron-builder --mac --arm64",
+    "dist:mac": "npm run dist:mac:silicon",
+    "dist:mac:silicon": "npm run build && electron-builder --mac --arm64 --config.artifactName='${productName}-${version}-mac-Apple-Silicon.${ext}'",
+    "dist:mac:intel": "npm run build && electron-builder --mac --x64 --config.artifactName='${productName}-${version}-mac-Intel.${ext}'",
     "dist:win": "npm run build && electron-builder --win --x64",
     "publish:mac": "npm run build && electron-builder --mac --arm64 --publish always",
     "publish:win": "npm run build && electron-builder --win --x64 --publish always"

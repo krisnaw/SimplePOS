@@ -29,15 +29,16 @@ import {
 import {Badge} from '@/renderer/components/ui/badge'
 import {Button} from '@/renderer/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
-import {FieldError} from '@/renderer/components/ui/field'
 import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
+import {ProductListFilters} from '@/renderer/components/ProductListFilters'
 import {formatCurrency} from '@/renderer/lib/formatters'
 import {generateReceiptHTML, printInvoice} from '@/renderer/lib/invoice-print'
 import {cn} from '@/renderer/lib/utils'
 import type {AuthenticatedUser} from '@/shared/types/user'
 import {ProductCategoryBadge} from '../inventory/ProductCategoryBadge'
 import {AddVehicleDialog} from './AddVehicleDialog'
+import {PriceOverrideDialog} from './PriceOverrideDialog'
 import {SalesCatalogListItem} from './SalesCatalogListItem'
 import type {
   MockCatalogItem,
@@ -181,6 +182,8 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   const { t } = useTranslation()
   const [vehicles, setVehicles] = useState<MockVehicle[]>([])
   const [catalogItems, setCatalogItems] = useState<MockCatalogItem[]>([])
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [uiState, dispatchUi] = useReducer(
     salesWorkspaceUiReducer,
     initialSalesWorkspaceUiState,
@@ -226,8 +229,33 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
   const activeOrder = orders.find((order) => order.id === activeOrderId) ?? null
   const selectedVehicle = activeOrder?.vehicle ?? null
   const lineItems = activeOrder?.lineItems ?? []
+  const editingPriceItem = lineItems.find((item) => item.key === editingPriceKey) ?? null
   const saleItemCount = lineItems.reduce((count, item) => count + item.quantity, 0)
   const total = lineItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const categoryOptions = useMemo(
+    () => [
+      {value: 'all', label: t('sales.allCategories')},
+      ...Array.from(new Set(catalogItems.map((item) => item.category)))
+        .sort((left, right) => left.localeCompare(right))
+        .map((category) => ({value: `category:${category}`, label: category})),
+    ],
+    [catalogItems, t],
+  )
+  const activeCategoryFilter = categoryOptions.some((option) => option.value === categoryFilter)
+    ? categoryFilter
+    : 'all'
+  const filteredCatalogItems = useMemo(() => {
+    const searchQuery = normalizeSearchText(catalogSearchQuery)
+
+    return catalogItems.filter((item) => {
+      const matchesCategory = activeCategoryFilter === 'all'
+        || `category:${item.category}` === activeCategoryFilter
+      if (!matchesCategory) return false
+      if (!searchQuery) return true
+
+      return normalizeSearchText([item.name, item.code, item.category].join(' ')).includes(searchQuery)
+    })
+  }, [activeCategoryFilter, catalogItems, catalogSearchQuery])
 
   useEffect(() => {
     const api = window.simplepos
@@ -502,7 +530,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
     dispatchUi({
       type: 'priceEdit/start',
       key: item.key,
-      draft: String(item.price * item.quantity),
+      draft: String(item.price),
     })
   }
 
@@ -512,24 +540,16 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
   async function saveLinePrice(item: SaleLineItem) {
     if (!activeOrder) return
-    const lineTotal = Number(priceDraft)
-    if (!Number.isInteger(lineTotal) || lineTotal < 0) {
+    const unitPrice = Number(priceDraft)
+    if (!priceDraft.trim() || !Number.isInteger(unitPrice) || unitPrice < 0) {
       dispatchUi({ type: 'priceEdit/setError', error: t('sales.validation.nonNegativeWholeAmount') })
       return
     }
-    if (lineTotal % item.quantity !== 0) {
+    if (item.type === 'product' && unitPrice < item.basePrice) {
       dispatchUi({
         type: 'priceEdit/setError',
-        error: t('sales.validation.totalDivisibleByQuantity', { quantity: item.quantity }),
-      })
-      return
-    }
-    const unitPrice = lineTotal / item.quantity
-    if (item.type === 'product' && unitPrice < item.minimumPrice) {
-      dispatchUi({
-        type: 'priceEdit/setError',
-        error: t('sales.validation.priceBelowInventoryCost', {
-          price: formatCurrency(item.minimumPrice * item.quantity),
+        error: t('sales.validation.priceBelowInventoryPrice', {
+          price: formatCurrency(item.basePrice),
         }),
       })
       return
@@ -589,8 +609,8 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-1">
-      <Card className="overflow-visible">
-        <CardContent className="overflow-visible">
+      <Card>
+        <CardContent>
           <div className="relative flex max-w-2xl flex-col gap-2">
             <Label htmlFor="vehicle-intake-search" className="sr-only">{t('sales.vehicleSearchLabel')}</Label>
             <div className="relative">
@@ -713,7 +733,7 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
       </Card>
 
       <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[240px_minmax(0,1fr)_340px]">
-          <Card className="min-h-0 overflow-hidden">
+          <Card className="min-h-0">
             <CardHeader>
               <CardTitle>{t('sales.runningOrders')}</CardTitle>
             </CardHeader>
@@ -799,36 +819,55 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
           {selectedVehicle ? (
             <>
-              <Card className="min-h-0 overflow-hidden">
+              <Card className="min-h-0">
                 <CardHeader>
                   <CardTitle>{t('sales.products')}</CardTitle>
                   <CardDescription>{selectedVehicle.plateNumber} · {vehicleName(selectedVehicle)}</CardDescription>
                 </CardHeader>
-                <CardContent className="scroll-fade flex min-h-0 flex-col gap-3 overflow-auto">
-                  {catalogItems.map((item) => (
-                    <SalesCatalogListItem
-                      key={item.key}
-                      itemType={item.type}
-                      typeLabel={item.type === 'service' ? t('sales.service') : t('sales.product')}
-                      name={item.name}
-                      category={item.category}
-                      code={item.code}
-                      price={item.price}
-                      addLabel={t('sales.add')}
-                      onAdd={() => addLineItem(item)}
-                    />
-                  ))}
+                <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
+                  <ProductListFilters
+                    searchId="sales-product-search"
+                    searchQuery={catalogSearchQuery}
+                    searchPlaceholder={t('sales.searchPlaceholder')}
+                    onSearchQueryChange={setCatalogSearchQuery}
+                    categoryFilterId="sales-category-filter"
+                    categoryFilter={activeCategoryFilter}
+                    categoryFilterLabel={t('sales.categoryFilter')}
+                    categoryOptions={categoryOptions}
+                    onCategoryFilterChange={setCategoryFilter}
+                  />
+                  <div className="scroll-fade flex min-h-0 flex-1 flex-col gap-3 overflow-auto">
+                    {filteredCatalogItems.length === 0 ? (
+                      <div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed p-4 text-center">
+                        <p className="text-sm text-muted-foreground text-pretty">{t('sales.noItemsFound')}</p>
+                      </div>
+                    ) : (
+                      filteredCatalogItems.map((item) => (
+                        <SalesCatalogListItem
+                          key={item.key}
+                          itemType={item.type}
+                          typeLabel={item.type === 'service' ? t('sales.service') : t('sales.product')}
+                          name={item.name}
+                          category={item.category}
+                          code={item.code}
+                          price={item.price}
+                          addLabel={t('sales.add')}
+                          onAdd={() => addLineItem(item)}
+                        />
+                      ))
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="min-h-0 overflow-hidden">
+              <Card className="min-h-0">
                 <CardHeader>
                   <CardTitle>{t('sales.currentSale')}</CardTitle>
                   <CardDescription>
                     {t('sales.activeItemCount', { count: saleItemCount })}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+                <CardContent className="flex min-h-0 flex-1 flex-col gap-2">
                   <div className="scroll-fade flex min-h-0 flex-1 flex-col gap-2 overflow-auto">
                     {lineItems.length === 0 ? (
                       <div className="flex min-h-32 items-center justify-center rounded-lg border border-dashed p-4 text-center">
@@ -881,57 +920,10 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                                 <Plus aria-hidden="true" />
                               </Button>
                             </div>
-                            <div className="flex w-[168px] shrink-0 justify-end">
-                              {editingPriceKey === item.key ? (
-                                <div className="flex items-center gap-1">
-                                <Input
-                                  id={`sale-total-${item.key}`}
-                                  type="number"
-                                  min={item.type === 'product' ? item.minimumPrice * item.quantity : 0}
-                                  step="1"
-                                  value={priceDraft}
-                                  onChange={(event) => {
-                                    dispatchUi({ type: 'priceEdit/setDraft', draft: event.target.value })
-                                  }}
-                                  onKeyDown={(event) => {
-                                    if (event.key === 'Enter') void saveLinePrice(item)
-                                    if (event.key === 'Escape') cancelPriceEdit()
-                                  }}
-                                  className="h-8 w-24 tabular-nums"
-                                  aria-label={t('sales.totalPriceForItem', { name: item.name })}
-                                  aria-invalid={Boolean(priceError)}
-                                  autoFocus
-                                />
-                                <Button
-                                  type="button"
-                                  size="icon-sm"
-                                  className={pressableClass}
-                                  onClick={() => void saveLinePrice(item)}
-                                  aria-label={t('sales.saveTotalPriceForItem', { name: item.name })}
-                                >
-                                  <Check aria-hidden="true" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="icon-sm"
-                                  variant="outline"
-                                  className={pressableClass}
-                                  onClick={cancelPriceEdit}
-                                  aria-label={t('sales.cancelPriceEdit')}
-                                >
-                                  <X aria-hidden="true" />
-                                </Button>
-                                </div>
-                              ) : (
-                                <p className="text-sm font-semibold tabular-nums">
-                                  {formatCurrency(item.price * item.quantity)}
-                                </p>
-                              )}
-                            </div>
+                            <p className="shrink-0 text-sm font-semibold tabular-nums">
+                              {formatCurrency(item.price * item.quantity)}
+                            </p>
                           </div>
-                          {editingPriceKey === item.key && priceError ? (
-                            <FieldError className="mt-2 text-right">{priceError}</FieldError>
-                          ) : null}
                         </div>
                       ))
                     )}
@@ -984,6 +976,15 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
             </>
           )}
       </div>
+
+      <PriceOverrideDialog
+        item={editingPriceItem}
+        draft={priceDraft}
+        error={priceError}
+        onDraftChange={(draft) => dispatchUi({type: 'priceEdit/setDraft', draft})}
+        onCancel={cancelPriceEdit}
+        onSave={saveLinePrice}
+      />
 
       <AlertDialog
         open={Boolean(orderToDelete)}
@@ -1065,18 +1066,18 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
               </div>
 
               <div className="mt-5 overflow-hidden rounded-lg border bg-background">
-                <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_96px_72px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
                   <span>{t('sales.item')}</span>
                   <span>{t('sales.category')}</span>
-                  <span className="text-right">{t('sales.qty')}</span>
                   <span className="text-right">{t('sales.price')}</span>
+                  <span className="text-right">{t('sales.qty')}</span>
                   <span className="text-right">{t('sales.total')}</span>
                 </div>
                 <div className="divide-y">
                   {lineItems.map((item) => (
                     <div
                       key={item.key}
-                      className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] items-center gap-3 px-3 py-2.5 text-sm"
+                      className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_96px_72px_104px] items-center gap-3 px-3 py-2.5 text-sm"
                     >
                       <p className="truncate font-medium text-balance">{item.name}</p>
                       {item.category ? (
@@ -1084,8 +1085,8 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                      <span className="text-right tabular-nums">{item.quantity}</span>
                       <span className="text-right tabular-nums">{formatCurrency(item.price)}</span>
+                      <span className="text-right tabular-nums">{item.quantity}</span>
                       <span className="text-right font-medium tabular-nums">
                         {formatCurrency(item.price * item.quantity)}
                       </span>

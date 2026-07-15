@@ -24,6 +24,7 @@ import {WorkOrderWorkspace} from '@/renderer/workspaces/work-orders/WorkOrderWor
 import {VehicleWorkspace} from '@/renderer/workspaces/vehicles/VehicleWorkspace'
 import {cn} from '@/renderer/lib/utils'
 import type {DashboardLocationState} from './Dashboard.types'
+import {version as appVersion} from '../../../package.json'
 
 const systemIndicators = [
   {
@@ -120,7 +121,12 @@ export default function Dashboard() {
                 <FileText aria-hidden="true" data-icon="inline-start" />
               </div>
               <div className="min-w-0">
-                <h1 className="truncate text-base font-semibold text-balance">{appSettings.appName}</h1>
+                <div className="flex min-w-0 items-baseline gap-1.5">
+                  <h1 className="truncate text-base font-semibold text-balance">{appSettings.appName}</h1>
+                  <span className="shrink-0 text-[10px] leading-none text-muted-foreground tabular-nums">
+                    v{appVersion}
+                  </span>
+                </div>
                 <p className="truncate text-[11px] leading-4 text-muted-foreground text-pretty">{appSettings.appDescription}</p>
               </div>
             </div>
@@ -272,7 +278,11 @@ export default function Dashboard() {
               {activeSection === 'reports' ? <ReportsWorkspace currentUser={user} appSettings={appSettings} /> : null}
               {activeSection === 'user-guide' ? <UserGuideWorkspace /> : null}
               {activeSection === 'settings' ? (
-                <SettingsWorkspace appSettings={appSettings} onAppSettingsChange={setAppSettings} />
+                <SettingsWorkspace
+                  currentUser={user}
+                  appSettings={appSettings}
+                  onAppSettingsChange={setAppSettings}
+                />
               ) : null}
               {activeSection !== 'dashboard' &&
               activeSection !== 'sales' &&

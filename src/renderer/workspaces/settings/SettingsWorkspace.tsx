@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Database, Download, FolderTree, Printer, RefreshCw, Settings } from 'lucide-react'
+import { Database, Download, FolderTree, Printer, RefreshCw, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { cn } from '@/renderer/lib/utils'
+import type { AuthenticatedUser } from '@/shared/types/user'
 import type { UpdateStatus } from '@/shared/types/updates'
+import { UserManagement } from '@/renderer/workspaces/users/UserManagement'
 import { ProductCategorySettingsScreen } from './ProductCategorySettingsScreen'
 
 type AppSettingsForm = {
@@ -34,18 +36,21 @@ const externalDevices = [
   },
 ]
 
-type SettingsTab = 'devices' | 'product-categories' | 'updates'
+type SettingsTab = 'devices' | 'product-categories' | 'users' | 'updates'
 
 const settingsTabs = [
   { id: 'devices', labelKey: 'settings.tabs.devices', icon: Settings },
   { id: 'product-categories', labelKey: 'settings.tabs.productCategories', icon: FolderTree },
+  { id: 'users', labelKey: 'settings.tabs.users', icon: Users },
   { id: 'updates', labelKey: 'settings.tabs.updates', icon: Download },
 ] as const
 
 export function SettingsWorkspace({
+  currentUser,
   appSettings,
   onAppSettingsChange,
 }: {
+  currentUser: AuthenticatedUser
   appSettings: AppSettingsForm
   onAppSettingsChange: (settings: AppSettingsForm) => void
 }) {
@@ -140,6 +145,7 @@ export function SettingsWorkspace({
         <DeviceSettingsPanel appSettings={appSettings} onAppSettingsChange={onAppSettingsChange} />
       ) : null}
       {activeTab === 'product-categories' ? <ProductCategorySettingsScreen /> : null}
+      {activeTab === 'users' ? <UserManagement currentUser={currentUser} /> : null}
       {activeTab === 'updates' ? (
         <UpdateSettingsPanel
           updateStatus={updateStatus}
@@ -185,8 +191,8 @@ function DeviceSettingsPanel({
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <Card>
+    <div className="flex w-full flex-col gap-4">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{t('settings.appIdentity.title')}</CardTitle>
           <CardDescription>{t('settings.appIdentity.description')}</CardDescription>
@@ -224,7 +230,7 @@ function DeviceSettingsPanel({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{t('settings.externalDevices')}</CardTitle>
           <CardDescription>{t('settings.devicesHint')}</CardDescription>
@@ -285,7 +291,7 @@ function DeviceSettingsPanel({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{t('settings.deviceNotes')}</CardTitle>
           <CardDescription>{t('settings.notesPlaceholder')}</CardDescription>

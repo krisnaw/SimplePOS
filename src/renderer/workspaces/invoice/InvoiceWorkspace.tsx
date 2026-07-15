@@ -395,18 +395,18 @@ export function InvoiceWorkspace() {
                   </div>
 
                   <div className="overflow-hidden rounded-lg border bg-background">
-                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_96px_72px_104px] gap-3 border-b bg-muted/70 px-3 py-2 text-xs font-medium text-muted-foreground">
                       <span>{t('invoices.item')}</span>
                       <span>{t('invoices.category')}</span>
-                      <span className="text-right">{t('invoices.qty')}</span>
                       <span className="text-right">{t('services.table.price')}</span>
+                      <span className="text-right">{t('invoices.qty')}</span>
                       <span className="text-right">{t('sales.total')}</span>
                     </div>
                     <div className="divide-y">
                       {selectedInvoice.items.map((item) => (
                         <div
                           key={item.id}
-                          className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_72px_96px_104px] items-center gap-3 px-3 py-2.5 text-sm"
+                          className="grid grid-cols-[minmax(0,1fr)_minmax(100px,160px)_96px_72px_104px] items-center gap-3 px-3 py-2.5 text-sm"
                         >
                           <p className="truncate font-medium text-balance">{item.name}</p>
                           {item.category ? (
@@ -414,8 +414,8 @@ export function InvoiceWorkspace() {
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
-                          <span className="text-right tabular-nums">{item.quantity}</span>
                           <span className="text-right tabular-nums">{formatCurrency(item.unitPrice)}</span>
+                          <span className="text-right tabular-nums">{item.quantity}</span>
                           <span className="text-right font-medium tabular-nums">{formatCurrency(item.lineTotal)}</span>
                         </div>
                       ))}

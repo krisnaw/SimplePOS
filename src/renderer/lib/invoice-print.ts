@@ -31,8 +31,8 @@ export function generateReceiptHTML(invoice: PrintableInvoice): string {
           <div style="font-weight:500">${escapeHtml(item.name)}</div>
           <div style="font-size:11px;color:#666">${escapeHtml(item.sku ?? '-')} · ${item.itemType === 'service' ? 'Service' : 'Product'}</div>
         </td>
-        <td style="padding:4px 8px;text-align:center;border-bottom:1px solid #eee">${item.quantity}</td>
         <td style="padding:4px 8px;text-align:right;border-bottom:1px solid #eee;white-space:nowrap">${formatReceiptCurrency(item.unitPrice)}</td>
+        <td style="padding:4px 8px;text-align:center;border-bottom:1px solid #eee">${item.quantity}</td>
         <td style="padding:4px 0;text-align:right;border-bottom:1px solid #eee;white-space:nowrap;font-weight:500">${formatReceiptCurrency(item.lineTotal)}</td>
       </tr>`,
     )
@@ -55,12 +55,13 @@ export function generateReceiptHTML(invoice: PrintableInvoice): string {
     table { width: 100%; border-collapse: collapse; }
     th { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.04em; padding-bottom: 6px; border-bottom: 2px solid #ddd; }
     th:not(:first-child) { text-align: right; padding-left: 8px; }
-    th:nth-child(2) { text-align: center; }
+    th:nth-child(3) { text-align: center; }
     .totals { margin-left: auto; width: 240px; margin-top: 16px; }
     .totals-row { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; font-size: 13px; }
     .totals-row.total { font-size: 15px; font-weight: 700; border-top: 2px solid #111; padding-top: 8px; margin-top: 4px; }
     .footer { margin-top: 32px; text-align: center; font-size: 12px; color: #666; }
-    @media print { body { padding: 0; } }
+    @page { size: A4 landscape; margin: 12mm; }
+    @media print { body { max-width: none; padding: 0; } }
   </style>
 </head>
 <body>
@@ -103,8 +104,8 @@ export function generateReceiptHTML(invoice: PrintableInvoice): string {
     <thead>
       <tr>
         <th style="text-align:left">Item</th>
-        <th>Qty</th>
         <th style="text-align:right;padding-left:8px">Unit Price</th>
+        <th>Qty</th>
         <th style="text-align:right">Total</th>
       </tr>
     </thead>
