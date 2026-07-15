@@ -352,7 +352,6 @@ export async function updateProduct(input: {
 
   if (
     typeof input.id !== 'number' ||
-    typeof input.sku !== 'string' ||
     typeof input.name !== 'string' ||
     typeof input.unitPrice !== 'number' ||
     !isValidUnitType(input.unitType) ||
@@ -365,7 +364,13 @@ export async function updateProduct(input: {
 
   if (!existing) return { ok: false, message: 'Product not found' }
 
-  const sku = input.sku.trim().toUpperCase()
+  const requestedSku = typeof input.sku === 'string' ? input.sku.trim().toUpperCase() : ''
+  const sku = requestedSku || existing.sku
+  const barcode = input.barcode === undefined
+    ? existing.barcode
+    : typeof input.barcode === 'string' && input.barcode.trim()
+      ? input.barcode.trim()
+      : null
   const skuConflict = await repository.select().from(products).where(eq(products.sku, sku)).limit(1)
 
   if (skuConflict[0] && skuConflict[0].id !== input.id) {
@@ -378,7 +383,7 @@ export async function updateProduct(input: {
   const [updated] = await repository.update(products).set({
     categoryId: categoryResult.categoryId,
     sku,
-    barcode: typeof input.barcode === 'string' && input.barcode.trim() ? input.barcode.trim() : null,
+    barcode,
     name: input.name.trim(),
     description: typeof input.description === 'string' && input.description.trim() ? input.description.trim() : null,
     unitPrice: input.unitPrice,

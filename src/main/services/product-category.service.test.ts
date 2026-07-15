@@ -141,6 +141,7 @@ describe('product category service', () => {
 
     const created = await createProduct({
       categoryId: category!.id,
+      barcode: '8990000000001',
       name: 'Category Test Product',
       unitPrice: 10000,
       unitType: 'piece',
@@ -155,13 +156,23 @@ describe('product category service', () => {
     expect(created.product?.sku).toMatch(/^P-[A-F0-9]{8}$/)
 
     const updated = await updateProduct({
-      ...created.product,
+      id: created.product!.id,
       categoryId: nextCategory!.id,
+      name: created.product!.name,
+      description: created.product!.description,
+      unitPrice: created.product!.unitPrice,
+      unitType: created.product!.unitType,
+      minStock: created.product!.minStock,
+      isActive: created.product!.isActive,
     })
 
     expect(updated).toMatchObject({
       ok: true,
-      product: { categoryId: nextCategory!.id },
+      product: {
+        categoryId: nextCategory!.id,
+        sku: created.product!.sku,
+        barcode: created.product!.barcode,
+      },
     })
   })
 

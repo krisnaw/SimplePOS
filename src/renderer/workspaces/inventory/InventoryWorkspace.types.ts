@@ -2,8 +2,6 @@ import type { PurchasePaymentStatus } from '@/shared/types/purchase'
 import type { StockMovementType } from '@/shared/types/stock-movement'
 
 export type ProductFormState = {
-  sku: string
-  barcode: string
   name: string
   description: string
   categoryId: string

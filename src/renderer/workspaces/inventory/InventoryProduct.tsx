@@ -16,8 +16,6 @@ import type {ProductFormState} from './InventoryWorkspace.types'
 import {ProductCategoryBadge} from './ProductCategoryBadge'
 
 const emptyForm: ProductFormState = {
-  sku: '',
-  barcode: '',
   name: '',
   description: '',
   categoryId: '',
@@ -35,8 +33,6 @@ function isLowStock(product: ProductSummary): boolean {
 
 function toProductForm(product: ProductSummary): ProductFormState {
   return {
-    sku: product.sku,
-    barcode: product.barcode ?? '',
     name: product.name,
     description: product.description ?? '',
     categoryId: product.categoryId ? String(product.categoryId) : '',
@@ -133,7 +129,7 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
     const stockQty = Number(form.stockQty)
     const minStock = Number(form.minStock)
 
-    if (!form.sku.trim() || !form.name.trim() || unitPrice < 0 || stockQty < 0 || minStock < 0) {
+    if (!form.name.trim() || unitPrice < 0 || stockQty < 0 || minStock < 0) {
       setMessage(t('inventory.messages.invalidProduct'))
       return
     }
@@ -141,8 +137,6 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
     setIsSubmitting(true)
 
     const payload = {
-      sku: form.sku.trim(),
-      barcode: form.barcode.trim() || null,
       name: form.name.trim(),
       description: form.description.trim() || null,
       categoryId: form.categoryId ? Number(form.categoryId) : null,
@@ -364,17 +358,6 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
             <CardContent className="min-h-0 flex-1 overflow-y-auto">
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="inventory-sku">{t('inventory.sku')}</Label>
-                  <Input
-                    id="inventory-sku"
-                    value={form.sku}
-                    onChange={(e) => updateForm('sku', e.target.value)}
-                    placeholder="BRK-PAD-FRONT"
-                    required
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
                   <Label htmlFor="inventory-name">{t('inventory.productName')}</Label>
                   <Input
                     id="inventory-name"
@@ -382,17 +365,6 @@ export function InventoryProduct({ currentUser }: { currentUser: AuthenticatedUs
                     onChange={(e) => updateForm('name', e.target.value)}
                     placeholder="Brake Pad Front"
                     required
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="inventory-barcode">{t('inventory.barcode')} <span
-                    className="text-muted-foreground">{t('inventory.optional')}</span></Label>
-                  <Input
-                    id="inventory-barcode"
-                    value={form.barcode}
-                    onChange={(e) => updateForm('barcode', e.target.value)}
-                    placeholder="8991234567890"
                   />
                 </div>
 

@@ -53,8 +53,6 @@ type InventoryPurchaseProps = {
 }
 
 const emptyProductForm: ProductFormState = {
-  sku: '',
-  barcode: '',
   name: '',
   description: '',
   categoryId: '',
@@ -113,8 +111,6 @@ const pressableClass =
 
 function toProductForm(product: ProductSummary): ProductFormState {
   return {
-    sku: product.sku,
-    barcode: product.barcode ?? '',
     name: product.name,
     description: product.description ?? '',
     categoryId: product.categoryId ? String(product.categoryId) : '',
@@ -411,8 +407,6 @@ export function InventoryPurchase({
     }
 
     const payload = {
-      sku: productForm.sku.trim(),
-      barcode: productForm.barcode.trim() || null,
       name: productForm.name.trim(),
       description: productForm.description.trim() || null,
       categoryId: Number(productForm.categoryId),
