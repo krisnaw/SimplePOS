@@ -269,6 +269,31 @@ describe('COGS checkout and reporting', () => {
     ]))
   })
 
+  it('filters reports using an inclusive custom date range', async () => {
+    const now = new Date()
+    const today = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('-')
+    const tomorrowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+    const tomorrow = [
+      tomorrowDate.getFullYear(),
+      String(tomorrowDate.getMonth() + 1).padStart(2, '0'),
+      String(tomorrowDate.getDate()).padStart(2, '0'),
+    ].join('-')
+
+    const todayReport = await getReportSummary({ period: 'today' })
+    const customTodayReport = await getReportSummary({ period: 'custom', dateFrom: today, dateTo: today })
+    const customTomorrowReport = await getReportSummary({ period: 'custom', dateFrom: tomorrow, dateTo: tomorrow })
+
+    expect(customTodayReport.period).toBe('custom')
+    expect(customTodayReport.salesTotal).toBe(todayReport.salesTotal)
+    expect(customTodayReport.invoiceCount).toBe(todayReport.invoiceCount)
+    expect(customTomorrowReport.salesTotal).toBe(0)
+    expect(customTomorrowReport.invoiceCount).toBe(0)
+  })
+
   it('flags legacy product sale items with missing cost snapshots only when the product is cost-tracked', async () => {
     const product = await createTestProduct({
       name: 'COGS Legacy Product',

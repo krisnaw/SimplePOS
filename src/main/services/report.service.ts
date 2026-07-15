@@ -3,7 +3,8 @@ import { invoices, payments, productCategories, products, purchaseItems, saleIte
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
 import { getCheckoutRepository } from '../repositories/checkout.repository'
 
-export type ReportPeriod = 'today' | 'week' | 'month' | 'quarter'
+type PresetReportPeriod = 'today' | 'week' | 'month' | 'quarter'
+export type ReportPeriod = PresetReportPeriod | 'custom'
 
 export type DashboardRecentTransaction = {
   invoiceId: number
@@ -82,7 +83,7 @@ export type ReportSummary = {
 }
 
 function isReportPeriod(value: unknown): value is ReportPeriod {
-  return value === 'today' || value === 'week' || value === 'month' || value === 'quarter'
+  return value === 'today' || value === 'week' || value === 'month' || value === 'quarter' || value === 'custom'
 }
 
 function startOfDay(date: Date): Date {
@@ -99,7 +100,7 @@ function addDays(date: Date, days: number): Date {
   return next
 }
 
-function periodRange(period: ReportPeriod, now = new Date()): { dateFrom: Date; dateTo: Date } {
+function periodRange(period: PresetReportPeriod, now = new Date()): { dateFrom: Date; dateTo: Date } {
   const todayStart = startOfDay(now)
 
   if (period === 'week') {
@@ -118,6 +119,29 @@ function periodRange(period: ReportPeriod, now = new Date()): { dateFrom: Date; 
   }
 
   return { dateFrom: todayStart, dateTo: endOfDay(now) }
+}
+
+function parseLocalDate(value: unknown): Date | null {
+  if (typeof value !== 'string') return null
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim())
+  if (!match) return null
+
+  const year = Number(match[1])
+  const monthIndex = Number(match[2]) - 1
+  const day = Number(match[3])
+  const date = new Date(year, monthIndex, day)
+
+  if (date.getFullYear() !== year || date.getMonth() !== monthIndex || date.getDate() !== day) return null
+  return date
+}
+
+function customPeriodRange(input: { dateFrom?: unknown; dateTo?: unknown }): { dateFrom: Date; dateTo: Date } | null {
+  const dateFrom = parseLocalDate(input.dateFrom)
+  const dateTo = parseLocalDate(input.dateTo)
+
+  if (!dateFrom || !dateTo || dateFrom.getTime() > dateTo.getTime()) return null
+  return { dateFrom: startOfDay(dateFrom), dateTo: endOfDay(dateTo) }
 }
 
 function isWithinRange(value: string, dateFrom: Date, dateTo: Date): boolean {
@@ -204,10 +228,14 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   }
 }
 
-export async function getReportSummary(input: { period?: unknown } = {}): Promise<ReportSummary> {
+export async function getReportSummary(
+  input: { period?: unknown; dateFrom?: unknown; dateTo?: unknown } = {},
+): Promise<ReportSummary> {
   const repository = getCheckoutRepository()
   const period = isReportPeriod(input.period) ? input.period : 'today'
-  const { dateFrom, dateTo } = periodRange(period)
+  const { dateFrom, dateTo } = period === 'custom'
+    ? (customPeriodRange(input) ?? periodRange('today'))
+    : periodRange(period)
   const emptySummary: ReportSummary = {
     period,
     dateFrom: dateFrom.toISOString(),

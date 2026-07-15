@@ -1,7 +1,12 @@
 export { authenticateUser } from './auth.service'
 export type { LoginResult } from './auth.service'
-export { getAppSettings, updateAppSettings } from './app-settings.service'
-export type { AppSettingsMutationResult, AppSettingsSummary } from './app-settings.service'
+export { getAppSettings, updateAppIdentity, updateBusinessProfile } from './app-settings.service'
+export type {
+  AppIdentity,
+  AppSettingsMutationResult,
+  AppSettingsSummary,
+  BusinessProfile,
+} from './app-settings.service'
 export { createUser, listUsers, updateUser } from './user.service'
 export type { UserMutationResult, UserSummary } from './user.service'
 export {

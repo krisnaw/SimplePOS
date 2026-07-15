@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-export type UnitType = 'piece' | 'litre' | 'set' | 'box'
+export type UnitType = 'piece' | 'litre' | 'set' | 'box' | 'service'
 
 export const productCategories = sqliteTable('product_categories', {
   id: integer('id').primaryKey({ autoIncrement: true }),

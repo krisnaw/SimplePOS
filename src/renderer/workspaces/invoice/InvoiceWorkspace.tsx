@@ -1,22 +1,28 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, Eye, Loader2, Printer, RefreshCw, X } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/renderer/components/ui/button'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/renderer/components/ui/card'
-import { Input } from '@/renderer/components/ui/input'
-import { Label } from '@/renderer/components/ui/label'
+import {useEffect, useMemo, useState} from 'react'
+import {format} from 'date-fns'
+import {enUS, id as idLocale} from 'date-fns/locale'
+import {CalendarDays, Eye, Loader2, Printer, RefreshCw, X} from 'lucide-react'
+import type {DateRange} from 'react-day-picker'
+import {useTranslation} from 'react-i18next'
+import {DateRangePicker} from '@/renderer/components/DateRangePicker'
+import {Button} from '@/renderer/components/ui/button'
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
+import {Input} from '@/renderer/components/ui/input'
+import {Label} from '@/renderer/components/ui/label'
 import {
-  AlertDialog,
-  AlertDialogBackdrop,
-  AlertDialogClose,
-  AlertDialogPortal,
-  AlertDialogPopup,
-} from '@/renderer/components/ui/alert-dialog'
-import { cn } from '@/renderer/lib/utils'
-import { formatCurrency, formatDateTime, formatPaymentMethod } from '@/renderer/lib/formatters'
-import { generateReceiptHTML, printInvoice } from '@/renderer/lib/invoice-print'
-import type { InvoiceSummary, InvoiceDetail } from './InvoiceWorkspace.types'
-import { ProductCategoryBadge } from '../inventory/ProductCategoryBadge'
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/renderer/components/ui/dialog'
+import {cn} from '@/renderer/lib/utils'
+import {formatCurrency, formatDateTime, formatPaymentMethod} from '@/renderer/lib/formatters'
+import {generateReceiptHTML, printInvoice} from '@/renderer/lib/invoice-print'
+import type {InvoiceDetail, InvoiceSummary} from './InvoiceWorkspace.types'
+import {ProductCategoryBadge} from '../inventory/ProductCategoryBadge'
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
@@ -55,12 +61,12 @@ function InvoiceStatusBadge({
 }
 
 export function InvoiceWorkspace() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetail>(null)
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [plateSearch, setPlateSearch] = useState('')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [isLoadingList, setIsLoadingList] = useState(false)
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -81,10 +87,10 @@ export function InvoiceWorkspace() {
         }
 
         const list = await window.simplepos.invoices.list({
-          search: '',
+          search: plateSearch,
           status: 'all',
-          dateFrom,
-          dateTo,
+          dateFrom: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '',
+          dateTo: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '',
         })
 
         if (!isMounted) return
@@ -111,7 +117,7 @@ export function InvoiceWorkspace() {
     return () => {
       isMounted = false
     }
-  }, [dateFrom, dateTo, refreshCount])
+  }, [dateRange, plateSearch, refreshCount, t])
 
   useEffect(() => {
     let isMounted = true
@@ -193,23 +199,43 @@ export function InvoiceWorkspace() {
           </CardAction>
         </CardHeader>
 
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-          <div className="grid grid-cols-4 gap-2">
-            <div className="col-span-2">
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-                {t('workOrders.fromDate')}
-                <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
-              </label>
-            </div>
-
-            <div className="col-span-2">
-              <label className="col-span-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                {t('workOrders.toDate')}
-                <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
-              </label>
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="invoice-plate-search" className="sr-only">
+              {t('invoices.searchPlaceholder')}
+            </Label>
+            <Input
+              id="invoice-plate-search"
+              type="search"
+              value={plateSearch}
+              onChange={(event) => setPlateSearch(event.target.value)}
+              placeholder={t('invoices.searchPlaceholder')}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">{t('invoices.dateRange')}</Label>
+            <div className="flex items-center gap-2">
+              <DateRangePicker
+                value={dateRange}
+                onValueChange={setDateRange}
+                placeholder={t('invoices.dateRangePlaceholder')}
+                ariaLabel={t('invoices.dateRange')}
+                locale={i18n.resolvedLanguage?.startsWith('id') ? idLocale : enUS}
+                className="min-w-0 max-w-none flex-1 shrink"
+              />
+              {dateRange?.from ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setDateRange(undefined)}
+                  aria-label={t('invoices.clearDateRange')}
+                >
+                  <X aria-hidden="true" />
+                </Button>
+              ) : null}
             </div>
           </div>
-
 
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
             <div className="grid shrink-0 grid-cols-2 gap-2">
@@ -320,43 +346,52 @@ export function InvoiceWorkspace() {
                 {selectedInvoice.invoiceNumber} · {formatDateTime(selectedInvoice.issuedAt)}
               </CardDescription>
               <CardAction className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" className={pressableButtonClass} onClick={handlePreview}>
+                <Button type="button" variant="outline" className={pressableButtonClass} onClick={handlePreview}>
                   <Eye data-icon="inline-start" aria-hidden="true" />
                   {t('invoices.preview')}
                 </Button>
-                <Button type="button" variant="outline" size="sm" className={pressableButtonClass} onClick={handlePrint}>
+                <Button type="button" variant="outline" className={pressableButtonClass} onClick={handlePrint}>
                   <Printer data-icon="inline-start" aria-hidden="true" />
                   {t('invoices.print')}
                 </Button>
               </CardAction>
 
-              <AlertDialog open={isPreviewOpen} onOpenChange={(open) => { if (!open) handlePreviewClose() }}>
-                <AlertDialogPortal>
-                  <AlertDialogBackdrop />
-                  <AlertDialogPopup className="flex max-h-[90vh] w-[90vw] max-w-3xl flex-col gap-0 p-0">
-                    <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-                      <p className="text-sm font-semibold">{selectedInvoice.invoiceNumber}</p>
-                      <AlertDialogClose
-                        render={
-                          <Button type="button" variant="ghost" size="icon-sm" className={pressableButtonClass} aria-label="Close preview">
-                            <X aria-hidden="true" />
-                          </Button>
-                        }
-                      />
-                    </div>
-                    <div className="min-h-0 flex-1">
+              <Dialog open={isPreviewOpen} onOpenChange={(open) => { if (!open) handlePreviewClose() }}>
+                <DialogContent
+                  showCloseButton={false}
+                  className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden sm:max-w-5xl"
+                >
+                  <DialogHeader>
+                    <DialogTitle>{t('invoices.previewTitle')}</DialogTitle>
+                    <DialogDescription>
+                      {t('invoices.previewDescription', {invoiceNumber: selectedInvoice.invoiceNumber})}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain  px-4 pt-8 pb-6 sm:px-8 sm:pt-10">
+                    <div className="mx-auto aspect-210/148 w-full max-w-215 rounded-sm bg-white shadow-lg ring-1 ring-black/10">
                       {previewUrl ? (
                         <iframe
                           src={previewUrl}
                           title={`Invoice ${selectedInvoice.invoiceNumber}`}
-                          className="h-full w-full rounded-b-xl border-0"
-                          style={{ minHeight: '70vh' }}
+                          sandbox=""
+                          className="h-full w-full rounded-sm border-0"
                         />
                       ) : null}
                     </div>
-                  </AlertDialogPopup>
-                </AlertDialogPortal>
-              </AlertDialog>
+                  </div>
+
+                  <DialogFooter>
+                    <DialogClose render={<Button type="button" variant="outline"/>}>
+                      {t('common.close')}
+                    </DialogClose>
+                    <Button type="button" className={pressableButtonClass} onClick={handlePrint}>
+                      <Printer data-icon="inline-start" aria-hidden="true"/>
+                      {t('invoices.print')}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
 
             <CardContent className="min-h-0 flex-1 overflow-auto">

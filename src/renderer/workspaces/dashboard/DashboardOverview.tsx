@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, ClipboardList, Receipt, UserRound, WalletCards } from 'lucide-react'
+import { AlertTriangle, Receipt, UserRound, WalletCards } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import { formatCurrency, formatTime, formatPaymentMethod } from '@/renderer/lib/formatters'
@@ -46,7 +46,7 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
 
   return (
     <div className="stagger-children grid gap-4 p-1">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>
             <CardTitle>
@@ -62,26 +62,6 @@ export function DashboardOverview({ user }: { user: AuthenticatedUser }) {
               <span className="truncate text-pretty">@{user.username}</span>
               <span className="capitalize text-muted-foreground text-pretty">{user.role}</span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {t('dashboard.workOrders')}
-            </CardTitle>
-            <CardDescription>{t('dashboard.activeJobs')}</CardDescription>
-            <CardAction>
-              <ClipboardList aria-hidden="true" className="size-4 text-muted-foreground" />
-            </CardAction>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">
-              {isLoading ? '...' : summary.openWorkOrderCount + summary.inProgressWorkOrderCount}
-            </p>
-            <p className="text-xs text-muted-foreground tabular-nums">
-              {t('dashboard.readyForCheckout', { count: summary.completedWorkOrderCount })}
-            </p>
           </CardContent>
         </Card>
 

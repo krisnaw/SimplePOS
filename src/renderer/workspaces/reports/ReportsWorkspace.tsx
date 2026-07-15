@@ -1,6 +1,10 @@
 import {useEffect, useState} from 'react'
+import {format} from 'date-fns'
+import {enUS, id as idLocale} from 'date-fns/locale'
 import {Download} from 'lucide-react'
+import type {DateRange} from 'react-day-picker'
 import {useTranslation} from 'react-i18next'
+import {DateRangePicker} from '@/renderer/components/DateRangePicker'
 import {Button} from '@/renderer/components/ui/button'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import {BaseSelect} from '@/renderer/components/ui/base-select'
@@ -64,6 +68,52 @@ function formatPercent(value: number): string {
   return `${value.toLocaleString(undefined, {maximumFractionDigits: 1})}%`
 }
 
+function ReportPeriodFilter({
+  period,
+  customRange,
+  onPeriodChange,
+  onCustomRangeChange,
+}: {
+  period: ReportPeriod
+  customRange: DateRange | undefined
+  onPeriodChange: (period: ReportPeriod) => void
+  onCustomRangeChange: (range: DateRange | undefined) => void
+}) {
+  const {t, i18n} = useTranslation()
+
+  return (
+    <>
+      <div className="w-40">
+        <BaseSelect
+          id="report-period"
+          value={period}
+          ariaLabel={t('reports.period')}
+          options={[
+            {value: 'today', label: t('reports.periods.today')},
+            {value: 'week', label: t('reports.periods.week')},
+            {value: 'month', label: t('reports.periods.month')},
+            {value: 'quarter', label: t('reports.periods.quarter')},
+            {value: 'custom', label: t('reports.periods.custom')},
+          ]}
+          onValueChange={(value) => onPeriodChange(value as ReportPeriod)}
+        />
+      </div>
+      {period === 'custom' ? (
+        <div className="w-72">
+          <DateRangePicker
+            value={customRange}
+            onValueChange={onCustomRangeChange}
+            placeholder={t('reports.customRangePlaceholder')}
+            ariaLabel={t('reports.periods.custom')}
+            locale={i18n.resolvedLanguage?.startsWith('id') ? idLocale : enUS}
+            className="max-w-none"
+          />
+        </div>
+      ) : null}
+    </>
+  )
+}
+
 export function ReportsWorkspace({
   currentUser,
   appSettings,
@@ -74,6 +124,7 @@ export function ReportsWorkspace({
   const {t} = useTranslation()
   const canViewProfit = currentUser.role === 'admin'
   const [period, setPeriod] = useState<ReportPeriod>('today')
+  const [customRange, setCustomRange] = useState<DateRange | undefined>()
   const [report, setReport] = useState<ReportSummary>(emptyReport)
   const [isLoading, setIsLoading] = useState(true)
   const vehicleCount = report.vehicleCount ?? 0
@@ -109,9 +160,25 @@ export function ReportsWorkspace({
     let isMounted = true
 
     async function loadReport() {
+      let reportInput: {period: ReportPeriod; dateFrom?: string; dateTo?: string}
+
+      if (period === 'custom') {
+        const dateFrom = customRange?.from
+        const dateTo = customRange?.to
+        if (!dateFrom || !dateTo) return
+
+        reportInput = {
+          period,
+          dateFrom: format(dateFrom, 'yyyy-MM-dd'),
+          dateTo: format(dateTo, 'yyyy-MM-dd'),
+        }
+      } else {
+        reportInput = {period}
+      }
+
       setIsLoading(true)
       try {
-        const nextReport = await window.simplepos?.reports?.getSummary({period})
+        const nextReport = await window.simplepos?.reports?.getSummary(reportInput)
 
         if (!isMounted) return
 
@@ -126,7 +193,7 @@ export function ReportsWorkspace({
     return () => {
       isMounted = false
     }
-  }, [period])
+  }, [customRange, period])
 
   return (
     <div className="p-1">
@@ -138,20 +205,12 @@ export function ReportsWorkspace({
             {t('reports.dateRange', {from: formatDate(report.dateFrom), to: formatDate(report.dateTo)})}
           </CardDescription>
           <CardAction className="flex flex-wrap items-center gap-2">
-            <div className="w-40">
-              <BaseSelect
-                id="report-period"
-                value={period}
-                ariaLabel={t('reports.period')}
-                options={[
-                  {value: 'today', label: t('reports.periods.today')},
-                  {value: 'week', label: t('reports.periods.week')},
-                  {value: 'month', label: t('reports.periods.month')},
-                  {value: 'quarter', label: t('reports.periods.quarter')},
-                ]}
-                onValueChange={(value) => setPeriod(value as ReportPeriod)}
-              />
-            </div>
+            <ReportPeriodFilter
+              period={period}
+              customRange={customRange}
+              onPeriodChange={setPeriod}
+              onCustomRangeChange={setCustomRange}
+            />
             <Dialog>
               <DialogTrigger
                 render={(
@@ -165,15 +224,15 @@ export function ReportsWorkspace({
                 <Download data-icon="inline-start" aria-hidden="true"/>
                 {t('reports.exportPdf')}
               </DialogTrigger>
-              <DialogContent className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden p-0 sm:max-w-5xl">
-                <DialogHeader className="shrink-0 px-5 pt-5">
+              <DialogContent className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden sm:max-w-5xl">
+                <DialogHeader>
                   <DialogTitle>{t('reports.pdfPreview.title')}</DialogTitle>
                   <DialogDescription>{t('reports.pdfPreview.description')}</DialogDescription>
                 </DialogHeader>
 
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/60 px-4 pt-8 pb-6 sm:px-8 sm:pt-10">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10">
                   <article
-                    className="mx-auto flex aspect-[210/148] w-full max-w-[860px] flex-col gap-5 rounded-sm bg-white p-6 text-zinc-950 shadow-lg ring-1 ring-black/10 sm:p-8">
+                    className="mx-auto flex aspect-210/148 w-full max-w-215 flex-col gap-5 rounded-sm bg-white p-6 text-zinc-950 shadow-lg ring-1 ring-black/10 sm:p-8">
                     <header className="flex items-start justify-between gap-6">
                       <div className="flex flex-col gap-1">
                         <p className="text-xl font-semibold tracking-tight">{appSettings.appName}</p>
@@ -238,7 +297,7 @@ export function ReportsWorkspace({
                                   : 'grid-cols-[minmax(0,1fr)_56px_112px]',
                               )}
                             >
-                              <span className="min-w-0 break-words leading-snug">{item.name}</span>
+                              <span className="min-w-0 wrap-break-word leading-snug">{item.name}</span>
                               <span className="text-right tabular-nums">{item.quantity}</span>
                               <span className="text-right font-medium tabular-nums">{formatCurrency(item.total)}</span>
                               {canViewProfit ? (
@@ -258,7 +317,7 @@ export function ReportsWorkspace({
                   </article>
                 </div>
 
-                <DialogFooter className="mx-0 mb-0 shrink-0 rounded-b-xl">
+                <DialogFooter>
                   <DialogClose render={<Button variant="outline"/>}>
                     {t('common.close')}
                   </DialogClose>

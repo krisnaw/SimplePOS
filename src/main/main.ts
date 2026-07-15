@@ -53,7 +53,8 @@ import {
   createSupplier,
   listSuppliers,
   updateSupplier,
-  updateAppSettings,
+  updateAppIdentity,
+  updateBusinessProfile,
   createPurchase,
   getPurchaseDetail,
   listPurchases,
@@ -119,7 +120,8 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('db:getStatus', () => getDatabaseStatus())
   ipcMain.handle('settings:getApp', () => getAppSettings())
-  ipcMain.handle('settings:updateApp', (_event, input: unknown) => updateAppSettings(input as Record<string, unknown>))
+  ipcMain.handle('settings:updateAppIdentity', (_event, input: unknown) => updateAppIdentity(input as Record<string, unknown>))
+  ipcMain.handle('settings:updateBusinessProfile', (_event, input: unknown) => updateBusinessProfile(input as Record<string, unknown>))
   ipcMain.handle('categories:list', () => listProductCategories())
   ipcMain.handle('categories:create', (_event, input: unknown) => (
     createProductCategory(input as { name?: unknown })

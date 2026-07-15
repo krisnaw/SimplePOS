@@ -1,5 +1,6 @@
 import {type FormEvent, type KeyboardEvent, useEffect, useId, useMemo, useState} from 'react'
 import {Car, Plus, Search} from 'lucide-react'
+import {useTranslation} from 'react-i18next'
 import {Button} from '@/renderer/components/ui/button'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import {Input} from '@/renderer/components/ui/input'
@@ -18,6 +19,7 @@ const emptyForm = {
 }
 
 export function VehicleWorkspace() {
+  const {t} = useTranslation()
   const brandListId = useId()
   const [vehicles, setVehicles] = useState<VehicleSummary[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -161,21 +163,21 @@ export function VehicleWorkspace() {
     <div className="grid h-full min-h-0 gap-3 p-1 lg:grid-cols-[minmax(280px,0.8fr)_minmax(420px,1.2fr)]">
       <Card className="min-h-0 overflow-hidden">
         <CardHeader>
-          <CardTitle>Vehicles</CardTitle>
-          <CardDescription>{vehicles.length} active vehicle{vehicles.length === 1 ? '' : 's'}</CardDescription>
+          <CardTitle>{t('vehicles.title')}</CardTitle>
+          <CardDescription>{t('vehicles.activeCount', {count: vehicles.length})}</CardDescription>
           <CardAction>
             <Button type="button" size="sm" onClick={startNew}>
               <Plus data-icon="inline-start" aria-hidden="true" />
-              New vehicle
+              {t('vehicles.newVehicle')}
             </Button>
           </CardAction>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search plate, model, or customer" className="pl-9" />
+            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('vehicles.searchPlaceholder')} className="pl-9" />
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto">
+          <div className="scroll-fade flex min-h-0 flex-1 flex-col gap-1.5 overflow-auto">
             {filtered.map((vehicle) => (
               <button
                 key={vehicle.id}
@@ -208,33 +210,33 @@ export function VehicleWorkspace() {
                 <Car className="size-5" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="font-semibold text-balance">No vehicle selected</h3>
+                <h3 className="font-semibold text-balance">{t('vehicles.noSelection')}</h3>
                 <p className="mt-1 text-sm text-muted-foreground text-pretty">
-                  Select a vehicle from the list to view and edit its details.
+                  {t('vehicles.noSelectionHint')}
                 </p>
               </div>
               <Button type="button" variant="outline" onClick={startNew}>
                 <Plus data-icon="inline-start" aria-hidden="true" />
-                Add new vehicle
+                {t('vehicles.addNewVehicle')}
               </Button>
             </div>
           </CardContent>
         ) : (
           <>
             <CardHeader>
-              <CardTitle>{selectedId ? 'Edit vehicle' : 'New vehicle'}</CardTitle>
-              <CardDescription>Plate and model are required. Customer details are optional.</CardDescription>
+              <CardTitle>{selectedId ? t('vehicles.editVehicle') : t('vehicles.newVehicle')}</CardTitle>
+              <CardDescription>{t('vehicles.formHint')}</CardDescription>
             </CardHeader>
             <CardContent className="min-h-0 flex-1 overflow-y-auto">
               <form className="flex flex-col gap-4" onSubmit={save}>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {([
-                    ['plateNumber', 'Plate number', 'DK1234'],
-                    ['model', 'Model', 'Avanza'],
-                    ['brand', 'Brand (optional)', 'Toyota'],
-                    ['customerName', 'Customer name (optional)', 'Customer name'],
-                    ['customerPhone', 'Phone (optional)', '08123456789'],
-                    ['notes', 'Notes (optional)', 'Vehicle notes'],
+                    ['model', t('vehicles.fields.model'), 'Avanza'],
+                    ['plateNumber', t('vehicles.fields.plateNumber'), 'DK1234'],
+                    ['brand', t('vehicles.fields.brandOptional'), 'Toyota'],
+                    ['customerName', t('vehicles.fields.customerNameOptional'), t('vehicles.placeholders.customerName')],
+                    ['customerPhone', t('vehicles.fields.phoneOptional'), '08123456789'],
+                    ['notes', t('vehicles.fields.notesOptional'), t('vehicles.placeholders.notes')],
                   ] as const).map(([field, label, placeholder]) => (
                     <div key={field} className="flex flex-col gap-1.5">
                       <Label htmlFor={`vehicle-${field}`}>{label}</Label>
@@ -306,11 +308,11 @@ export function VehicleWorkspace() {
                     variant="outline"
                     onClick={clearSelection}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button type="submit" disabled={!form.plateNumber.trim() || !form.model.trim()}>
                     <Car data-icon="inline-start" aria-hidden="true" />
-                    Save vehicle
+                    {t('vehicles.saveVehicle')}
                   </Button>
                 </div>
               </form>

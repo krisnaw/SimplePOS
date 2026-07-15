@@ -96,6 +96,13 @@ describe('persisted sales drafts', () => {
         amount: product.unitPrice * 2,
       },
     })
+    const issuedAt = new Date(invoice!.issuedAt)
+    const issuedDateStamp = [
+      issuedAt.getFullYear(),
+      String(issuedAt.getMonth() + 1).padStart(2, '0'),
+      String(issuedAt.getDate()).padStart(2, '0'),
+    ].join('')
+    expect(invoice!.invoiceNumber).toBe(`INV-${issuedDateStamp}-01`)
     const updatedProduct = (await listProducts()).find((candidate) => candidate.id === product.id)
     expect(updatedProduct?.stockQty).toBe(product.stockQty - 2)
     const [savedSaleItem] = await getProductRepository()!

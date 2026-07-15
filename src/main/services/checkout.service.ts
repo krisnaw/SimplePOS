@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, like } from 'drizzle-orm'
 import { flushDatabase } from '../db/client'
 import { invoices, payments, products, purchaseItems, saleItems, sales, services, users, vehicles } from '../db/schema/index'
 import type { PaymentMethod, SaleItemType } from '../db/schema/index'
@@ -107,14 +107,24 @@ function nonNegativeInteger(value: unknown): number | null {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null
 }
 
-function createInvoiceNumber(date = new Date()): string {
-  const timestamp = date
-    .toISOString()
-    .replace(/[-:TZ.]/g, '')
-    .slice(0, 14)
-  const suffix = String(date.getMilliseconds()).padStart(3, '0')
+function invoiceDateStamp(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('')
+}
 
-  return `INV-${timestamp}-${suffix}`
+export function createInvoiceNumber(date: Date, existingInvoiceNumbers: string[]): string {
+  const prefix = `INV-${invoiceDateStamp(date)}-`
+  const highestSequence = existingInvoiceNumbers.reduce((highest, invoiceNumber) => {
+    if (!invoiceNumber.startsWith(prefix)) return highest
+
+    const sequence = Number(invoiceNumber.slice(prefix.length))
+    return Number.isInteger(sequence) && sequence > highest ? sequence : highest
+  }, 0)
+
+  return `${prefix}${String(highestSequence + 1).padStart(2, '0')}`
 }
 
 async function hasPurchaseHistory(productId: number): Promise<boolean> {
@@ -393,13 +403,21 @@ async function persistCheckout(input: PersistCheckoutInput): Promise<CheckoutRes
   const subtotal = input.items.reduce((total, item) => total + item.lineTotal, 0)
   const total = subtotal
 
-  const now = new Date().toISOString()
-  const invoiceNumber = createInvoiceNumber()
+  const checkoutDate = new Date()
+  const now = checkoutDate.toISOString()
 
   let checkout: CheckoutSummary
 
   try {
     checkout = repository.transaction((tx) => {
+    const existingInvoiceNumbers = tx
+      .select({invoiceNumber: invoices.invoiceNumber})
+      .from(invoices)
+      .where(like(invoices.invoiceNumber, `INV-${invoiceDateStamp(checkoutDate)}-%`))
+      .all()
+      .map((invoice) => invoice.invoiceNumber)
+    const invoiceNumber = createInvoiceNumber(checkoutDate, existingInvoiceNumbers)
+
     const createdBy = input.createdById
       ? tx.select().from(users).where(eq(users.id, input.createdById)).limit(1).get()
       : null

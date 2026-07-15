@@ -108,13 +108,13 @@ export function InventoryProductFormScreen({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="inventory-unit">Unit type</FieldLabel>
+                <FieldLabel htmlFor="inventory-unit">{t('inventory.unitType')}</FieldLabel>
                 <BaseSelect
                   id="inventory-unit"
                   value={productForm.unitType}
                   options={unitTypes.map((unitType) => ({
                     value: unitType,
-                    label: unitType,
+                    label: t(`inventory.units.${unitType}`),
                   }))}
                   onValueChange={(value) => onUpdateProductForm('unitType', value as ProductFormState['unitType'])}
                 />

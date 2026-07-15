@@ -29,7 +29,6 @@ export function generateReceiptHTML(invoice: PrintableInvoice): string {
       <tr>
         <td style="padding:4px 0;border-bottom:1px solid #eee;">
           <div style="font-weight:500">${escapeHtml(item.name)}</div>
-          <div style="font-size:11px;color:#666">${escapeHtml(item.sku ?? '-')} · ${item.itemType === 'service' ? 'Service' : 'Product'}</div>
         </td>
         <td style="padding:4px 8px;text-align:right;border-bottom:1px solid #eee;white-space:nowrap">${formatReceiptCurrency(item.unitPrice)}</td>
         <td style="padding:4px 8px;text-align:center;border-bottom:1px solid #eee">${item.quantity}</td>
@@ -60,7 +59,7 @@ export function generateReceiptHTML(invoice: PrintableInvoice): string {
     .totals-row { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; font-size: 13px; }
     .totals-row.total { font-size: 15px; font-weight: 700; border-top: 2px solid #111; padding-top: 8px; margin-top: 4px; }
     .footer { margin-top: 32px; text-align: center; font-size: 12px; color: #666; }
-    @page { size: A4 landscape; margin: 12mm; }
+    @page { size: A5 landscape; margin: 10mm; }
     @media print { body { max-width: none; padding: 0; } }
   </style>
 </head>

@@ -176,6 +176,22 @@ describe('product category service', () => {
     })
   })
 
+  it('creates a product with the service unit type', async () => {
+    const category = (await listProductCategories()).find((item) => item.name === 'Mesin')
+
+    const created = await createProduct({
+      categoryId: category!.id,
+      name: 'Installation Service',
+      unitPrice: 50000,
+      unitType: 'service',
+    })
+
+    expect(created).toMatchObject({
+      ok: true,
+      product: {unitType: 'service'},
+    })
+  })
+
   it('rejects a missing or unknown category when creating or updating a product', async () => {
     await expect(createProduct({
       categoryId: null,

@@ -69,7 +69,7 @@ function toProductSummary(product: Product, hasPurchaseHistory = false): Product
 }
 
 function isValidUnitType(value: unknown): value is UnitType {
-  return value === 'piece' || value === 'litre' || value === 'set' || value === 'box'
+  return value === 'piece' || value === 'litre' || value === 'set' || value === 'box' || value === 'service'
 }
 
 export async function listProductCategories(): Promise<ProductCategorySummary[]> {

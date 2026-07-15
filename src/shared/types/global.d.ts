@@ -28,9 +28,23 @@ type DatabaseStatus = {
   checkedAt: string
 }
 
-type AppSettingsSummary = {
+type AppIdentity = {
   appName: string
   appDescription: string
+}
+
+type BusinessProfile = {
+  companyLogo: string | null
+  companyName: string
+  email: string
+  phone: string
+  address: string
+  instagram: string
+}
+
+type AppSettingsSummary = {
+  appIdentity: AppIdentity
+  businessProfile: BusinessProfile
 }
 
 type AppSettingsMutationResult = {
@@ -80,7 +94,7 @@ type ProductCategoryMutationResult = {
   category?: ProductCategorySummary
 }
 
-type UnitType = 'piece' | 'litre' | 'set' | 'box'
+type UnitType = 'piece' | 'litre' | 'set' | 'box' | 'service'
 
 type ProductSummary = {
   id: number
@@ -368,7 +382,7 @@ type WorkOrderCheckoutResult = CheckoutResult & {
   workOrder?: WorkOrderDetail
 }
 
-type ReportPeriod = 'today' | 'week' | 'month' | 'quarter'
+type ReportPeriod = 'today' | 'week' | 'month' | 'quarter' | 'custom'
 
 type DashboardRecentTransaction = {
   invoiceId: number
@@ -454,7 +468,8 @@ declare global {
       }
       settings: {
         getApp: () => Promise<AppSettingsSummary>
-        updateApp: (input: { appName: string; appDescription: string }) => Promise<AppSettingsMutationResult>
+        updateAppIdentity: (input: AppIdentity) => Promise<AppSettingsMutationResult>
+        updateBusinessProfile: (input: BusinessProfile) => Promise<AppSettingsMutationResult>
       }
       auth: {
         login: (credentials: { username: string; password: string }) => Promise<LoginResult>
@@ -535,7 +550,7 @@ declare global {
         getSummary: () => Promise<DashboardSummary>
       }
       reports: {
-        getSummary: (input?: { period?: ReportPeriod }) => Promise<ReportSummary>
+        getSummary: (input?: { period?: ReportPeriod; dateFrom?: string; dateTo?: string }) => Promise<ReportSummary>
       }
       invoices: {
         list: (input?: InvoiceListInput) => Promise<InvoiceSummary[]>

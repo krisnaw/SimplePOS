@@ -1,4 +1,4 @@
-export type UnitType = 'piece' | 'litre' | 'set' | 'box'
+export type UnitType = 'piece' | 'litre' | 'set' | 'box' | 'service'
 
 export type ProductCategorySummary = {
   id: number

@@ -104,6 +104,31 @@
       }
     }
   },
+  "vehicles": {
+    "title": "Kendaraan",
+    "activeCount_one": "{{count}} kendaraan aktif",
+    "activeCount_other": "{{count}} kendaraan aktif",
+    "newVehicle": "Kendaraan baru",
+    "editVehicle": "Edit kendaraan",
+    "addNewVehicle": "Tambah kendaraan baru",
+    "searchPlaceholder": "Cari plat, model, atau pelanggan",
+    "noSelection": "Belum ada kendaraan dipilih",
+    "noSelectionHint": "Pilih kendaraan dari daftar untuk melihat dan mengubah detailnya.",
+    "formHint": "Plat dan model wajib diisi. Detail pelanggan bersifat opsional.",
+    "saveVehicle": "Simpan kendaraan",
+    "fields": {
+      "model": "Model",
+      "plateNumber": "Nomor plat",
+      "brandOptional": "Merek (opsional)",
+      "customerNameOptional": "Nama pelanggan (opsional)",
+      "phoneOptional": "Telepon (opsional)",
+      "notesOptional": "Catatan (opsional)"
+    },
+    "placeholders": {
+      "customerName": "Nama pelanggan",
+      "notes": "Catatan kendaraan"
+    }
+  },
   "login": {
     "title": "SimplePOS",
     "subtitle": "Manajemen Bengkel Mobil",
@@ -207,8 +232,8 @@
     "phoneOptional": "Telepon (opsional)",
     "brandOptional": "Merek (opsional)",
     "model": "Model",
-    "runningOrders": "Order Berjalan",
-    "noRunningOrders": "Tidak ada order berjalan.",
+    "runningOrders": "Pesanan Berjalan",
+    "noRunningOrders": "Tidak ada pesanan berjalan.",
     "stale": "Lama",
     "deleteDraftForVehicle": "Hapus draft untuk {{plateNumber}}",
     "activeItemCount_one": "{{count}} item",
@@ -278,7 +303,10 @@
     "invoiceCount_other": "{{count}} faktur",
     "totalInvoices": "Total faktur",
     "refresh": "Muat ulang faktur",
-    "searchPlaceholder": "Cari plat, faktur, pelanggan, pembayaran",
+    "dateRange": "Rentang tanggal faktur",
+    "dateRangePlaceholder": "Pilih rentang tanggal",
+    "clearDateRange": "Hapus rentang tanggal",
+    "searchPlaceholder": "Cari berdasarkan nomor plat",
     "invoiceStatus": "Status faktur",
     "paid": "Lunas",
     "loading": "Memuat faktur",
@@ -292,6 +320,8 @@
     "workOrderNumber": "Perintah Kerja {{number}}",
     "print": "Cetak",
     "preview": "Pratinjau",
+    "previewTitle": "Pratinjau Faktur",
+    "previewDescription": "Tinjau faktur {{invoiceNumber}} dalam format A5 lanskap sebelum dicetak.",
     "export": "Ekspor",
     "contact": "Telepon",
     "payment": "Pembayaran",
@@ -450,7 +480,8 @@
       "piece": "pcs",
       "litre": "liter",
       "set": "set",
-      "box": "dus"
+      "box": "dus",
+      "service": "jasa"
     },
     "messages": {
       "invalidProduct": "Masukkan SKU, nama produk, serta nilai stok dan harga yang valid."
@@ -617,6 +648,7 @@
     "filters": "Filter Laporan",
     "dateRange": "Meninjau {{from}} hingga {{to}}.",
     "period": "Periode",
+    "customRangePlaceholder": "Pilih rentang khusus",
     "exportPdf": "Ekspor PDF",
     "pdfPreview": {
       "title": "Pratinjau PDF",
@@ -636,7 +668,8 @@
       "today": "Hari Ini",
       "week": "Minggu Ini",
       "month": "Bulan Ini",
-      "quarter": "Kuartal Ini"
+      "quarter": "Kuartal Ini",
+      "custom": "Rentang Khusus"
     },
     "groups": {
       "sales": {
@@ -776,12 +809,34 @@
     "devicesHint": "Kelola koneksi perangkat keras dan layanan yang digunakan oleh POS.",
     "appIdentity": {
       "title": "Identitas Aplikasi",
-      "description": "Atur nama dan deskripsi yang tampil di header aplikasi dan laporan.",
+      "description": "Atur nama dan deskripsi yang tampil di antarmuka aplikasi.",
       "name": "Nama aplikasi",
       "namePlaceholder": "SimplePOS",
       "descriptionLabel": "Deskripsi",
       "descriptionPlaceholder": "Bengkel Mobil",
       "unavailable": "Pengaturan aplikasi tidak tersedia."
+    },
+    "businessProfile": {
+      "title": "Profil Bisnis",
+      "description": "Informasi perusahaan yang dapat digunakan pada faktur, struk, laporan, dan ekspor.",
+      "logo": "Logo perusahaan",
+      "logoHint": "PNG, JPEG, atau WebP hingga 2 MB.",
+      "logoPreviewAlt": "Pratinjau logo perusahaan",
+      "removeLogo": "Hapus logo",
+      "logoInvalidType": "Pilih gambar PNG, JPEG, atau WebP.",
+      "logoTooLarge": "Pilih gambar berukuran kurang dari 2 MB.",
+      "logoReadFailed": "Logo yang dipilih tidak dapat dibaca.",
+      "companyName": "Nama perusahaan",
+      "companyNamePlaceholder": "Nama perusahaan",
+      "email": "Email",
+      "emailPlaceholder": "perusahaan@contoh.com",
+      "phone": "Telepon",
+      "phonePlaceholder": "+62 812 3456 7890",
+      "address": "Alamat",
+      "addressPlaceholder": "Alamat perusahaan",
+      "instagram": "Instagram",
+      "instagramPlaceholder": "@perusahaan",
+      "unavailable": "Pengaturan profil bisnis tidak tersedia."
     },
     "devices": {
       "database": {
@@ -893,7 +948,8 @@
       "piece": "pcs",
       "litre": "liter",
       "set": "set",
-      "box": "dus"
+      "box": "dus",
+      "service": "jasa"
     },
     "messages": {
       "unableToReachDb": "Tidak dapat terhubung ke database.",

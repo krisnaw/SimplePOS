@@ -6,7 +6,7 @@ export type ProductFormState = {
   description: string
   categoryId: string
   unitPrice: string
-  unitType: 'piece' | 'litre' | 'set' | 'box'
+  unitType: 'piece' | 'litre' | 'set' | 'box' | 'service'
   stockQty: string
   minStock: string
 }

@@ -6,7 +6,15 @@ contextBridge.exposeInMainWorld('simplepos', {
   },
   settings: {
     getApp: () => ipcRenderer.invoke('settings:getApp'),
-    updateApp: (input: { appName: string; appDescription: string }) => ipcRenderer.invoke('settings:updateApp', input),
+    updateAppIdentity: (input: { appName: string; appDescription: string }) => ipcRenderer.invoke('settings:updateAppIdentity', input),
+    updateBusinessProfile: (input: {
+      companyLogo: string | null
+      companyName: string
+      email: string
+      phone: string
+      address: string
+      instagram: string
+    }) => ipcRenderer.invoke('settings:updateBusinessProfile', input),
   },
   auth: {
     login: (credentials: { username: string; password: string }) => {

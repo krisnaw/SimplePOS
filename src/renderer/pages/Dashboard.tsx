@@ -60,8 +60,18 @@ const sectionTranslationKeys: Record<AppSection, string> = {
 }
 
 const defaultAppSettings = {
-  appName: 'SimplePOS',
-  appDescription: 'Car Repair Shop',
+  appIdentity: {
+    appName: 'SimplePOS',
+    appDescription: 'Car Repair Shop',
+  },
+  businessProfile: {
+    companyLogo: null,
+    companyName: 'SimplePOS',
+    email: '',
+    phone: '',
+    address: '',
+    instagram: '',
+  },
 }
 
 export default function Dashboard() {
@@ -122,12 +132,12 @@ export default function Dashboard() {
               </div>
               <div className="min-w-0">
                 <div className="flex min-w-0 items-baseline gap-1.5">
-                  <h1 className="truncate text-base font-semibold text-balance">{appSettings.appName}</h1>
+                  <h1 className="truncate text-base font-semibold text-balance">{appSettings.appIdentity.appName}</h1>
                   <span className="shrink-0 text-[10px] leading-none text-muted-foreground tabular-nums">
                     v{appVersion}
                   </span>
                 </div>
-                <p className="truncate text-[11px] leading-4 text-muted-foreground text-pretty">{appSettings.appDescription}</p>
+                <p className="truncate text-[11px] leading-4 text-muted-foreground text-pretty">{appSettings.appIdentity.appDescription}</p>
               </div>
             </div>
 
@@ -275,7 +285,7 @@ export default function Dashboard() {
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
               {activeSection === 'invoices' ? <InvoiceWorkspace /> : null}
               {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
-              {activeSection === 'reports' ? <ReportsWorkspace currentUser={user} appSettings={appSettings} /> : null}
+              {activeSection === 'reports' ? <ReportsWorkspace currentUser={user} appSettings={appSettings.appIdentity} /> : null}
               {activeSection === 'user-guide' ? <UserGuideWorkspace /> : null}
               {activeSection === 'settings' ? (
                 <SettingsWorkspace

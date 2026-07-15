@@ -104,6 +104,31 @@
       }
     }
   },
+  "vehicles": {
+    "title": "Vehicles",
+    "activeCount_one": "{{count}} active vehicle",
+    "activeCount_other": "{{count}} active vehicles",
+    "newVehicle": "New vehicle",
+    "editVehicle": "Edit vehicle",
+    "addNewVehicle": "Add new vehicle",
+    "searchPlaceholder": "Search plate, model, or customer",
+    "noSelection": "No vehicle selected",
+    "noSelectionHint": "Select a vehicle from the list to view and edit its details.",
+    "formHint": "Plate and model are required. Customer details are optional.",
+    "saveVehicle": "Save vehicle",
+    "fields": {
+      "model": "Model",
+      "plateNumber": "Plate number",
+      "brandOptional": "Brand (optional)",
+      "customerNameOptional": "Customer name (optional)",
+      "phoneOptional": "Phone (optional)",
+      "notesOptional": "Notes (optional)"
+    },
+    "placeholders": {
+      "customerName": "Customer name",
+      "notes": "Vehicle notes"
+    }
+  },
   "login": {
     "title": "SimplePOS",
     "subtitle": "Car Repair Shop Management",
@@ -207,7 +232,7 @@
     "phoneOptional": "Phone (optional)",
     "brandOptional": "Brand (optional)",
     "model": "Model",
-    "runningOrders": "Order Berjalan",
+    "runningOrders": "Orders in Progress",
     "noRunningOrders": "No orders in progress.",
     "stale": "Stale",
     "deleteDraftForVehicle": "Delete draft for {{plateNumber}}",
@@ -278,7 +303,10 @@
     "invoiceCount_other": "{{count}} invoices",
     "totalInvoices": "Total invoices",
     "refresh": "Refresh invoices",
-    "searchPlaceholder": "Search plate, invoice, customer, payment",
+    "dateRange": "Invoice date range",
+    "dateRangePlaceholder": "Select a date range",
+    "clearDateRange": "Clear date range",
+    "searchPlaceholder": "Search by plate number",
     "invoiceStatus": "Invoice status",
     "paid": "Paid",
     "loading": "Loading invoices",
@@ -292,6 +320,8 @@
     "workOrderNumber": "Work Order {{number}}",
     "print": "Print",
     "preview": "Preview",
+    "previewTitle": "Invoice Preview",
+    "previewDescription": "Review invoice {{invoiceNumber}} in A5 landscape format before printing.",
     "export": "Export",
     "contact": "Phone",
     "payment": "Payment",
@@ -450,7 +480,8 @@
       "piece": "piece",
       "litre": "litre",
       "set": "set",
-      "box": "box"
+      "box": "box",
+      "service": "service"
     },
     "messages": {
       "invalidProduct": "Enter SKU, product name, and valid stock and price values."
@@ -617,6 +648,7 @@
     "filters": "Report Filters",
     "dateRange": "Reviewing {{from}} to {{to}}.",
     "period": "Period",
+    "customRangePlaceholder": "Select a custom range",
     "exportPdf": "Export PDF",
     "pdfPreview": {
       "title": "PDF Preview",
@@ -636,7 +668,8 @@
       "today": "Today",
       "week": "This Week",
       "month": "This Month",
-      "quarter": "This Quarter"
+      "quarter": "This Quarter",
+      "custom": "Custom Range"
     },
     "groups": {
       "sales": {
@@ -776,12 +809,34 @@
     "devicesHint": "Manage hardware and service connections used by the POS.",
     "appIdentity": {
       "title": "App Identity",
-      "description": "Set the name and description shown in the app header and reports.",
+      "description": "Set the name and description shown in the application interface.",
       "name": "App name",
       "namePlaceholder": "SimplePOS",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Car Repair Shop",
       "unavailable": "App settings are unavailable."
+    },
+    "businessProfile": {
+      "title": "Business Profile",
+      "description": "Company information available to invoices, receipts, reports, and exports.",
+      "logo": "Company logo",
+      "logoHint": "PNG, JPEG, or WebP up to 2 MB.",
+      "logoPreviewAlt": "Company logo preview",
+      "removeLogo": "Remove logo",
+      "logoInvalidType": "Choose a PNG, JPEG, or WebP image.",
+      "logoTooLarge": "Choose an image smaller than 2 MB.",
+      "logoReadFailed": "The selected logo could not be read.",
+      "companyName": "Company name",
+      "companyNamePlaceholder": "Company name",
+      "email": "Email",
+      "emailPlaceholder": "company@example.com",
+      "phone": "Phone",
+      "phonePlaceholder": "+62 812 3456 7890",
+      "address": "Address",
+      "addressPlaceholder": "Company address",
+      "instagram": "Instagram",
+      "instagramPlaceholder": "@company",
+      "unavailable": "Business profile settings are unavailable."
     },
     "devices": {
       "database": {
@@ -893,7 +948,8 @@
       "piece": "piece",
       "litre": "litre",
       "set": "set",
-      "box": "box"
+      "box": "box",
+      "service": "service"
     },
     "messages": {
       "unableToReachDb": "Unable to reach the database.",

@@ -1,0 +1,13 @@
+- [x] Swap model with plate number position in create/edit vehicle.
+- [x] Make the create vehicle form reusable so it can be used in create vehicle in sales page.
+- [x] In App Identity card, add new field for company logo, later this will be used in the invoice.
+- [x] Add scroll fade in Vehicles list
+- [x] Add translation in Vehicle Screen
+- [x] in Create/Edit Product > Unit Type, add new option called "jasa" or "service"
+- [x] Split App Identity (app name and description) from Business Profile (logo, company name, email, phone, address, and Instagram) for invoice use.
+- [x] Create range-picker component, don't wire it yet, see this url for ref : https://ui.shadcn.com/docs/components/base/date-picker#range-picker
+- [x] Remove "Work Orders" stats in Dashboard
+- [x] Fix the translation in Sales > Order Berjalan card
+- [x] In Invoice History, add search invoice by plate number
+- [ ] in invoice detail, for the preview, remove the SKU and category in the invoice line
+- [ ] Update the Preview modal, so it looks like "PDF Preview" modal in Report page

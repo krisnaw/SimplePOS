@@ -61,7 +61,7 @@ const emptyProductForm: ProductFormState = {
   stockQty: '',
   minStock: '',
 }
-const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
+const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box', 'service']
 const now = new Date()
 const today = [
   now.getFullYear(),

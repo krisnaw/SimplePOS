@@ -13,11 +13,11 @@ import {
 } from '@/renderer/components/ui/dialog'
 import {
   Field,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from '@/renderer/components/ui/field'
 import { Input } from '@/renderer/components/ui/input'
+import {VehicleIdentityFields, type VehicleIdentityField} from '@/renderer/components/VehicleIdentityFields'
 import type { NewVehicleFormState } from './SalesWorkspace.types'
 
 const pressableClass =
@@ -73,53 +73,27 @@ export function AddVehicleDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup className="grid gap-4 sm:grid-cols-3">
-            <Field data-invalid={Boolean(errors.plateNumber)}>
-              <FieldLabel htmlFor="new-vehicle-plate">{t('sales.plateNumber')}</FieldLabel>
-              <Input
-                id="new-vehicle-plate"
-                value={plate}
-                onChange={(event) => {
-                  onFormChange({
-                    plate: event.target.value,
-                    errors: { ...errors, plateNumber: undefined },
-                  })
-                }}
-                placeholder="DK1234"
-                className="uppercase tabular-nums"
-                aria-invalid={Boolean(errors.plateNumber)}
-                autoFocus
-              />
-              <FieldError>{errors.plateNumber}</FieldError>
-            </Field>
+          <VehicleIdentityFields
+            idPrefix="sales-vehicle"
+            value={{model, brand, plateNumber: plate}}
+            labels={{
+              model: t('sales.model'),
+              brand: t('sales.brandOptional'),
+              plateNumber: t('sales.plateNumber'),
+            }}
+            placeholders={{model: 'Avanza', brand: 'Toyota', plateNumber: 'DK1234'}}
+            errors={errors}
+            autoFocusField="model"
+            onChange={(field: VehicleIdentityField, value) => {
+              if (field === 'plateNumber') {
+                onFormChange({plate: value, errors: {...errors, plateNumber: undefined}})
+                return
+              }
+              onFormChange({[field]: value, errors: {...errors, [field]: undefined}})
+            }}
+          />
 
-            <Field data-invalid={Boolean(errors.model)}>
-              <FieldLabel htmlFor="new-vehicle-name">{t('sales.model')}</FieldLabel>
-              <Input
-                id="new-vehicle-name"
-                value={model}
-                onChange={(event) => {
-                  onFormChange({
-                    model: event.target.value,
-                    errors: { ...errors, model: undefined },
-                  })
-                }}
-                placeholder="Avanza"
-                aria-invalid={Boolean(errors.model)}
-              />
-              <FieldError>{errors.model}</FieldError>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="new-vehicle-brand">{t('sales.brandOptional')}</FieldLabel>
-              <Input
-                id="new-vehicle-brand"
-                value={brand}
-                onChange={(event) => onFormChange({ brand: event.target.value })}
-                placeholder="Toyota"
-              />
-            </Field>
-
+          <FieldGroup className="grid gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="new-customer-name">{t('sales.customerNameOptional')}</FieldLabel>
               <Input

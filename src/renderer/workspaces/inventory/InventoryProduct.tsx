@@ -25,7 +25,7 @@ const emptyForm: ProductFormState = {
   minStock: '',
 }
 
-const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box']
+const unitTypes: ProductFormState['unitType'][] = ['piece', 'litre', 'set', 'box', 'service']
 
 function isLowStock(product: ProductSummary): boolean {
   return product.stockQty <= product.minStock

@@ -13,6 +13,7 @@ import {
 } from '@/renderer/components/ui/card'
 import { Input } from '@/renderer/components/ui/input'
 import { Label } from '@/renderer/components/ui/label'
+import {VehicleIdentityFields} from '@/renderer/components/VehicleIdentityFields'
 import { cn } from '@/renderer/lib/utils'
 import { formatDate } from '@/renderer/lib/formatters'
 import type { CustomerSummary } from '@/shared/types/customer'
@@ -749,46 +750,22 @@ export function CustomerWorkspace() {
                 </CardHeader>
                 <CardContent>
                   <form id="vehicle-form" onSubmit={handleVehicleSubmit} className="flex flex-col gap-3" noValidate>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="vehicle-plate">
-                        {t('customers.form.plateNumber')} <RequiredMark />
-                      </Label>
-                      <Input
-                        id="vehicle-plate"
-                        value={vehicleForm.plateNumber}
-                        onChange={(event) => updateVehicleForm('plateNumber', event.target.value)}
-                        placeholder={t('customers.form.platePlaceholder')}
-                        required
-                      />
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="vehicle-brand">
-                          {t('customers.form.brand')} <RequiredMark />
-                        </Label>
-                        <Input
-                          id="vehicle-brand"
-                          value={vehicleForm.brand}
-                          onChange={(event) => updateVehicleForm('brand', event.target.value)}
-                          placeholder={t('customers.form.brandPlaceholder')}
-                          required
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="vehicle-model">
-                          {t('customers.form.model')} <RequiredMark />
-                        </Label>
-                        <Input
-                          id="vehicle-model"
-                          value={vehicleForm.model}
-                          onChange={(event) => updateVehicleForm('model', event.target.value)}
-                          placeholder={t('customers.form.modelPlaceholder')}
-                          required
-                        />
-                      </div>
-                    </div>
+                    <VehicleIdentityFields
+                      idPrefix="customer-vehicle"
+                      value={vehicleForm}
+                      labels={{
+                        model: t('customers.form.model'),
+                        brand: t('customers.form.brand'),
+                        plateNumber: t('customers.form.plateNumber'),
+                      }}
+                      placeholders={{
+                        model: t('customers.form.modelPlaceholder'),
+                        brand: t('customers.form.brandPlaceholder'),
+                        plateNumber: t('customers.form.platePlaceholder'),
+                      }}
+                      requiredFields={['model', 'brand', 'plateNumber']}
+                      onChange={updateVehicleForm}
+                    />
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="flex flex-col gap-2">
