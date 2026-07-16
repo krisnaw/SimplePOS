@@ -359,7 +359,7 @@ export function InvoiceWorkspace() {
               <Dialog open={isPreviewOpen} onOpenChange={(open) => { if (!open) handlePreviewClose() }}>
                 <DialogContent
                   showCloseButton={false}
-                  className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden sm:max-w-5xl"
+                  className="h-[calc(100vh-2rem)] sm:max-w-5xl"
                 >
                   <DialogHeader>
                     <DialogTitle>{t('invoices.previewTitle')}</DialogTitle>
@@ -368,7 +368,7 @@ export function InvoiceWorkspace() {
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain  px-4 pt-8 pb-6 sm:px-8 sm:pt-10">
+                  <div className="min-h-0 overflow-y-auto">
                     <div className="mx-auto aspect-210/148 w-full max-w-215 rounded-sm bg-white shadow-lg ring-1 ring-black/10">
                       {previewUrl ? (
                         <iframe

@@ -849,7 +849,6 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                           typeLabel={item.type === 'service' ? t('sales.service') : t('sales.product')}
                           name={item.name}
                           category={item.category}
-                          code={item.code}
                           price={item.price}
                           addLabel={t('sales.add')}
                           onAdd={() => addLineItem(item)}
@@ -877,11 +876,9 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
                       lineItems.map((item) => (
                         <div key={item.key} className="rounded-lg bg-muted/60 p-3">
                           <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <p className="truncate text-sm font-medium">{item.name}</p>
-                                {item.price !== item.basePrice ? <Badge variant="secondary">{t('sales.adjusted')}</Badge> : null}
-                              </div>
+                            <div className="flex min-w-0 flex-col items-start gap-1.5">
+                              <p className="truncate text-sm font-medium">{item.name}</p>
+                              {item.price !== item.basePrice ? <Badge variant="secondary">{t('sales.adjusted')}</Badge> : null}
                             </div>
                             <div className="flex shrink-0 items-start">
                               <Button

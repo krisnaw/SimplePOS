@@ -9,7 +9,6 @@ type SalesCatalogListItemProps = {
   typeLabel: string
   name: string
   category?: string
-  code: string
   description?: string
   price: number
   inventoryLabel?: string
@@ -26,7 +25,6 @@ export function SalesCatalogListItem({
   typeLabel,
   name,
   category,
-  code,
   description,
   price,
   inventoryLabel,
@@ -57,10 +55,9 @@ export function SalesCatalogListItem({
         <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="min-w-0 truncate text-sm font-medium text-balance">{name}</span>
         </div>
-        <div className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <span className="tabular-nums">{code}</span>
-          {description ? <span className="line-clamp-1 text-pretty">{description}</span> : null}
-        </div>
+        {description ? (
+          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground text-pretty">{description}</p>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
@@ -74,7 +71,6 @@ export function SalesCatalogListItem({
         </div>
         <Button
           type="button"
-          size="sm"
           disabled={disabled}
           className={pressableButtonClass}
           onClick={onAdd}
