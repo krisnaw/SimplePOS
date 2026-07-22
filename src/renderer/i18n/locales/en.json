@@ -366,6 +366,7 @@
       "product": "Product",
       "purchase": "Purchase",
       "moving": "Movements",
+      "stockCount": "Stock Count",
       "emptyContentHint": "Inventory content will be attached here as each tab is migrated into the layout."
     },
     "totalItems": "Total Items",

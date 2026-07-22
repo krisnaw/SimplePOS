@@ -33,7 +33,7 @@ import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
 import {ProductListFilters} from '@/renderer/components/ProductListFilters'
 import {formatCurrency} from '@/renderer/lib/formatters'
-import {generateReceiptHTML, printInvoice} from '@/renderer/lib/invoice-print'
+import {generateReceiptHTML, type InvoiceBusinessProfile, printInvoice} from '@/renderer/lib/invoice-print'
 import {cn} from '@/renderer/lib/utils'
 import type {AuthenticatedUser} from '@/shared/types/user'
 import {ProductCategoryBadge} from '../inventory/ProductCategoryBadge'
@@ -178,7 +178,13 @@ function vehicleName(vehicle: MockVehicle): string {
   return [vehicle.brand, vehicle.model].filter(Boolean).join(' ')
 }
 
-export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser }) {
+export function SalesWorkspace({
+  currentUser,
+  businessProfile,
+}: {
+  currentUser: AuthenticatedUser
+  businessProfile: InvoiceBusinessProfile
+}) {
   const { t } = useTranslation()
   const [vehicles, setVehicles] = useState<MockVehicle[]>([])
   const [catalogItems, setCatalogItems] = useState<MockCatalogItem[]>([])
@@ -585,13 +591,13 @@ export function SalesWorkspace({ currentUser }: { currentUser: AuthenticatedUser
 
   function handlePrintCompletedInvoice() {
     if (!completedInvoice) return
-    printInvoice(completedInvoice)
+    printInvoice(completedInvoice, businessProfile)
   }
 
   function handlePreviewCompletedInvoice() {
     if (!completedInvoice) return
     if (previewUrl) URL.revokeObjectURL(previewUrl)
-    const html = generateReceiptHTML(completedInvoice)
+    const html = generateReceiptHTML(completedInvoice, businessProfile)
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
     dispatchUi({ type: 'receiptPreview/open', url })
   }

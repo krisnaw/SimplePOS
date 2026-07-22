@@ -12,6 +12,7 @@ import {InvoiceWorkspace} from '@/renderer/workspaces/invoice/InvoiceWorkspace'
 import {InventoryLayout, type InventoryLayoutTab} from '@/renderer/workspaces/inventory/InventoryLayout'
 import {InventoryProduct} from '@/renderer/workspaces/inventory/InventoryProduct'
 import {InventoryPurchase} from '@/renderer/workspaces/inventory/InventoryPurchase'
+import {InventoryStockCount} from '@/renderer/workspaces/inventory/InventoryStockCount'
 import {SupplierManagement} from '@/renderer/workspaces/suppliers/SupplierManagement'
 import {ReportsWorkspace} from '@/renderer/workspaces/reports/ReportsWorkspace'
 import {SalesWorkspace} from '../workspaces/sales/SalesWorkspace'
@@ -59,7 +60,22 @@ const sectionTranslationKeys: Record<AppSection, string> = {
   settings: 'settings',
 }
 
-const defaultAppSettings = {
+type DashboardAppSettings = {
+  appIdentity: {
+    appName: string
+    appDescription: string
+  }
+  businessProfile: {
+    companyLogo: string | null
+    companyName: string
+    email: string
+    phone: string
+    address: string
+    instagram: string
+  }
+}
+
+const defaultAppSettings: DashboardAppSettings = {
   appIdentity: {
     appName: 'SimplePOS',
     appDescription: 'Car Repair Shop',
@@ -266,7 +282,7 @@ export default function Dashboard() {
               )}
             >
               {activeSection === 'dashboard' ? <DashboardOverview user={user} /> : null}
-              {activeSection === 'sales' ? <SalesWorkspace currentUser={user} /> : null}
+              {activeSection === 'sales' ? <SalesWorkspace currentUser={user} businessProfile={appSettings.businessProfile} /> : null}
               {activeSection === 'inventory' ? (
                 <InventoryLayout activeTab={inventoryTab} onTabChange={setInventoryTab}>
                   {inventoryTab === 'product' ? <InventoryProduct currentUser={user} /> : null}
@@ -276,6 +292,7 @@ export default function Dashboard() {
                   {inventoryTab === 'moving' ? (
                     <InventoryPurchase key="moving" currentUser={user} embedded initialView="movements" />
                   ) : null}
+                  {inventoryTab === 'stock-count' ? <InventoryStockCount /> : null}
                 </InventoryLayout>
               ) : null}
               {activeSection === 'suppliers' ? <SupplierManagement /> : null}
@@ -283,7 +300,7 @@ export default function Dashboard() {
               {activeSection === 'services' ? <ServicesWorkspace /> : null}
               {activeSection === 'work-orders' ? <WorkOrderWorkspace currentUser={user} /> : null}
               {activeSection === 'customers' ? <CustomerWorkspace /> : null}
-              {activeSection === 'invoices' ? <InvoiceWorkspace /> : null}
+              {activeSection === 'invoices' ? <InvoiceWorkspace businessProfile={appSettings.businessProfile} /> : null}
               {activeSection === 'users' ? <UserManagement currentUser={user} /> : null}
               {activeSection === 'reports' ? <ReportsWorkspace currentUser={user} appSettings={appSettings.appIdentity} /> : null}
               {activeSection === 'user-guide' ? <UserGuideWorkspace /> : null}

@@ -20,7 +20,7 @@ import {
 } from '@/renderer/components/ui/dialog'
 import {cn} from '@/renderer/lib/utils'
 import {formatCurrency, formatDateTime, formatPaymentMethod} from '@/renderer/lib/formatters'
-import {generateReceiptHTML, printInvoice} from '@/renderer/lib/invoice-print'
+import {generateReceiptHTML, type InvoiceBusinessProfile, printInvoice} from '@/renderer/lib/invoice-print'
 import type {InvoiceDetail, InvoiceSummary} from './InvoiceWorkspace.types'
 import {ProductCategoryBadge} from '../inventory/ProductCategoryBadge'
 
@@ -60,7 +60,7 @@ function InvoiceStatusBadge({
   )
 }
 
-export function InvoiceWorkspace() {
+export function InvoiceWorkspace({ businessProfile }: { businessProfile: InvoiceBusinessProfile }) {
   const { t, i18n } = useTranslation()
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
@@ -146,7 +146,7 @@ export function InvoiceWorkspace() {
 
   function handlePreview() {
     if (!selectedInvoice) return
-    const html = generateReceiptHTML(selectedInvoice)
+    const html = generateReceiptHTML(selectedInvoice, businessProfile)
     const blob = new Blob([html], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     setPreviewUrl(url)
@@ -163,7 +163,7 @@ export function InvoiceWorkspace() {
 
   function handlePrint() {
     if (!selectedInvoice) return
-    printInvoice(selectedInvoice)
+    printInvoice(selectedInvoice, businessProfile)
   }
 
   const totals = useMemo(() => {
@@ -359,7 +359,7 @@ export function InvoiceWorkspace() {
               <Dialog open={isPreviewOpen} onOpenChange={(open) => { if (!open) handlePreviewClose() }}>
                 <DialogContent
                   showCloseButton={false}
-                  className="h-[calc(100vh-2rem)] sm:max-w-5xl"
+                  className="min-w-4xl"
                 >
                   <DialogHeader>
                     <DialogTitle>{t('invoices.previewTitle')}</DialogTitle>
@@ -368,7 +368,7 @@ export function InvoiceWorkspace() {
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="min-h-0 overflow-y-auto">
+                  <div className="min-h-0">
                     <div className="mx-auto aspect-210/148 w-full max-w-215 rounded-sm bg-white shadow-lg ring-1 ring-black/10">
                       {previewUrl ? (
                         <iframe

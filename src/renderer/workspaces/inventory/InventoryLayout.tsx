@@ -1,14 +1,15 @@
 import { type ReactNode, useState } from 'react'
-import { ClipboardList, Package, ReceiptText } from 'lucide-react'
+import { ClipboardCheck, ClipboardList, Package, ReceiptText } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/renderer/lib/utils'
 
-export type InventoryLayoutTab = 'product' | 'purchase' | 'moving'
+export type InventoryLayoutTab = 'product' | 'purchase' | 'moving' | 'stock-count'
 
 const inventorySectionTabs = [
   { id: 'product', labelKey: 'inventory.tabs.product', icon: Package },
   { id: 'purchase', labelKey: 'inventory.tabs.purchase', icon: ReceiptText },
   { id: 'moving', labelKey: 'inventory.tabs.moving', icon: ClipboardList },
+  { id: 'stock-count', labelKey: 'inventory.tabs.stockCount', icon: ClipboardCheck },
 ] as const
 
 type InventoryLayoutProps = {

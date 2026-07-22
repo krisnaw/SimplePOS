@@ -366,6 +366,7 @@
       "product": "Produk",
       "purchase": "Pembelian",
       "moving": "Mutasi",
+      "stockCount": "Stok Opname",
       "emptyContentHint": "Konten inventaris akan ditampilkan di sini saat setiap tab dipindahkan ke layout."
     },
     "totalItems": "Total Item",
