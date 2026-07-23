@@ -555,6 +555,7 @@ declare global {
       invoices: {
         list: (input?: InvoiceListInput) => Promise<InvoiceSummary[]>
         get: (input: { id: number }) => Promise<InvoiceDetail | null>
+        previewPdf: (input: { html: string }) => Promise<string>
       }
       workOrders: {
         list: (input?: WorkOrderListInput) => Promise<WorkOrderSummary[]>

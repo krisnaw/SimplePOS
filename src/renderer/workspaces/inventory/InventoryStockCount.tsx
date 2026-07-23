@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, ClipboardCheck, PackageSearch, Plus, Search, Send } from 'lucide-react'
+import { ArrowLeft, Check, ClipboardCheck, PackageSearch, Plus, Search } from 'lucide-react'
 import { Badge } from '@/renderer/components/ui/badge'
 import { Button } from '@/renderer/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/renderer/components/ui/card'
@@ -10,6 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/renderer/lib/utils'
 
 type CountFilter = 'all' | 'uncounted' | 'matched' | 'shortages' | 'overages'
+type View = 'list' | 'detail'
+type CountStatus = 'draft' | 'completed'
+
+type CountSession = {
+  id: number
+  countNumber: string
+  businessDate: string
+  status: CountStatus
+  startedBy: string
+  progress: string
+  mismatches: number
+  completedAt?: string
+}
 
 type CountItem = {
   id: number
@@ -19,16 +32,43 @@ type CountItem = {
   systemStock: number
   physicalStock: string
   reason: string
+  reasonNote: string
 }
 
-const initialItems: CountItem[] = [
-  { id: 1, product: 'Engine Oil 10W-40', category: 'Engine', unit: 'Bottle', systemStock: 12, physicalStock: '10', reason: 'damaged' },
-  { id: 2, product: 'Oil Filter Toyota', category: 'Engine', unit: 'Piece', systemStock: 8, physicalStock: '8', reason: '' },
-  { id: 3, product: 'Brake Pad Set', category: 'Brakes', unit: 'Set', systemStock: 6, physicalStock: '', reason: '' },
-  { id: 4, product: 'Coolant Green', category: 'Fluids', unit: 'Bottle', systemStock: 15, physicalStock: '16', reason: 'extra-stock' },
-  { id: 5, product: 'Spark Plug NGK', category: 'Engine', unit: 'Piece', systemStock: 24, physicalStock: '22', reason: 'missing' },
-  { id: 6, product: 'Brake Cleaner', category: 'Fluids', unit: 'Can', systemStock: 9, physicalStock: '9', reason: '' },
+const initialSessions: CountSession[] = [
+  {
+    id: 1,
+    countNumber: 'SC-20260716-01',
+    businessDate: 'Wednesday, 16 July 2026',
+    status: 'draft',
+    startedBy: 'Dewi Lestari',
+    progress: '5 of 6 counted',
+    mismatches: 3,
+  },
+  {
+    id: 2,
+    countNumber: 'SC-20260715-01',
+    businessDate: 'Tuesday, 15 July 2026',
+    status: 'completed',
+    startedBy: 'Dewi Lestari',
+    progress: '6 of 6 counted',
+    mismatches: 2,
+    completedAt: '15 July 2026, 18:14',
+  },
 ]
+
+const initialItems: CountItem[] = [
+  { id: 1, product: 'Engine Oil 10W-40', category: 'Engine', unit: 'Bottle', systemStock: 12, physicalStock: '10', reason: 'damaged', reasonNote: '' },
+  { id: 2, product: 'Oil Filter Toyota', category: 'Engine', unit: 'Piece', systemStock: 8, physicalStock: '8', reason: '', reasonNote: '' },
+  { id: 3, product: 'Brake Pad Set', category: 'Brakes', unit: 'Set', systemStock: 6, physicalStock: '', reason: '', reasonNote: '' },
+  { id: 4, product: 'Coolant Green', category: 'Fluids', unit: 'Bottle', systemStock: 15, physicalStock: '16', reason: 'extra-stock', reasonNote: 'Extra bottle found in the back room.' },
+  { id: 5, product: 'Spark Plug NGK', category: 'Engine', unit: 'Piece', systemStock: 24, physicalStock: '22', reason: 'missing', reasonNote: '' },
+  { id: 6, product: 'Brake Cleaner', category: 'Fluids', unit: 'Can', systemStock: 9, physicalStock: '9', reason: '', reasonNote: '' },
+]
+
+const completedItems: CountItem[] = initialItems.map((item) => item.id === 3
+  ? { ...item, physicalStock: '6' }
+  : item)
 
 const reasonOptions = [
   { value: 'damaged', label: 'Damaged' },
@@ -50,12 +90,22 @@ function formatVariance(variance: number | null) {
   return variance > 0 ? `+${variance}` : String(variance)
 }
 
+function statusLabel(status: CountStatus) {
+  return status === 'completed' ? 'Completed' : 'Draft'
+}
+
 export function InventoryStockCount() {
+  const [view, setView] = useState<View>('list')
+  const [sessions, setSessions] = useState(initialSessions)
+  const [activeSessionId, setActiveSessionId] = useState(1)
   const [items, setItems] = useState(initialItems)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<CountFilter>('all')
   const [showConfirm, setShowConfirm] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [draftSaveMessage, setDraftSaveMessage] = useState('Draft saved locally')
+
+  const activeSession = sessions.find((session) => session.id === activeSessionId) ?? sessions[0]
+  const isCompleted = activeSession.status === 'completed'
 
   const summary = useMemo(() => {
     const counted = items.filter((item) => item.physicalStock !== '')
@@ -91,18 +141,133 @@ export function InventoryStockCount() {
 
   const missingReason = items.some((item) => {
     const variance = getVariance(item)
-    return variance !== null && variance !== 0 && !item.reason
+    return variance !== null && variance !== 0 && (!item.reason || (item.reason === 'other' && !item.reasonNote.trim()))
   })
-  const canSubmit = summary.counted === items.length && !missingReason
+  const canComplete = !isCompleted && summary.counted === items.length && !missingReason
+
+  function openSession(id: number) {
+    const session = sessions.find((candidate) => candidate.id === id)
+    if (session?.status === 'completed') setItems(completedItems)
+    if (session?.status === 'draft') setItems(initialItems)
+    setActiveSessionId(id)
+    setView('detail')
+  }
+
+  function startCount() {
+    const nextId = Math.max(...sessions.map((session) => session.id)) + 1
+    const session: CountSession = {
+      id: nextId,
+      countNumber: `SC-20260723-${String(nextId).padStart(2, '0')}`,
+      businessDate: 'Thursday, 23 July 2026',
+      status: 'draft',
+      startedBy: 'Current user',
+      progress: `0 of ${initialItems.length} counted`,
+      mismatches: 0,
+    }
+
+    setSessions((current) => [session, ...current])
+    setItems(initialItems.map((item) => ({ ...item, physicalStock: '', reason: '', reasonNote: '' })))
+    setActiveSessionId(nextId)
+    setQuery('')
+    setFilter('all')
+    setDraftSaveMessage('Draft saved locally')
+    setView('detail')
+  }
 
   function updateItem(id: number, update: Partial<CountItem>) {
     setItems((currentItems) => currentItems.map((item) => item.id === id ? { ...item, ...update } : item))
-    setSubmitted(false)
+    setDraftSaveMessage('Draft saved locally')
   }
 
-  function submitCount() {
+  function updatePhysicalStock(id: number, physicalStock: string) {
+    if (!/^\d*$/.test(physicalStock)) return
+    updateItem(id, { physicalStock })
+  }
+
+  function completeCount() {
+    const completedAt = '23 July 2026, 18:00'
+    setSessions((current) => current.map((session) => session.id === activeSession.id
+      ? {
+          ...session,
+          status: 'completed',
+          progress: `${summary.counted} of ${items.length} counted`,
+          mismatches: summary.shortages + summary.overages,
+          completedAt,
+        }
+      : session))
     setShowConfirm(false)
-    setSubmitted(true)
+  }
+
+  if (view === 'list') {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <Card>
+          <CardHeader>
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <ClipboardCheck className="size-4" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <CardTitle className="text-balance">Stock Count</CardTitle>
+                <CardDescription>End-of-day physical stock reconciliation.</CardDescription>
+              </div>
+            </div>
+            <CardAction>
+              <Button type="button" size="sm" onClick={startCount}>
+                <Plus data-icon="inline-start" aria-hidden="true" />
+                Start stock count
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <p className="max-w-3xl text-sm text-muted-foreground text-pretty">
+              Count each active physical product after selling, receiving, and manual stock changes have stopped for the day.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="min-h-0 flex-1">
+          <CardHeader>
+            <CardTitle>Stock count sessions</CardTitle>
+            <CardDescription>Open a draft to continue counting, or review a completed reconciliation.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table containerClassName="rounded-none border-x-0 border-b-0">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Count number</TableHead>
+                  <TableHead>Business date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Started by</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead className="text-right">Mismatches</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead><span className="sr-only">Actions</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell className="font-medium tabular-nums">{session.countNumber}</TableCell>
+                    <TableCell>{session.businessDate}</TableCell>
+                    <TableCell><Badge variant={session.status === 'completed' ? 'secondary' : 'outline'}>{statusLabel(session.status)}</Badge></TableCell>
+                    <TableCell>{session.startedBy}</TableCell>
+                    <TableCell className="tabular-nums">{session.progress}</TableCell>
+                    <TableCell className="text-right tabular-nums">{session.mismatches}</TableCell>
+                    <TableCell className="text-muted-foreground">{session.completedAt ?? '—'}</TableCell>
+                    <TableCell className="text-right">
+                      <Button type="button" size="sm" variant="outline" onClick={() => openSession(session.id)}>
+                        {session.status === 'draft' ? 'Continue' : 'View'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -114,12 +279,12 @@ export function InventoryStockCount() {
               <ClipboardCheck className="size-4" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <CardTitle className="text-balance">Stock Count</CardTitle>
-              <CardDescription>SC-20260716-01 · Wednesday, 16 July 2026</CardDescription>
+              <CardTitle className="text-balance">{activeSession.countNumber}</CardTitle>
+              <CardDescription>{activeSession.businessDate} · Started by {activeSession.startedBy}</CardDescription>
             </div>
           </div>
           <CardAction>
-            <Badge variant={submitted ? 'secondary' : 'outline'}>{submitted ? 'Submitted' : 'Draft'}</Badge>
+            <Badge variant={isCompleted ? 'secondary' : 'outline'}>{statusLabel(activeSession.status)}</Badge>
           </CardAction>
         </CardHeader>
         <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -129,12 +294,15 @@ export function InventoryStockCount() {
           <CountMetric label="Overages" value={summary.overages} tone="text-primary" />
         </CardContent>
         <CardFooter className="justify-between gap-3 border-t pt-4">
-          <p className="max-w-2xl text-sm text-muted-foreground text-pretty">
-            Enter the quantity physically on hand. A deduction reason is required whenever physical stock is lower than system stock.
-          </p>
-          <Button type="button" size="sm" variant="outline" className="shrink-0" onClick={() => setItems(initialItems)}>
-            <Plus data-icon="inline-start" aria-hidden="true" />
-            Reset demo
+          <div className="min-w-0">
+            <p className="text-sm text-muted-foreground text-pretty">
+              Enter the quantity physically on hand. Reasons are required for every difference.
+            </p>
+            {!isCompleted ? <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">{draftSaveMessage}</p> : null}
+          </div>
+          <Button type="button" size="sm" variant="outline" className="shrink-0" onClick={() => setView('list')}>
+            <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+            All counts
           </Button>
         </CardFooter>
       </Card>
@@ -142,22 +310,22 @@ export function InventoryStockCount() {
       <Card className="min-h-0 flex-1">
         <CardHeader>
           <CardTitle>Count products</CardTitle>
-          <CardDescription>System stock is shown after physical stock is entered.</CardDescription>
+          <CardDescription>{isCompleted ? 'This completed count is read-only.' : 'System stock is shown after physical stock is entered.'}</CardDescription>
           <CardAction>
-            <Button type="button" size="sm" disabled={!canSubmit || submitted} onClick={() => setShowConfirm(true)}>
-              <Send data-icon="inline-start" aria-hidden="true" />
-              {submitted ? 'Submitted' : 'Submit count'}
+            <Button type="button" size="sm" disabled={!canComplete} onClick={() => setShowConfirm(true)}>
+              <Check data-icon="inline-start" aria-hidden="true" />
+              Complete count
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <label className="relative block min-w-0 flex-1">
               <span className="sr-only">Search products</span>
               <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products" className="pl-9" />
             </label>
-            <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 sm:flex">
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 sm:flex" aria-label="Count filter" role="group">
               {([
                 ['all', 'All'],
                 ['uncounted', 'Uncounted'],
@@ -165,14 +333,7 @@ export function InventoryStockCount() {
                 ['shortages', 'Shortages'],
                 ['overages', 'Overages'],
               ] as const).map(([value, label]) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant={filter === value ? 'secondary' : 'ghost'}
-                  size="xs"
-                  aria-pressed={filter === value}
-                  onClick={() => setFilter(value)}
-                >
+                <Button key={value} type="button" variant={filter === value ? 'secondary' : 'ghost'} size="xs" aria-pressed={filter === value} onClick={() => setFilter(value)}>
                   {label}
                 </Button>
               ))}
@@ -187,14 +348,15 @@ export function InventoryStockCount() {
                 <TableHead className="text-right">System stock</TableHead>
                 <TableHead className="w-36">Physical stock</TableHead>
                 <TableHead className="text-right">Variance</TableHead>
-                <TableHead className="min-w-52">Deduction reason</TableHead>
+                <TableHead className="min-w-56">Reason / explanation</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredItems.map((item) => {
                 const variance = getVariance(item)
                 const needsReason = variance !== null && variance !== 0
-                const hasError = needsReason && !item.reason
+                const needsNote = item.reason === 'other'
+                const hasError = needsReason && (!item.reason || (needsNote && !item.reasonNote.trim()))
 
                 return (
                   <TableRow key={item.id} className={cn(hasError && 'bg-destructive/5 hover:bg-destructive/10')}>
@@ -206,30 +368,18 @@ export function InventoryStockCount() {
                     <TableCell className="text-right tabular-nums">{item.physicalStock === '' ? 'Hidden' : item.systemStock}</TableCell>
                     <TableCell>
                       <label className="sr-only" htmlFor={`physical-stock-${item.id}`}>Physical stock for {item.product}</label>
-                      <Input
-                        id={`physical-stock-${item.id}`}
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        value={item.physicalStock}
-                        aria-invalid={hasError}
-                        onChange={(event) => updateItem(item.id, { physicalStock: event.target.value })}
-                        placeholder="Enter qty"
-                        className="h-9 text-right tabular-nums"
-                      />
+                      <Input id={`physical-stock-${item.id}`} type="number" min="0" step="1" inputMode="numeric" value={item.physicalStock} disabled={isCompleted} aria-invalid={hasError} onChange={(event) => updatePhysicalStock(item.id, event.target.value)} placeholder="Enter qty" className="h-9 text-right tabular-nums" />
                     </TableCell>
                     <TableCell className={cn('text-right font-medium tabular-nums', variance !== null && variance < 0 && 'text-destructive', variance !== null && variance > 0 && 'text-primary')}>
                       {formatVariance(variance)}
                     </TableCell>
                     <TableCell>
                       {needsReason ? (
-                        <BaseSelect
-                          value={item.reason}
-                          options={reasonOptions}
-                          onValueChange={(reason) => updateItem(item.id, { reason })}
-                          placeholder={variance && variance < 0 ? 'Select deduction reason' : 'Explain overage'}
-                          ariaLabel={`Reason for ${item.product}`}
-                        />
+                        <div className="flex min-w-52 flex-col gap-1.5">
+                          <BaseSelect value={item.reason} options={reasonOptions} disabled={isCompleted} onValueChange={(reason) => updateItem(item.id, { reason, reasonNote: reason === 'other' ? item.reasonNote : '' })} placeholder={variance && variance < 0 ? 'Select deduction reason' : 'Explain overage'} ariaLabel={`Reason for ${item.product}`} />
+                          {needsNote ? <Input value={item.reasonNote} disabled={isCompleted} aria-invalid={hasError} onChange={(event) => updateItem(item.id, { reasonNote: event.target.value })} placeholder="Required note" /> : null}
+                          {hasError ? <p className="text-xs text-destructive">{needsNote ? 'Add a note for Other.' : 'Select a reason or explanation.'}</p> : null}
+                        </div>
                       ) : (
                         <span className="text-sm text-muted-foreground">{variance === null ? 'Enter physical stock first' : 'No reason needed'}</span>
                       )}
@@ -252,10 +402,14 @@ export function InventoryStockCount() {
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Submit stock count?</DialogTitle>
-            <DialogDescription>This UI preview will only change the on-screen status. It will not update inventory.</DialogDescription>
+            <DialogTitle>Complete stock count?</DialogTitle>
+            <DialogDescription>Completion will reconcile inventory to the physical quantities entered and make this count read-only. This UI-only preview does not save inventory changes yet.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-3 text-sm">
+            <span className="text-muted-foreground">Products counted</span>
+            <span className="text-right font-medium tabular-nums">{summary.counted} of {items.length}</span>
+            <span className="text-muted-foreground">Matched products</span>
+            <span className="text-right font-medium tabular-nums">{summary.matched}</span>
             <span className="text-muted-foreground">Units to deduct</span>
             <span className="text-right font-medium tabular-nums">{summary.totalDecrease}</span>
             <span className="text-muted-foreground">Units to add</span>
@@ -263,9 +417,9 @@ export function InventoryStockCount() {
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setShowConfirm(false)}>Cancel</Button>
-            <Button type="button" onClick={submitCount}>
+            <Button type="button" onClick={completeCount}>
               <Check data-icon="inline-start" aria-hidden="true" />
-              Confirm submission
+              Complete count
             </Button>
           </DialogFooter>
         </DialogContent>

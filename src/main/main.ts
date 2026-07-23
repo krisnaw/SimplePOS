@@ -99,6 +99,30 @@ function createWindow(): void {
   }
 }
 
+async function createInvoicePreviewPdf(html: string): Promise<string> {
+  const previewWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  })
+
+  try {
+    await previewWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+    const pdf = await previewWindow.webContents.printToPDF({
+      landscape: true,
+      preferCSSPageSize: true,
+      printBackground: true,
+    })
+
+    return pdf.toString('base64')
+  } finally {
+    previewWindow.destroy()
+  }
+}
+
 function prepareDatabaseDirectory(): string {
   const databaseDirectory = app.getPath('userData')
   const databasePath = path.join(databaseDirectory, 'simplepos.sqlite')
@@ -155,6 +179,11 @@ app.whenReady().then(async () => {
   ipcMain.handle('salesDrafts:saveItems', (_event, input: unknown) => saveSalesDraftItems(input as Record<string, unknown>))
   ipcMain.handle('invoices:list', (_event, input: unknown) => listInvoices(input as Record<string, unknown>))
   ipcMain.handle('invoices:get', (_event, input: unknown) => getInvoiceDetail(input as { id?: unknown }))
+  ipcMain.handle('invoices:previewPdf', async (_event, input: { html?: unknown }) => {
+    if (typeof input?.html !== 'string') throw new Error('Invalid invoice preview request')
+
+    return createInvoicePreviewPdf(input.html)
+  })
   ipcMain.handle('dashboard:getSummary', () => getDashboardSummary())
   ipcMain.handle('reports:getSummary', (_event, input: unknown) => getReportSummary(input as Record<string, unknown>))
   ipcMain.handle('workOrders:list', (_event, input: unknown) => listWorkOrders(input as Record<string, unknown>))

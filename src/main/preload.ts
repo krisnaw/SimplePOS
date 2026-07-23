@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld('simplepos', {
   invoices: {
     list: (input?: Record<string, unknown>) => ipcRenderer.invoke('invoices:list', input ?? {}),
     get: (input: { id: number }) => ipcRenderer.invoke('invoices:get', input),
+    previewPdf: (input: { html: string }) => ipcRenderer.invoke('invoices:previewPdf', input),
   },
   workOrders: {
     list: (input?: Record<string, unknown>) => ipcRenderer.invoke('workOrders:list', input ?? {}),

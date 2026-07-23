@@ -9,20 +9,12 @@ import {Button} from '@/renderer/components/ui/button'
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from '@/renderer/components/ui/card'
 import {Input} from '@/renderer/components/ui/input'
 import {Label} from '@/renderer/components/ui/label'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/renderer/components/ui/dialog'
 import {cn} from '@/renderer/lib/utils'
 import {formatCurrency, formatDateTime, formatPaymentMethod} from '@/renderer/lib/formatters'
 import {generateReceiptHTML, type InvoiceBusinessProfile, printInvoice} from '@/renderer/lib/invoice-print'
 import type {InvoiceDetail, InvoiceSummary} from './InvoiceWorkspace.types'
 import {ProductCategoryBadge} from '../inventory/ProductCategoryBadge'
+import {InvoicePreviewDialog} from './InvoicePreviewDialog'
 
 const pressableButtonClass =
   'transition-[transform,box-shadow] duration-150 ease-out active:scale-[0.96] active:translate-y-0'
@@ -72,7 +64,9 @@ export function InvoiceWorkspace({ businessProfile }: { businessProfile: Invoice
   const [loadError, setLoadError] = useState('')
   const [refreshCount, setRefreshCount] = useState(0)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewInvoice, setPreviewInvoice] = useState<NonNullable<InvoiceDetail> | null>(null)
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -144,20 +138,23 @@ export function InvoiceWorkspace({ businessProfile }: { businessProfile: Invoice
     }
   }, [selectedInvoiceId])
 
-  function handlePreview() {
+  async function handlePreview() {
     if (!selectedInvoice) return
-    const html = generateReceiptHTML(selectedInvoice, businessProfile)
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    setPreviewUrl(url)
-    setIsPreviewOpen(true)
-  }
 
-  function handlePreviewClose() {
-    setIsPreviewOpen(false)
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
-      setPreviewUrl(null)
+    setPreviewInvoice(selectedInvoice)
+    setPreviewPdfUrl(null)
+    setIsPreviewOpen(true)
+    setIsPreviewLoading(true)
+
+    try {
+      if (!window.simplepos?.invoices.previewPdf) throw new Error('Invoice preview is unavailable')
+
+      const pdf = await window.simplepos.invoices.previewPdf({
+        html: generateReceiptHTML(selectedInvoice, businessProfile),
+      })
+      setPreviewPdfUrl(`data:application/pdf;base64,${pdf}`)
+    } finally {
+      setIsPreviewLoading(false)
     }
   }
 
@@ -356,42 +353,6 @@ export function InvoiceWorkspace({ businessProfile }: { businessProfile: Invoice
                 </Button>
               </CardAction>
 
-              <Dialog open={isPreviewOpen} onOpenChange={(open) => { if (!open) handlePreviewClose() }}>
-                <DialogContent
-                  showCloseButton={false}
-                  className="min-w-4xl"
-                >
-                  <DialogHeader>
-                    <DialogTitle>{t('invoices.previewTitle')}</DialogTitle>
-                    <DialogDescription>
-                      {t('invoices.previewDescription', {invoiceNumber: selectedInvoice.invoiceNumber})}
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="min-h-0">
-                    <div className="mx-auto aspect-210/148 w-full max-w-215 rounded-sm bg-white shadow-lg ring-1 ring-black/10">
-                      {previewUrl ? (
-                        <iframe
-                          src={previewUrl}
-                          title={`Invoice ${selectedInvoice.invoiceNumber}`}
-                          sandbox=""
-                          className="h-full w-full rounded-sm border-0"
-                        />
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <DialogClose render={<Button type="button" variant="outline"/>}>
-                      {t('common.close')}
-                    </DialogClose>
-                    <Button type="button" className={pressableButtonClass} onClick={handlePrint}>
-                      <Printer data-icon="inline-start" aria-hidden="true"/>
-                      {t('invoices.print')}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </CardHeader>
 
             <CardContent className="min-h-0 flex-1 overflow-auto">
@@ -491,6 +452,16 @@ export function InvoiceWorkspace({ businessProfile }: { businessProfile: Invoice
           </CardContent>
         )}
       </Card>
+      {previewInvoice ? (
+        <InvoicePreviewDialog
+          businessProfile={businessProfile}
+          invoice={previewInvoice}
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+          previewPdfUrl={previewPdfUrl}
+          isLoading={isPreviewLoading}
+        />
+      ) : null}
     </div>
   )
 }
